@@ -1,6 +1,6 @@
 :root {
     --cor-fundo: #f4f6f9;
-    --cor-principal: #2c3e50; /* Azul escuro corporativo */
+    --cor-principal: #2c3e50; /* Será substituído dinamicamente */
     --cor-secundaria: #34495e;
     --cor-texto: #333;
     --borda: #ccc;
@@ -11,7 +11,7 @@ body {
     background-color: var(--cor-fundo);
     color: var(--cor-texto);
     margin: 0; padding: 20px;
-    display: flex; justify-content: center;
+    display: flex; justify-content: center; flex-direction: column; align-items: center;
 }
 
 .container {
