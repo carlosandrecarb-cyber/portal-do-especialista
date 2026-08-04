@@ -17,7 +17,7 @@ const escolasConfig = {
         nome: "Escola Municipal Exemplo",
         corPrincipal: "#2980b9", // Azul
         corSecundaria: "#3498db",
-        logo: "LINK_DA_LOGO_AQUI"
+        logo: "https://drive.google.com/file/d/1A2c_3Me99qofg25uyoor4roLHybutll5/view?usp=sharing"
     }
 };
 
