@@ -3,12 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal do Especialista</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Portal do Especialista - Gestão Educacional</title>
+    <link rel="stylesheet" href="estilo.css">
 </head>
 <body>
-    <h1>Centro de Comando - Especialista</h1>
-    <p>Conectando ao banco de dados...</p>
+    <!-- Tela de Login da Supervisão -->
+    <div id="telaLogin" class="container">
+        <h2>Acesso da Gestão Escolar</h2>
+        <input type="text" id="loginUsuario" placeholder="Usuário do Especialista">
+        <input type="password" id="loginSenha" placeholder="Senha">
+        <button onclick="fazerLogin()">Acessar Painel</button>
+        <p id="msgLogin" class="mensagem-erro"></p>
+    </div>
+
+    <!-- Painel Principal de Articulação -->
+    <div id="painelEspecialista" class="container" style="display: none;">
+        <header>
+            <h2>Centro de Comando</h2>
+            <span id="infoUsuarioBoasVindas"></span>
+            <button class="btn-sair" onclick="location.reload()">Sair</button>
+        </header>
+
+        <!-- Abas de Navegação -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
+            <button class="tab-btn" onclick="mudarAba('historicoPlanos', this)">📄 Auditoria de Planos</button>
+            <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Backup e Sistema</button>
+        </div>
+
+        <!-- Aba 1: Gestão de Professores -->
+        <div id="gestaoUsuarios" class="tab-content active">
+            <h3>Gerenciar Acessos da Rede</h3>
+            <div id="formularioUsuario" class="card-form">
+                <input type="hidden" id="linhaUsuario">
+                <input type="text" id="cadNome" placeholder="Nome do Professor">
+                <input type="text" id="cadSenha" placeholder="Senha de Acesso">
+                <select id="cadPerfil">
+                    <option value="Professor">Professor</option>
+                    <option value="Especialista">Especialista</option>
+                </select>
+                <input type="text" id="cadComponentes" placeholder="Componentes (ex: Matemática, Arte)">
+                <input type="text" id="cadTurmas" placeholder="Turmas (ex: 6º REG 1, 7º REG 2)">
+                <button onclick="salvarUsuario()" style="background: var(--cor-principal);">💾 Salvar Usuário</button>
+                <button onclick="limparFormulario()" style="background: #7f8c8d; margin-top: 5px;">Cancelar</button>
+                <p id="msgFormulario"></p>
+            </div>
+            <hr>
+            <button onclick="carregarUsuarios()" style="margin-bottom: 15px;">🔄 Atualizar Lista</button>
+            <div id="listaUsuarios">Clique em atualizar para carregar a equipe...</div>
+        </div>
+
+        <!-- Aba 2: Histórico de Planos -->
+        <div id="historicoPlanos" class="tab-content">
+            <h3>Visão Global de Planos Gerados</h3>
+            <button onclick="carregarHistoricoGeral()">🔄 Buscar Todos os Planos</button>
+            <div id="listaPlanosRede" style="margin-top: 15px;"></div>
+        </div>
+
+        <!-- Aba 3: Configurações -->
+        <div id="configuracoes" class="tab-content">
+            <h3>Segurança e Backup</h3>
+            <p>Solicite uma cópia imediata de toda a base de dados (Acessos, Matrizes e Controle de Planos). O arquivo Excel será enviado para o e-mail do administrador do Google Drive.</p>
+            <button onclick="forcarBackup()" style="background: #e67e22;">📦 Enviar Backup para o E-mail</button>
+            <p id="msgBackup" style="margin-top: 15px; font-weight: bold;"></p>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
