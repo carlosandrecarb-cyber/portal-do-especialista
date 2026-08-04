@@ -1,9 +1,4 @@
 // ==========================================
-// CONEXÃO COM O BANCO DE DADOS (PLANILHA)
-// ==========================================
-const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
-
-// ==========================================
 // IDENTIDADE VISUAL DAS ESCOLAS (FILIAIS)
 // ==========================================
 const escolasConfig = {
@@ -11,15 +6,14 @@ const escolasConfig = {
         nome: "Escola Municipal Mestra Aurora",
         corPrincipal: "#27ae60", // Verde da Mestra Aurora
         corSecundaria: "#2ecc71",
-        logo: "https://drive.google.com/file/d/1A2c_3Me99qofg25uyoor4roLHybutll5/view?usp=sharing"
-    },
-    "outraescola": {
-        nome: "Escola Municipal Exemplo",
-        corPrincipal: "#2980b9", // Azul
-        corSecundaria: "#3498db",
-        logo: "https://drive.google.com/file/d/1A2c_3Me99qofg25uyoor4roLHybutll5/view?usp=sharing"
+        logo: "https://drive.google.com/uc?export=view&id=1A2c_3Me99qofg25uyoor4roLHybutll5"
     }
 };
+
+// ==========================================
+// CONEXÃO COM O BANCO DE DADOS (PLANILHA)
+// ==========================================
+const URL_API = "https://drive.google.com/file/d/1A2c_3Me99qofg25uyoor4roLHybutll5/view?usp=sharing";
 
 // ==========================================
 // CARREGAMENTO DINÂMICO (Veste a camisa da escola)
@@ -42,6 +36,7 @@ window.onload = function() {
         document.documentElement.style.setProperty('--cor-secundaria', config.corSecundaria);
     }
 };
+
 // ==========================================
 // SISTEMA DE LOGIN DA GESTÃO
 // ==========================================
