@@ -11,7 +11,7 @@ const escolasConfig = {
         nome: "Escola Municipal Mestra Aurora",
         corPrincipal: "#27ae60", // Verde da Mestra Aurora
         corSecundaria: "#2ecc71",
-        logo: "COLE_AQUI_O_LINK_DA_LOGO_DA_MESTRA_AURORA"
+        logo: "https://drive.google.com/file/d/1A2c_3Me99qofg25uyoor4roLHybutll5/view?usp=sharing"
     },
     "outraescola": {
         nome: "Escola Municipal Exemplo",
