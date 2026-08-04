@@ -4,6 +4,45 @@
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 
 // ==========================================
+// IDENTIDADE VISUAL DAS ESCOLAS (FILIAIS)
+// ==========================================
+const escolasConfig = {
+    "mestraaurora": {
+        nome: "Escola Municipal Mestra Aurora",
+        corPrincipal: "#27ae60", // Verde da Mestra Aurora
+        corSecundaria: "#2ecc71",
+        logo: "COLE_AQUI_O_LINK_DA_LOGO_DA_MESTRA_AURORA"
+    },
+    "outraescola": {
+        nome: "Escola Municipal Exemplo",
+        corPrincipal: "#2980b9", // Azul
+        corSecundaria: "#3498db",
+        logo: "LINK_DA_LOGO_AQUI"
+    }
+};
+
+// ==========================================
+// CARREGAMENTO DINÂMICO (Veste a camisa da escola)
+// ==========================================
+window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const escolaId = urlParams.get('escola');
+
+    if (escolaId && escolasConfig[escolaId]) {
+        const config = escolasConfig[escolaId];
+        
+        // Troca os textos e a logo
+        document.getElementById('nomeEscola').innerText = "Gestão - " + config.nome;
+        const imgLogo = document.getElementById('logoEscola');
+        imgLogo.src = config.logo;
+        imgLogo.style.display = "block";
+
+        // Troca as cores de todo o sistema na hora!
+        document.documentElement.style.setProperty('--cor-principal', config.corPrincipal);
+        document.documentElement.style.setProperty('--cor-secundaria', config.corSecundaria);
+    }
+};
+// ==========================================
 // SISTEMA DE LOGIN DA GESTÃO
 // ==========================================
 function fazerLogin() {
