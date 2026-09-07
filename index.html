@@ -126,15 +126,15 @@
         <div id="listaUsuarios">Carregando...</div>
       </div>
 
-      <!-- Aba 2: Importador por Copia e Cola Inteligente -->
+      <!-- Aba 2: Importador por Copia e Cola (Caixa de Texto Direta) -->
       <div id="extratorPDF" class="tab-content">
         <div class="guia-card">
-          <h4>📌 Guia Operacional - Importador Instantâneo</h4>
-          <p>Cole o texto selecionado do PDF oficial. O sistema organiza tudo sozinho na tela, respeitando as particularidades de cada disciplina.</p>
+          <h4>📌 Guia Operacional - Importador Instantâneo por Copia e Cola</h4>
+          <p>Abra o PDF oficial, copie o texto da página do trimestre e cole na caixa abaixo. O sistema organiza tudo sozinho na tela, respeitando as regras específicas de cada componente.</p>
         </div>
 
         <div class="instrucao-box">
-          <strong>💡 Lembrete de Uso:</strong> Abra o PDF oficial no computador, selecione o conteúdo desejado (desde <em>"UNIDADE TEMÁTICA"</em> até <em>"EVIDÊNCIAS"</em>), aperte <strong>Ctrl + C</strong> para copiar e cole na caixa abaixo. O sistema fará a leitura e organização automática imediata!
+          <strong>💡 Lembrete de Uso:</strong> Abra o PDF oficial no seu computador, selecione o texto completo da página (desde <em>"UNIDADE TEMÁTICA"</em> até <em>"EVIDÊNCIAS DE CONSOLIDAÇÃO"</em>), aperte <strong>Ctrl + C</strong> para copiar e cole na caixa abaixo (Ctrl + V). O sistema lerá e organizará tudo instantaneamente!
         </div>
 
         <h3>📄 Importador por Copia e Cola (Matriz Curricular)</h3>
@@ -146,7 +146,7 @@
         </div>
 
         <label><strong>Cole o texto copiado do PDF oficial aqui (Ctrl + V):</strong></label>
-        <textarea id="textoCopiadoInput" rows="7" placeholder="Ex: UNIDADE TEMÁTICA Geometria HABILIDADES PRIORIZADAS DO ANO ESCOLAR..."></textarea>
+        <textarea id="textoCopiadoInput" rows="8" placeholder="Cole aqui o texto copiado do PDF... (ex: UNIDADE TEMÁTICA Geometria HABILIDADES PRIORIZADAS...)"></textarea>
         
         <button onclick="processarTextoColado()" style="background: #27ae60; margin-bottom: 20px; font-size: 1.05rem;">⚙️ Organizar Dados e Gerar Pré-visualização</button>
 
@@ -590,7 +590,7 @@
           return;
         }
 
-        status.innerText = "⏳ Organizando os dados automaticamente...";
+        status.innerText = "⏳ Organizando dados automaticamente...";
         dadosExtraidosLote = [];
 
         const textoLimpo = texto.replace(/\|/g, " ");
@@ -676,7 +676,6 @@
           }
         });
 
-        // Fallback Absoluto: se não houver divisão por blocos, pega a porção principal
         if (dadosExtraidosLote.length === 0) {
           const habP = extrairTextoSimples(textoLimpo, "HABILIDADES\\s*PRIORIZADAS", "OBJETOS");
           const habR = (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Matemática") ? extrairTextoSimples(textoLimpo, "HABILIDADES\\s*DE\\s*RECOMPOSIÇÃO", "HABILIDADES\\s*DE\\s*SUPORTE") : "-";
