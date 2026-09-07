@@ -26,7 +26,7 @@
       .check-item input { width: 18px; height: 18px; margin: 0; accent-color: var(--cor-secundaria); }
 
       table.preview-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
-      table.preview-table th, table.preview-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+      table.preview-table th, table.preview-table td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; word-break: break-word; }
       table.preview-table th { background: #2c3e50; color: white; }
 
       .filtros-box { display: flex; gap: 15px; background: #eef2f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
@@ -126,15 +126,15 @@
         <div id="listaUsuarios">Carregando...</div>
       </div>
 
-      <!-- Aba 2: Importador por Copia e Cola (Caixa de Texto Direta) -->
+      <!-- Aba 2: Importador por Copia e Cola (Texto Totalmente Visível) -->
       <div id="extratorPDF" class="tab-content">
         <div class="guia-card">
-          <h4>📌 Guia Operacional - Importador Instantâneo por Copia e Cola</h4>
-          <p>Abra o PDF oficial, copie o texto da página do trimestre e cole na caixa abaixo. O sistema organiza tudo sozinho na tela, respeitando as regras específicas de cada componente.</p>
+          <h4>📌 Guia Operacional - Importador Instantâneo</h4>
+          <p>Cole o texto selecionado do PDF oficial. O sistema organiza tudo sozinho na tela, com visualização completa do conteúdo.</p>
         </div>
 
         <div class="instrucao-box">
-          <strong>💡 Lembrete de Uso:</strong> Abra o PDF oficial no seu computador, selecione o texto completo da página (desde <em>"UNIDADE TEMÁTICA"</em> até <em>"EVIDÊNCIAS DE CONSOLIDAÇÃO"</em>), aperte <strong>Ctrl + C</strong> para copiar e cole na caixa abaixo (Ctrl + V). O sistema lerá e organizará tudo instantaneamente!
+          <strong>💡 Lembrete de Uso:</strong> Abra o PDF oficial no seu computador, selecione o texto completo da página (desde <em>"UNIDADE TEMÁTICA"</em> até <em>"EVIDÊNCIAS DE CONSOLIDAÇÃO"</em>), aperte <strong>Ctrl + C</strong> para copiar e cole na caixa abaixo (Ctrl + V). Tudo aparecerá visível por completo na tabela abaixo!
         </div>
 
         <h3>📄 Importador por Copia e Cola (Matriz Curricular)</h3>
@@ -151,14 +151,15 @@
         <button onclick="processarTextoColado()" style="background: #27ae60; margin-bottom: 20px; font-size: 1.05rem;">⚙️ Organizar Dados e Gerar Pré-visualização</button>
 
         <div id="areaConferencia" style="display:none; background: #fff; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
-          <h3 style="color: #d35400; margin-top:0;">👁️ Tabela de Conferência (Tudo Organizado na Tela)</h3>
-          <div style="max-height: 300px; overflow-y: auto;">
+          <h3 style="color: #d35400; margin-top:0;">👁️ Tabela de Conferência (Conteúdo 100% Visível)</h3>
+          <!-- Removida a rolagem restritiva para exibir todo o texto na íntegra -->
+          <div>
             <table class="preview-table" id="tabelaPreview">
               <thead><tr><th>Ano</th><th>Trimestre</th><th>Unidade / Eixo</th><th>Habilidade Priorizada</th><th>Detalhes Curriculares (Rec/Sup/Gênero)</th></tr></thead>
               <tbody id="corpoPreview"></tbody>
             </table>
           </div>
-          <button onclick="enviarLotePlanilha()" style="background: #2980b9; margin-top: 15px; font-size: 1.1rem;">🚀 Confirmar e Salvar Tudo na Planilha do Google</button>
+          <button onclick="enviarLotePlanilha()" style="background: #2980b9; margin-top: 20px; font-size: 1.1rem;">🚀 Confirmar e Salvar Tudo na Planilha do Google</button>
         </div>
 
         <p id="statusOCR" style="font-weight: bold; margin-top: 15px; color: #e67e22;"></p>
@@ -720,8 +721,8 @@
             <td>${d.ano}</td>
             <td>${d.trimestre}</td>
             <td>${d.unidade}</td>
-            <td><div style="max-height:80px; overflow-y:auto;">${d.habPriorizada}</div></td>
-            <td><div style="max-height:80px; overflow-y:auto;">Gênero: ${d.genero}<br>Rec: ${d.habRecomposicao}<br>Sup: ${d.habSuporte}</div></td>
+            <td><div>${d.habPriorizada}</div></td>
+            <td><div>Gênero: ${d.genero}<br>Rec: ${d.habRecomposicao}<br>Sup: ${d.habSuporte}</div></td>
           </tr>`;
         });
         document.getElementById('areaConferencia').style.display = 'block';
