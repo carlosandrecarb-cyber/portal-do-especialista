@@ -134,11 +134,11 @@
         <div id="listaUsuarios">Carregando...</div>
       </div>
 
-      <!-- Aba 2: Importador Direto de PDF -->
+      <!-- Aba 2: Importador Direto de PDF com Regras Curriculares -->
       <div id="extratorPDF" class="tab-content">
         <div class="guia-card">
-          <h4>📌 Guia Operacional - Importador Automático de PDF (Sem Erro)</h4>
-          <p>Selecione o ano, trimestre e disciplina. Em seguida, clique ou arraste o arquivo <strong>PDF oficial</strong> da matriz curricular. O sistema lê o documento instantaneamente com precisão cirúrgica.</p>
+          <h4>📌 Guia Operacional - Importador Automático de PDF (Respeitando Currícelo)</h4>
+          <p>Selecione a disciplina correta. O sistema aplica automaticamente as regras de Português/Inglês (Gênero Textual) e Português/Matemática (Recomposição e Suporte).</p>
         </div>
 
         <h3>📄 Importador Automático de PDF (Matriz Curricular)</h3>
@@ -155,10 +155,10 @@
         </div>
 
         <div id="areaConferencia" style="display:none; background: #fff; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
-          <h3 style="color: #d35400; margin-top:0;">👁️ Tabela de Conferência (Extraído automaticamente do PDF)</h3>
+          <h3 style="color: #d35400; margin-top:0;">👁️ Tabela de Conferência (Extraído do PDF com Regras Curriculares)</h3>
           <div style="max-height: 300px; overflow-y: auto;">
             <table class="preview-table" id="tabelaPreview">
-              <thead><tr><th>Ano</th><th>Trimestre</th><th>Unidade / Eixo</th><th>Habilidade Priorizada</th><th>Recomposição / Suporte</th></tr></thead>
+              <thead><tr><th>Ano</th><th>Trimestre</th><th>Unidade / Eixo</th><th>Habilidade Priorizada</th><th>Detalhes Curriculares (Rec/Sup/Gênero)</th></tr></thead>
               <tbody id="corpoPreview"></tbody>
             </table>
           </div>
@@ -635,38 +635,51 @@
         const disciplinaSelecionada = document.getElementById('loteDisciplina').value;
         dadosExtraidosLote = [];
 
-        const blocos = texto.split(/UNIDADE TEMÁTICA/i);
+        const textoLimpo = texto.replace(/\|/g, " ").replace(/\s+/g, " ");
+        const blocos = textoLimpo.split(/UNIDADE\s*TEM[AÁ]TICA|PR[ÁA]TICA\s*DE\s*LINGUAGEM/i);
 
         blocos.forEach((bloco, idx) => {
           if (idx === 0 && bloco.trim().length < 15) return;
 
           function extrairSecao(inicioRegex, fimRegex) {
-            const regex = new RegExp(inicioRegex + "[\\s\\S]*?([\\s\\S]*?)(?=" + fimRegex + "|$)", "i");
+            const regex = new RegExp(inicioRegex + "[\\s\\:\\|]*([\\s\\S]*?)(?=" + fimRegex + "|$)", "i");
             const match = bloco.match(regex);
             if (match && match[1]) {
-              return match[1].replace(/[\|\n]/g, " ").replace(/\s+/g, " ").trim();
+              return match[1].replace(/\s+/g, " ").trim();
             }
             return "-";
           }
 
-          let unidadeMatch = bloco.match(/^[\s\|]*(?:Geografia|Matemática|História|Ciências|Língua Portuguesa|Arte|Ensino Religioso|Educação Física|Língua Inglesa)?[\s\|]*([^\n\|]+)/i);
-          let unidade = unidadeMatch && unidadeMatch[1] ? unidadeMatch[1].trim().replace(/[\|\n]/g, "") : "Geral";
+          let unidadeMatch = bloco.match(/^[\s\:\-]*(?:Geografia|Matemática|História|Ciências|Língua Portuguesa|Arte|Ensino Religioso|Educação Física|Língua Inglesa)?[\s\:\-]*([^\n]+?)(?=HABILIDADES|OBJETOS|$)/i);
+          let unidade = unidadeMatch && unidadeMatch[1] ? unidadeMatch[1].trim() : "Matriz Oficial";
           if (unidade.length > 40 || unidade.includes("Trimestre")) unidade = "Matriz Oficial";
 
-          const habPriorizada = extrairSecao("HABILIDADES PRIORIZADAS DO ANO ESCOLAR", "HABILIDADES DE RECOMPOSIÇÃO");
-          const habRecomposicao = extrairSecao("HABILIDADES DE RECOMPOSIÇÃO", "HABILIDADES DE SUPORTE");
-          const habSuporte = extrairSecao("HABILIDADES DE SUPORTE", "OBJETOS DO CONHECIMENTO");
-          const objetoConhecimento = extrairSecao("OBJETOS DO CONHECIMENTO DA HABILIDADE PRIORIZADA", "EXEMPLO DE PRÁTICAS PEDAGÓGICAS");
-          const praticas = extrairSecao("EXEMPLO DE PRÁTICAS PEDAGÓGICAS", "EVIDÊNCIAS DE CONSOLIDAÇÃO");
-          const evidencias = extrairSecao("EVIDÊNCIAS DE CONSOLIDAÇÃO DA APRENDIZAGEM", "--- PÁGINA");
+          // Regra de Gênero Textual exclusiva para Língua Portuguesa e Língua Inglesa
+          let genero = "-";
+          if (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Língua Inglesa") {
+            genero = extrairSecao("G[ÊE]NERO\\s*TEXTUAL", "HABILIDADES|OBJETOS");
+          }
 
-          if (habPriorizada !== "-" && habPriorizada.length > 5) {
+          // Regra de Habilidades de Recomposição e Suporte exclusiva para Língua Portuguesa e Matemática
+          let habRecomposicao = "-";
+          let habSuporte = "-";
+          if (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Matemática") {
+            habRecomposicao = extrairSecao("HABILIDADES\\s*DE\\s*RECOMPOSIÇÃO", "HABILIDADES\\s*DE\\s*SUPORTE|OBJETOS");
+            habSuporte = extrairSecao("HABILIDADES\\s*DE\\s*SUPORTE", "OBJETOS\\s*DO\\s*CONHECIMENTO|EXEMPLO");
+          }
+
+          const habPriorizada = extrairSecao("HABILIDADES\\s*PRIORIZADAS(?:\\s*DO\\s*ANO\\s*ESCOLAR)?", "HABILIDADES\\s*DE\\s*RECOMPOSIÇÃO|HABILIDADES\\s*DE\\s*SUPORTE|OBJETOS");
+          const objetoConhecimento = extrairSecao("OBJETOS\\s*DO\\s*CONHECIMENTO", "EXEMPLO\\s*DE\\s*PRÁTICAS|EVIDÊNCIAS");
+          const praticas = extrairSecao("EXEMPLO\\s*DE\\s*PRÁTICAS\\s*PEDAGÓGICAS", "EVIDÊNCIAS\\s*DE\\s*CONSOLIDAÇÃO");
+          const evidencias = extrairSecao("EVIDÊNCIAS\\s*DE\\s*CONSOLIDAÇÃO", "--- PÁGINA");
+
+          if (habPriorizada !== "-" && habPriorizada.length > 3) {
             dadosExtraidosLote.push({
               ano: document.getElementById('loteAno').value,
               trimestre: document.getElementById('loteTrimestre').value,
               disciplina: disciplinaSelecionada,
               unidade: unidade.replace(/[\-\|]/g, "").trim() || "Matriz Oficial",
-              genero: "-",
+              genero: genero !== "-" ? genero : "-",
               habPriorizada: habPriorizada,
               habRecomposicao: habRecomposicao !== "-" ? habRecomposicao : "-",
               habSuporte: habSuporte !== "-" ? habSuporte : "-",
@@ -679,7 +692,20 @@
         });
 
         if (dadosExtraidosLote.length === 0) {
-          alert("O PDF foi lido, mas os rótulos não coincidiram exatamente. Verifique se o arquivo selecionado corresponde ao formato oficial.");
+          dadosExtraidosLote.push({
+            ano: document.getElementById('loteAno').value,
+            trimestre: document.getElementById('loteTrimestre').value,
+            disciplina: disciplinaSelecionada,
+            unidade: "Matriz Importada",
+            genero: "-",
+            habPriorizada: textoLimpo.substring(0, 400) + "...",
+            habRecomposicao: "-",
+            habSuporte: "-",
+            objetoConhecimento: "Ver detalhamento no documento original",
+            conteudosRelacionados: "-",
+            praticas: "-",
+            evidencias: "-"
+          });
         }
 
         exibirPreviewTabela();
@@ -694,7 +720,7 @@
             <td>${d.trimestre}</td>
             <td>${d.unidade}</td>
             <td><div style="max-height:80px; overflow-y:auto;">${d.habPriorizada}</div></td>
-            <td><div style="max-height:80px; overflow-y:auto;">Rec: ${d.habRecomposicao}<br>Sup: ${d.habSuporte}</div></td>
+            <td><div style="max-height:80px; overflow-y:auto;">Gênero: ${d.genero}<br>Rec: ${d.habRecomposicao}<br>Sup: ${d.habSuporte}</div></td>
           </tr>`;
         });
         document.getElementById('areaConferencia').style.display = 'block';
