@@ -1,440 +1,423 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal do Especialista - Gestão Educacional</title>
-    <!-- Tesseract OCR para leitura das páginas do PDF coladas -->
+<html>
+  <head>
+    <base target="_top">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Tesseract OCR para imagens -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- PDF.js para leitura nativa de arquivos PDF por drag and drop -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <style>
-        :root {
-            --cor-fundo: #f4f6f9;
-            --cor-principal: #2c3e50;
-            --cor-secundaria: #27ae60;
-            --cor-texto: #333;
-            --borda: #dcdde1;
-        }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--cor-fundo);
-            color: var(--cor-texto);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .container {
-            background: #fff;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-            width: 100%;
-            max-width: 900px;
-            margin-bottom: 20px;
-        }
-        h1, h2, h3 { color: var(--cor-principal); margin-top: 0; }
-        input, select, textarea {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid var(--borda);
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-        button {
-            background-color: var(--cor-secundaria);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 1rem;
-            transition: 0.2s;
-            width: 100%;
-        }
-        button:hover { filter: brightness(1.1); }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid #ecf0f1;
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-        .btn-sair { background: #e74c3c; width: auto; padding: 8px 15px; font-size: 0.9rem; }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .tab-btn {
-            flex: 1;
-            background: #e0e0e0;
-            color: #333;
-            border-radius: 8px;
-            padding: 12px;
-            border: none;
-            cursor: pointer;
-            font-weight: bold;
-        }
-        .tab-btn.active { background: var(--cor-principal); color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        
-        /* Área de Cola para o Extrator */
-        #pasteZone {
-            border: 3px dashed var(--cor-secundaria);
-            background: #e8f8f5;
-            border-radius: 10px;
-            padding: 30px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 15px;
-        }
-        #pasteZone p { margin: 0; color: var(--cor-secundaria); font-weight: bold; }
-        .gallery { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-        .thumb-card { position: relative; width: 90px; height: 90px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fff; }
-        .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
-        .thumb-card button { position: absolute; top: 2px; right: 2px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; width: auto; padding: 0 6px;}
-        
-        .mensagem-erro { color: #e74c3c; font-weight: bold; text-align: center; }
+      :root { --cor-fundo: #f4f6f9; --cor-principal: #2c3e50; --cor-secundaria: #27ae60; --cor-texto: #333; --borda: #dcdde1; }
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--cor-fundo); color: var(--cor-texto); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+      .container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 1000px; margin-bottom: 20px; }
+      h1, h2, h3 { color: var(--cor-principal); margin-top: 0; }
+      input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--borda); border-radius: 8px; box-sizing: border-box; font-size: 1rem; font-family: inherit; }
+      button { background-color: var(--cor-secundaria); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s; width: 100%; }
+      button:hover { filter: brightness(1.1); }
+      header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 15px; margin-bottom: 20px; }
+      .btn-sair { background: #e74c3c; width: auto; padding: 8px 15px; font-size: 0.9rem; }
+      .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+      .tab-btn { flex: 1; background: #e0e0e0; color: #333; border-radius: 8px; padding: 12px; border: none; cursor: pointer; font-weight: bold; }
+      .tab-btn.active { background: var(--cor-principal); color: white; }
+      .tab-content { display: none; }
+      .tab-content.active { display: block; }
+      
+      .checkbox-lista { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px; max-height: 250px; overflow-y: auto; }
+      .checkbox-item { display: flex; align-items: flex-start; margin-bottom: 8px; }
+      .checkbox-item input { margin-right: 10px; margin-top: 3px; width: 18px; height: 18px; accent-color: #3498db; }
+      
+      /* Zona de Drag & Drop e Cola */
+      #dropZone { border: 3px dashed var(--cor-secundaria); background: #e8f8f5; border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; margin-bottom: 20px; transition: 0.3s; }
+      #dropZone.dragover { background: #d1f2eb; border-color: #219653; transform: scale(1.01); }
+      #dropZone p { margin: 0; color: #27ae60; font-weight: bold; font-size: 1.1rem; }
+      
+      .gallery { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
+      .thumb-card { position: relative; width: 90px; height: 90px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fff; }
+      .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
+      .thumb-card button { position: absolute; top: 2px; right: 2px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; padding: 0; }
+      
+      table.preview-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
+      table.preview-table th, table.preview-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+      table.preview-table th { background: #2c3e50; color: white; }
     </style>
-</head>
-<body>
+  </head>
+  <body>
 
-    <!-- Cabeçalho Dinâmico da Escola -->
-    <div id="cabecalhoEscola" style="text-align: center; margin-bottom: 20px; width: 100%;">
-        <img id="logoEscola" src="https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5" alt="Logo Mestra Aurora" style="max-height: 90px; display: block; margin: 0 auto 10px auto;">
-        <h1 id="nomeEscola" style="color: var(--cor-principal); margin: 0; font-size: 1.5rem;">Portal do Especialista - Gestão Educacional</h1>
+    <div style="text-align: center; margin-bottom: 20px; width: 100%;">
+      <img src="https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5" alt="Logo Escola" style="max-height: 90px; display: block; margin: 0 auto 10px auto;">
+      <h1 style="color: var(--cor-principal); margin: 0; font-size: 1.5rem;">Portal do Especialista - Gestão Educacional</h1>
     </div>
 
-    <!-- Tela de Login da Supervisão -->
+    <!-- Tela de Login -->
     <div id="telaLogin" class="container">
-        <h2>Acesso da Gestão Escolar</h2>
-        <input type="text" id="loginUsuario" placeholder="Usuário do Especialista (ex: Carlos André Vieira)">
-        <input type="password" id="loginSenha" placeholder="Senha (ex: 1234)">
-        <button onclick="fazerLogin()">Acessar Painel</button>
-        <p id="msgLogin" class="mensagem-erro"></p>
+      <h2>Acesso da Gestão Escolar</h2>
+      <input type="text" id="loginUsuario" placeholder="Usuário (ex: Carlos André Vieira)">
+      <input type="password" id="loginSenha" placeholder="Senha (ex: 1234)">
+      <button onclick="fazerLogin()">Acessar Painel</button>
+      <p id="msgLogin" style="color: #e74c3c; font-weight: bold; text-align: center;"></p>
     </div>
 
-    <!-- Painel Principal de Articulação -->
+    <!-- Painel Principal -->
     <div id="painelEspecialista" class="container" style="display: none;">
-        <header>
-            <div>
-                <h2 style="margin:0;">Centro de Comando</h2>
-                <span id="infoUsuarioBoasVindas" style="font-size: 0.85rem; color: #666;"></span>
-            </div>
-            <button class="btn-sair" onclick="location.reload()">Sair</button>
-        </header>
+      <header>
+        <div>
+          <h2 style="margin:0;">Centro de Comando</h2>
+          <span id="infoUsuarioBoasVindas" style="font-size: 0.85rem; color: #666;"></span>
+        </div>
+        <button class="btn-sair" onclick="location.reload()">Sair</button>
+      </header>
 
-        <!-- Abas de Navegação -->
-        <div class="tabs">
-            <button class="tab-btn active" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
-            <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📥 Extrator PDF</button>
-            <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Sistema</button>
+      <div class="tabs">
+        <button class="tab-btn active" onclick="mudarAba('gerarPlanoTab', this)">✏️ Gerar Plano</button>
+        <button class="tab-btn" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
+        <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📥 Extrator PDF & Currículo</button>
+        <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Sistema</button>
+      </div>
+
+      <!-- Aba 0: Gerar Plano -->
+      <div id="gerarPlanoTab" class="tab-content active">
+        <div class="card">
+          <h3>1. Identificação</h3>
+          <label>Nome do(a) Professor(a)</label>
+          <input type="text" id="nomeProfessor" placeholder="Digite seu nome completo">
+          
+          <label>Tipo de Plano</label>
+          <select id="tipoPlano"><option value="Plano de Aula Diário">Plano de Aula Diário</option><option value="Plano de Aula Semanal">Plano de Aula Semanal</option><option value="Plano de Unidade">Plano de Unidade</option></select>
+
+          <label>Componente Curricular</label>
+          <select id="componente" onchange="buscarMatriz()">
+            <option value="">Selecione...</option><option value="Educação Física">Educação Física</option><option value="Língua Portuguesa">Língua Portuguesa</option><option value="Matemática">Matemática</option><option value="Geografia">Geografia</option><option value="História">História</option><option value="Ciências">Ciências</option><option value="Ensino Religioso">Ensino Religioso</option><option value="Arte">Arte</option><option value="Língua Inglesa">Língua Inglesa</option>
+          </select>
+
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 1;"><label>Ano/Série</label><select id="ano" onchange="buscarMatriz()"><option value="">Selecione...</option><option value="6º Ano">6º Ano</option><option value="7º Ano">7º Ano</option><option value="8º Ano">8º Ano</option><option value="9º Ano">9º Ano</option></select></div>
+            <div style="flex: 1;"><label>Turma(s)</label><input type="text" id="turma" placeholder="Ex: A e B"></div>
+          </div>
+          <label>Período</label><input type="text" id="periodo" placeholder="Ex: 03/08 a 14/08">
         </div>
 
-        <!-- Aba 1: Gestão de Professores -->
-        <div id="gestaoUsuarios" class="tab-content active">
-            <h3>Gerenciar Acessos da Rede</h3>
-            <div id="formularioUsuario" style="background: #eef2f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
-                <input type="hidden" id="linhaUsuario">
-                <input type="text" id="cadNome" placeholder="Nome Completo do Professor">
-                <input type="text" id="cadSenha" placeholder="Senha de Acesso">
-                <select id="cadPerfil">
-                    <option value="Professor">Professor</option>
-                    <option value="Especialista">Especialista</option>
-                </select>
-                <input type="text" id="cadComponentes" placeholder="Componentes (ex: Matemática, Geografia)">
-                <input type="text" id="cadTurmas" placeholder="Turmas (ex: 6º REG 1, 7º REG 4)">
-                <button onclick="salvarUsuario()">💾 Salvar Usuário</button>
-                <button onclick="limparFormulario()" style="background: #7f8c8d; margin-top: 5px;">Cancelar</button>
-                <p id="msgFormulario"></p>
-            </div>
-            <button onclick="carregarUsuarios()" style="margin-bottom: 15px; background: #34495e;">🔄 Atualizar Lista</button>
-            <div id="listaUsuarios">Clique em atualizar para carregar a equipe...</div>
+        <div class="card" id="blocoCurriculo" style="display:none;">
+          <h3>2. Estrutura Curricular (Organizada por Trimestre)</h3>
+          <label>Selecione a Habilidade / Unidade</label>
+          <select id="unidade" onchange="montarCheckboxes()"></select>
+          <div id="painelOpcoes" style="display:none; margin-top: 15px;">
+            <h4>🎯 Habilidades</h4><div class="checkbox-lista" id="listaHabilidades"></div><br>
+            <h4>📚 Objetos do Conhecimento</h4><div class="checkbox-lista" id="listaObjetos"></div>
+          </div>
         </div>
 
-        <!-- Aba 2: Extrator PDF por Captura e OCR -->
-        <div id="extratorPDF" class="tab-content">
-            <h3>📥 Extrator Inteligente de Currículos (PDF ➔ Planilha)</h3>
-            <p style="font-size: 0.9rem; color: #555;">
-                Abra o PDF do currículo, tire print da página (`Win + Shift + S`) e aperte <strong>Ctrl + V</strong> na caixa abaixo quantas vezes precisar.
-            </p>
-
-            <div style="display: flex; gap: 15px; margin-bottom: 15px; flex-wrap: wrap;">
-                <div style="flex:1;">
-                    <label>Ano do Lote:</label>
-                    <select id="loteAno">
-                        <option value="6º Ano">6º Ano</option>
-                        <option value="7º Ano">7º Ano</option>
-                        <option value="8º Ano">8º Ano</option>
-                        <option value="9º Ano">9º Ano</option>
-                    </select>
-                </div>
-                <div style="flex:1;">
-                    <label>Disciplina / Aba Destino:</label>
-                    <select id="loteDisciplina">
-                        <option value="Matemática">Matemática</option>
-                        <option value="Língua Portuguesa">Língua Portuguesa</option>
-                        <option value="Geografia">Geografia</option>
-                        <option value="História">História</option>
-                        <option value="Ciências">Ciências</option>
-                        <option value="Língua Inglesa">Língua Inglesa</option>
-                        <option value="Arte">Arte</option>
-                        <option value="Educação Física">Educação Física</option>
-                        <option value="Ensino Religioso">Ensino Religioso</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Zona de Cola -->
-            <div id="pasteZone" tabindex="0">
-                <p>📋 Clique aqui e aperte <strong>CTRL + V</strong> para colar a imagem da página do PDF</p>
-                <span style="font-size: 0.8rem; color: #666;">(Páginas acumuladas: <span id="contadorFila">0</span>)</span>
-            </div>
-
-            <div class="gallery" id="imageGallery"></div>
-
-            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                <button onclick="processarFilaOCR()" style="background: #27ae60; flex: 1;">⚙️ Processar OCR de Todas</button>
-                <button id="btnEnviarLote" onclick="enviarLotePlanilha()" style="background: #2980b9; flex: 1; display: none;">☁️ Salvar na Planilha do Google</button>
-            </div>
-
-            <p id="statusOCR" style="font-weight: bold; margin-top: 15px; color: #e67e22;"></p>
+        <div class="card">
+          <h3>3. Sequência das Atividades</h3>
+          <textarea id="desenvolvimento" rows="6" placeholder="Passo a passo..."></textarea>
         </div>
 
-        <!-- Aba 3: Configurações -->
-        <div id="configuracoes" class="tab-content">
-            <h3>Segurança e Backup</h3>
-            <p>Solicite uma cópia imediata de toda a base de dados em Excel (Acessos, Matrizes e Controle de Planos) enviada para o seu e-mail.</p>
-            <button onclick="forcarBackup()" style="background: #e67e22;">📦 Enviar Backup para o E-mail</button>
-            <p id="msgBackup" style="margin-top: 15px; font-weight: bold;"></p>
+        <button onclick="gerarPlano()" style="background: #27ae60; margin-bottom: 40px;">📄 Gerar Plano Oficial</button>
+      </div>
+
+      <!-- Aba 1: Gestão de Professores -->
+      <div id="gestaoUsuarios" class="tab-content">
+        <h3>Gerenciar Acessos da Rede</h3>
+        <div style="background: #eef2f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+          <input type="hidden" id="linhaUsuario">
+          <input type="text" id="cadNome" placeholder="Nome Completo">
+          <input type="text" id="cadSenha" placeholder="Senha">
+          <select id="cadPerfil"><option value="Professor">Professor</option><option value="Especialista">Especialista</option></select>
+          <input type="text" id="cadComponentes" placeholder="Componentes">
+          <input type="text" id="cadTurmas" placeholder="Turmas">
+          <button onclick="salvarUsuario()">💾 Salvar Usuário</button>
         </div>
+        <div id="listaUsuarios">Carregando...</div>
+      </div>
+
+      <!-- Aba 2: Extrator com Drag & Drop Universal (PDF e Prints) -->
+      <div id="extratorPDF" class="tab-content">
+        <h3>📥 Extrator Inteligente Universal (Arraste o PDF ou Cole Prints)</h3>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; background: #ecf0f1; padding: 15px; border-radius: 8px;">
+          <div style="flex: 1;"><label>Ano:</label><select id="loteAno"><option value="6º Ano">6º Ano</option><option value="7º Ano">7º Ano</option><option value="8º Ano">8º Ano</option><option value="9º Ano">9º Ano</option></select></div>
+          <div style="flex: 1;"><label>Trimestre:</label><select id="loteTrimestre"><option value="1º Trimestre">1º Trimestre</option><option value="2º Trimestre" selected>2º Trimestre</option><option value="3º Trimestre">3º Trimestre</option></select></div>
+          <div style="flex: 1;"><label>Disciplina:</label><select id="loteDisciplina"><option value="Matemática">Matemática</option><option value="Língua Portuguesa">Língua Portuguesa</option><option value="Geografia">Geografia</option><option value="História">História</option><option value="Ciências">Ciências</option><option value="Língua Inglesa">Língua Inglesa</option><option value="Arte">Arte</option><option value="Educação Física">Educação Física</option><option value="Ensino Religioso">Ensino Religioso</option></select></div>
+        </div>
+
+        <!-- ZONA UNIVERSAL DE DRAG & DROP E COLE -->
+        <div id="dropZone">
+          <p>📁 Arraste e solte o seu arquivo <strong>PDF</strong> aqui (ou cole prints com <strong>Ctrl + V</strong>)</p>
+          <span style="font-size: 0.85rem; color: #666;">(O sistema aceita PDF completo ou imagens. Arquivos na fila: <span id="contadorFila">0</span>)</span>
+        </div>
+
+        <div class="gallery" id="imageGallery"></div>
+
+        <button id="btnProcessar" onclick="processarFila()" style="background: #27ae60; margin-bottom: 15px; display: none;">⚙️ Processar e Gerar Pré-visualização</button>
+
+        <!-- TABELA DE CONFERÊNCIA PRÉVIA -->
+        <div id="areaConferencia" style="display:none; background: #fff; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
+          <h3 style="color: #d35400; margin-top:0;">👁️ Tabela de Conferência (Revise antes de salvar)</h3>
+          <div style="max-height: 250px; overflow-y: auto;">
+            <table class="preview-table" id="tabelaPreview">
+              <thead><tr><th>Ano</th><th>Trimestre</th><th>Unidade</th><th>Habilidade Priorizada</th><th>Objetos</th></tr></thead>
+              <tbody id="corpoPreview"></tbody>
+            </table>
+          </div>
+          <button onclick="enviarLotePlanilha()" style="background: #2980b9; margin-top: 15px; font-size: 1.1rem;">🚀 Confirmar e Salvar Tudo na Planilha do Google</button>
+        </div>
+
+        <p id="statusOCR" style="font-weight: bold; margin-top: 15px; color: #e67e22;"></p>
+      </div>
+
+      <!-- Aba 3: Sistema -->
+      <div id="configuracoes" class="tab-content">
+        <h3>Backup e Segurança</h3>
+        <button onclick="forcarBackup()" style="background: #e67e22;">📦 Enviar Backup para o E-mail</button>
+        <p id="msgBackup" style="margin-top: 15px; font-weight: bold;"></p>
+      </div>
     </div>
 
     <script>
-        // COLE AQUI O SEU LINK DA API DO GOOGLE APPS SCRIPT
-        const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
+      const URL_API = "COLE_AQUI_O_LINK_DO_SEU_WEB_APP_APPS_SCRIPT";
 
-        function mudarAba(abaId, btn) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
-            document.getElementById(abaId).classList.add('active');
-            btn.classList.add('active');
-        }
+      function mudarAba(abaId, btn) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
+        document.getElementById(abaId).classList.add('active');
+        btn.classList.add('active');
+      }
 
-        async function fazerLogin() {
-            const usuario = document.getElementById('loginUsuario').value.trim();
-            const senha = document.getElementById('loginSenha').value.trim();
-            const msg = document.getElementById('msgLogin');
+      async function fazerLogin() {
+        const usuario = document.getElementById('loginUsuario').value.trim();
+        const senha = document.getElementById('loginSenha').value.trim();
+        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "login", usuario, senha }) });
+        const r = await res.json();
+        if(r.status === "sucesso") {
+          document.getElementById('telaLogin').style.display = 'none';
+          document.getElementById('painelEspecialista').style.display = 'block';
+          document.getElementById('infoUsuarioBoasVindas').innerText = `${r.nome} (${r.perfil})`;
+          carregarUsuarios();
+        } else { document.getElementById('msgLogin').innerText = r.mensagem; }
+      }
 
-            if(!usuario || !senha) {
-                msg.innerText = "Preencha o usuário e a senha!";
-                return;
-            }
-
-            msg.innerText = "Autenticando...";
-            try {
-                const response = await fetch(URL_API, {
-                    method: 'POST',
-                    body: JSON.stringify({ acao: "login", usuario: usuario, senha: senha })
-                });
-                const res = await response.json();
-
-                if(res.status === "sucesso") {
-                    document.getElementById('telaLogin').style.display = 'none';
-                    document.getElementById('painelEspecialista').style.display = 'block';
-                    document.getElementById('infoUsuarioBoasVindas').innerText = `Logado como: ${res.nome} (${res.perfil})`;
-                    carregarUsuarios();
-                } else {
-                    msg.innerText = res.mensagem || "Usuário ou senha incorretos.";
-                }
-            } catch(e) {
-                msg.innerText = "Erro de conexão com o servidor.";
-                console.error(e);
-            }
-        }
-
-        async function carregarUsuarios() {
-            const lista = document.getElementById('listaUsuarios');
-            lista.innerText = "Carregando equipe...";
-            try {
-                const response = await fetch(URL_API, {
-                    method: 'POST',
-                    body: JSON.stringify({ acao: "listarUsuarios" })
-                });
-                const res = await response.json();
-                if(res.status === "sucesso") {
-                    let html = "";
-                    res.usuarios.forEach(u => {
-                        html += `<div style="background:#f9f9f9; padding:10px; border-left:4px solid #2980b9; margin-bottom:8px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
-                            <div><strong>${u.nome}</strong> (${u.perfil})<br><small>Componentes: ${u.componentes}</small></div>
-                            <button onclick='editarUsuario(${JSON.stringify(u)})' style="width:auto; padding:5px 10px; font-size:0.8rem; background:#f39c12;">Editar</button>
-                        </div>`;
-                    });
-                    lista.innerHTML = html || "Nenhum usuário cadastrado.";
-                }
-            } catch(e) {
-                lista.innerText = "Erro ao carregar usuários.";
-            }
-        }
-
-        function editarUsuario(u) {
-            document.getElementById('linhaUsuario').value = u.linha;
-            document.getElementById('cadNome').value = u.nome;
-            document.getElementById('cadSenha').value = u.senha;
-            document.getElementById('cadPerfil').value = u.perfil;
-            document.getElementById('cadComponentes').value = u.componentes;
-            document.getElementById('cadTurmas').value = u.turmas;
-        }
-
-        function limparFormulario() {
-            document.getElementById('linhaUsuario').value = "";
-            document.getElementById('cadNome').value = "";
-            document.getElementById('cadSenha').value = "";
-            document.getElementById('cadComponentes').value = "";
-            document.getElementById('cadTurmas').value = "";
-        }
-
-        async function salvarUsuario() {
-            const u = {
-                linha: document.getElementById('linhaUsuario').value,
-                nome: document.getElementById('cadNome').value,
-                senha: document.getElementById('cadSenha').value,
-                perfil: document.getElementById('cadPerfil').value,
-                componentes: document.getElementById('cadComponentes').value,
-                turmas: document.getElementById('cadTurmas').value
-            };
-            const msg = document.getElementById('msgFormulario');
-            try {
-                const response = await fetch(URL_API, {
-                    method: 'POST',
-                    body: JSON.stringify({ acao: "salvarUsuario", usuarioData: u })
-                });
-                const res = await response.json();
-                msg.innerText = res.mensagem;
-                limparFormulario();
-                carregarUsuarios();
-            } catch(e) {
-                msg.innerText = "Erro ao salvar usuário.";
-            }
-        }
-
-        async function forcarBackup() {
-            const msg = document.getElementById('msgBackup');
-            msg.innerText = "Gerando backup e enviando para o seu e-mail...";
-            try {
-                const response = await fetch(URL_API, {
-                    method: 'POST',
-                    body: JSON.stringify({ acao: "forcarBackup" })
-                });
-                const res = await response.json();
-                msg.innerText = res.mensagem;
-            } catch(e) {
-                msg.innerText = "Erro ao solicitar backup.";
-            }
-        }
-
-        // --- EXTRATOR PDF OCR ---
-        let imagensFila = [];
-        let dadosExtraidosLote = [];
-        const pasteZone = document.getElementById('pasteZone');
-        pasteZone.addEventListener('click', () => pasteZone.focus());
-
-        window.addEventListener('paste', e => {
-            const items = e.clipboardData.items;
-            for (let i = 0; i < items.length; i++) {
-                if (items[i].type.indexOf('image') !== -1) {
-                    imagensFila.push(items[i].getAsFile());
-                    atualizarGaleriaFila();
-                }
-            }
+      async function carregarUsuarios() {
+        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
+        const r = await res.json();
+        let html = "";
+        r.usuarios.forEach(u => {
+          html += `<div style="background:#f9f9f9; padding:10px; border-left:4px solid #2980b9; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
+            <div><strong>${u.nome}</strong> (${u.perfil})</div>
+            <button onclick='editarUsuario(${JSON.stringify(u)})' style="width:auto; padding:5px 10px; background:#f39c12;">Editar</button>
+          </div>`;
         });
+        document.getElementById('listaUsuarios').innerHTML = html;
+      }
 
-        function atualizarGaleriaFila() {
-            const gallery = document.getElementById('imageGallery');
-            gallery.innerHTML = "";
-            imagensFila.forEach((blob, idx) => {
-                const url = URL.createObjectURL(blob);
-                const card = document.createElement('div');
-                card.className = 'thumb-card';
-                card.innerHTML = `<img src="${url}"><button onclick="removerItemFila(${idx})">X</button>`;
-                gallery.appendChild(card);
+      function editarUsuario(u) {
+        document.getElementById('linhaUsuario').value = u.linha;
+        document.getElementById('cadNome').value = u.nome;
+        document.getElementById('cadSenha').value = u.senha;
+        document.getElementById('cadPerfil').value = u.perfil;
+        document.getElementById('cadComponentes').value = u.componentes;
+        document.getElementById('cadTurmas').value = u.turmas;
+      }
+
+      async function salvarUsuario() {
+        const u = {
+          linha: document.getElementById('linhaUsuario').value,
+          nome: document.getElementById('cadNome').value,
+          senha: document.getElementById('cadSenha').value,
+          perfil: document.getElementById('cadPerfil').value,
+          componentes: document.getElementById('cadComponentes').value,
+          turmas: document.getElementById('cadTurmas').value
+        };
+        await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: u }) });
+        alert("Usuário salvo!");
+        carregarUsuarios();
+      }
+
+      async function forcarBackup() {
+        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) });
+        const r = await res.json();
+        document.getElementById('msgBackup').innerText = r.mensagem;
+      }
+
+      var dadosLocais = [];
+      var evidenciaGlobal = "";
+
+      function buscarMatriz() {
+        const comp = document.getElementById('componente').value;
+        const ano = document.getElementById('ano').value;
+        if(comp && ano) {
+          document.getElementById('blocoCurriculo').style.display = 'block';
+          fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "buscarMatriz", componente: comp, ano }) })
+            .then(res => res.json()).then(res => {
+              dadosLocais = res.resultados;
+              let sel = document.getElementById('unidade');
+              sel.innerHTML = '<option value="">Escolha...</option>';
+              res.resultados.forEach((item, idx) => {
+                sel.innerHTML += `<option value="${idx}">[${item.trimestre || 'Trimestre N/D'}] - ${item.unidade}</option>`;
+              });
             });
-            document.getElementById('contadorFila').innerText = imagensFila.length;
         }
+      }
 
-        function removerItemFila(idx) {
-            imagensFila.splice(idx, 1);
-            atualizarGaleriaFila();
+      function montarCheckboxes() {
+        const idx = document.getElementById('unidade').value;
+        if(idx !== "") {
+          document.getElementById('painelOpcoes').style.display = 'block';
+          evidenciaGlobal = dadosLocais[idx].evidencias;
+          preencherLista('listaHabilidades', dadosLocais[idx].habilidades, 'chk_hab');
+          preencherLista('listaObjetos', dadosLocais[idx].objetos, 'chk_obj');
         }
+      }
 
-        async function processarFilaOCR() {
-            if(imagensFila.length === 0) {
-                alert("Cole imagens de páginas usando Ctrl+V primeiro!");
-                return;
+      function preencherLista(id, texto, nome) {
+        let el = document.getElementById(id); el.innerHTML = "";
+        if(texto) {
+          texto.split('\n').forEach(l => {
+            if(l.trim()) el.innerHTML += `<div class="checkbox-item"><input type="checkbox" name="${nome}" value="${l.trim().replace(/"/g, '&quot;')}"><label>${l.trim()}</label></div>`;
+          });
+        }
+      }
+
+      function getChecked(name) {
+        return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
+      }
+
+      async function gerarPlano() {
+        const dados = {
+          professor: document.getElementById('nomeProfessor').value,
+          tipoPlano: document.getElementById('tipoPlano').value,
+          componente: document.getElementById('componente').value,
+          turma: document.getElementById('ano').value + " " + document.getElementById('turma').value,
+          periodo: document.getElementById('periodo').value,
+          unidade: document.getElementById('unidade').options[document.getElementById('unidade').selectedIndex].text,
+          desenvolvimento: document.getElementById('desenvolvimento').value,
+          evidencias: evidenciaGlobal,
+          habilidades: getChecked('chk_hab'),
+          objetos: getChecked('chk_obj')
+        };
+        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify(dados) });
+        const r = await res.json();
+        alert("✅ Plano gerado com sucesso: " + r.url);
+      }
+
+      // --- GERENCIAMENTO DE ARQUIVOS (DRAG & DROP, PDF OU IMAGENS, CTRL+V) ---
+      let arquivosFila = []; // Pode guardar PDFs ou Blobs de Imagem
+      let dadosExtraidosLote = [];
+
+      const dropZone = document.getElementById('dropZone');
+
+      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+      
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          for (let file of e.dataTransfer.files) {
+            arquivosFila.push(file);
+          }
+          atualizarInterfaceFila();
+        }
+      });
+
+      window.addEventListener('paste', e => {
+        for (let i = 0; i < e.clipboardData.items.length; i++) {
+          if (e.clipboardData.items[i].type.indexOf('image') !== -1) {
+            arquivosFila.push(e.clipboardData.items[i].getAsFile());
+            atualizarInterfaceFila();
+          }
+        }
+      });
+
+      function atualizarInterfaceFila() {
+        const gallery = document.getElementById('imageGallery');
+        gallery.innerHTML = "";
+        arquivosFila.forEach((item, idx) => {
+          if(item.type === "application/pdf") {
+            gallery.innerHTML += `<div class="thumb-card" style="display:flex; align-items:center; justify-content:center; background:#e8f8f5; font-size:0.75rem; font-weight:bold; text-align:center; padding:5px;">📄 PDF<button onclick="arquivosFila.splice(${idx},1);atualizarInterfaceFila()">X</button></div>`;
+          } else {
+            gallery.innerHTML += `<div class="thumb-card"><img src="${URL.createObjectURL(item)}"><button onclick="arquivosFila.splice(${idx},1);atualizarInterfaceFila()">X</button></div>`;
+          }
+        });
+        document.getElementById('contadorFila').innerText = arquivosFila.length;
+        if(arquivosFila.length > 0) {
+          document.getElementById('btnProcessar').style.display = 'block';
+        } else {
+          document.getElementById('btnProcessar').style.display = 'none';
+        }
+      }
+
+      async function processarFila() {
+        if(!arquivosFila.length) return alert("Adicione um PDF ou imagens primeiro!");
+        const status = document.getElementById('statusOCR');
+        dadosExtraidosLote = [];
+        status.innerText = "⏳ Processando documentos...";
+
+        for (let i = 0; i < arquivosFila.length; i++) {
+          let arquivo = arquivosFila[i];
+          
+          if(arquivo.type === "application/pdf") {
+            status.innerText = `⏳ Lendo PDF inteiro (${i+1}/${arquivosFila.length})...`;
+            const buffer = await arquivo.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument(buffer).promise;
+            for (let p = 1; p <= pdf.numPages; p++) {
+              const page = await pdf.getPage(p);
+              const textContent = await page.getTextContent();
+              const text = textContent.items.map(item => item.str).join(" ");
+              if(text.length > 50) dadosExtraidosLorePush(text);
             }
-            const status = document.getElementById('statusOCR');
-            dadosExtraidosLote = [];
-            status.innerText = "⏳ Lendo páginas com inteligência OCR...";
-
-            for (let i = 0; i < imagensFila.length; i++) {
-                status.innerText = `⏳ Processando página ${i + 1} de ${imagensFila.length}...`;
-                try {
-                    const worker = await Tesseract.createWorker('por');
-                    const ret = await worker.recognize(imagensFila[i]);
-                    await worker.terminate();
-
-                    const texto = ret.data.text;
-                    function buscar(regex) {
-                        const m = texto.match(regex);
-                        return m && m[1] ? m[1].trim().replace(/\n/g, " ") : "-";
-                    }
-
-                    dadosExtraidosLote.push({
-                        ano: document.getElementById('loteAno').value,
-                        disciplina: document.getElementById('loteDisciplina').value,
-                        unidade: buscar(/(?:UNIDADE TEMÁTICA|Unidade Temática|Mundo do Trabalho|Natureza|Terra e Universo|Matéria e Energia)[\s:]*([^\n]+)/i),
-                        genero: buscar(/(?:Gênero Textual|Gênero)[\s:]*([^\n]+)/i),
-                        habPriorizada: buscar(/(?:HABILIDADE(?:S)? (?:DO CRMG|PRIORIZADA(?:S)? DO ANO ESCOLAR|PRIORIZADA(?:S)?))\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADE DE RECOMPOSIÇÃO|HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-                        habRecomposicao: buscar(/(?:HABILIDADE(?:S)? DE RECOMPOSIÇÃO)\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-                        habSuporte: buscar(/(?:HABILIDADE(?:S)? DE SUPORTE)\s*[:\n-]*([\s\S]*?)(?=(?:OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-                        objetoConhecimento: buscar(/(?:OBJETO(?:S)? DO CONHECIMENTO)\s*[:\n-]*([\s\S]*?)(?=(?:CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-                        conteudosRelacionados: buscar(/(?:CONTEÚDO(?:S)? RELACIONADO(?:S)?)\s*[:\n-]*([\s\S]*?)(?=(?:EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-                        praticas: buscar(/(?:EXEMPLO(?:S)? DE PRÁTICA(?:S)? PEDAGÓGICA(?:S)?)\s*[:\n-]*([\s\S]*?)(?=(?:EVIDÊNCIA(?:S)? DE CONSOLIDAÇÃO|$))/i),
-                        evidencias: buscar(/(?:EVIDÊNCIA(?:S)? DE CONSOLIDAÇÃO(?: DE APRENDIZAGEM)?)\s*[:\n-]*([\s\S]*$)/i)
-                    });
-                } catch(err) {
-                    console.error("Erro OCR", err);
-                }
-            }
-            status.innerText = `✅ Pronto! ${dadosExtraidosLote.length} páginas lidas com sucesso. Clique em salvar.`;
-            document.getElementById('btnEnviarLote').style.display = 'block';
+          } else {
+            status.innerText = `⏳ Executando OCR na imagem (${i+1}/${arquivosFila.length})...`;
+            const worker = await Tesseract.createWorker('por');
+            const ret = await worker.recognize(arquivo);
+            await worker.terminate();
+            dadosExtraidosLorePush(ret.data.text);
+          }
         }
+        exibirPreviewTabela();
+      }
 
-        async function enviarLotePlanilha() {
-            if(dadosExtraidosLote.length === 0) return;
-            const status = document.getElementById('statusOCR');
-            status.innerText = "☁️ Enviando dados direto para o Google Sheets...";
+      function dadosExtraidosLorePush(texto) {
+        function buscar(regex) { const m = texto.match(regex); return m && m[1] ? m[1].trim().replace(/\n/g, " ") : "-"; }
+        dadosExtraidosLote.push({
+          ano: document.getElementById('loteAno').value,
+          trimestre: document.getElementById('loteTrimestre').value,
+          disciplina: document.getElementById('loteDisciplina').value,
+          unidade: buscar(/(?:UNIDADE TEMÁTICA|Unidade Temática|Mundo do Trabalho|Natureza|Terra e Universo|Matéria e Energia)[\s:]*([^\n]+)/i),
+          genero: buscar(/(?:Gênero Textual|Gênero)[\s:]*([^\n]+)/i),
+          habPriorizada: buscar(/(?:HABILIDADE(?:S)? (?:DO CRMG|PRIORIZADA(?:S)? DO ANO ESCOLAR|PRIORIZADA(?:S)?))\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADE DE RECOMPOSIÇÃO|HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
+          habRecomposicao: buscar(/(?:HABILIDADE(?:S)? DE RECOMPOSIÇÃO)\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
+          habSuporte: buscar(/(?:HABILIDADE(?:S)? DE SUPORTE)\s*[:\n-]*([\s\S]*?)(?=(?:OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
+          objetoConhecimento: buscar(/(?:OBJETO(?:S)? DO CONHECIMENTO)\s*[:\n-]*([\s\S]*?)(?=(?:CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
+          conteudosRelacionados: buscar(/(?:CONTEÚDO(?:S)? RELACIONADO(?:S)?)\s*[:\n-]*([\s\S]*?)(?=(?:EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
+          praticas: buscar(/(?:EXEMPLO(?:S)? DE PRÁTICA(?:S)? PEDAGÓGICA(?:S)?)\s*[:\n-]*([\s\S]*?)(?=(?:EVIDÊNCIA(?:S)? DE CONSOLIDAÇÃO|$))/i),
+          evidencias: buscar(/(?:EVIDÊNCIA(?:S)? DE CONSOLIDAÇÃO(?: DE APRENDIZAGEM)?)\s*[:\n-]*([\s\S]*$)/i)
+        });
+      }
 
-            try {
-                const response = await fetch(URL_API, {
-                    method: 'POST',
-                    body: JSON.stringify({ acao: "salvarLoteMatriz", itens: dadosExtraidosLote })
-                });
-                const resp = await response.json();
-                if(resp.status === "sucesso") {
-                    alert("🚀 " + resp.mensagem);
-                    status.innerText = "✅ Salvo com sucesso na planilha!";
-                    imagensFila = [];
-                    atualizarGaleriaFila();
-                    document.getElementById('btnEnviarLote').style.display = 'none';
-                }
-            } catch(e) {
-                alert("Erro ao enviar para a planilha.");
-            }
-        }
+      function exibirPreviewTabela() {
+        const corpo = document.getElementById('corpoPreview');
+        corpo.innerHTML = "";
+        dadosExtraidosLote.forEach(d => {
+          corpo.innerHTML += `<tr><td>${d.ano}</td><td>${d.trimestre}</td><td>${d.unidade}</td><td>${d.habPriorizada}</td><td>${d.objetoConhecimento}</td></tr>`;
+        });
+        document.getElementById('areaConferencia').style.display = 'block';
+        document.getElementById('statusOCR').innerText = `✅ Leitura concluída! ${dadosExtraidosLote.length} registros prontos para revisão.`;
+      }
+
+      async function enviarLotePlanilha() {
+        const status = document.getElementById('statusOCR');
+        status.innerText = "☁️ Enviando dados para o Google Sheets...";
+        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: dadosExtraidosLote }) });
+        const r = await res.json();
+        alert(r.mensagem);
+        document.getElementById('areaConferencia').style.display = 'none';
+        arquivosFila = [];
+        atualizarInterfaceFila();
+        status.innerText = "🚀 Sucesso! Dados salvos na planilha.";
+      }
     </script>
-</body>
+  </body>
 </html>
