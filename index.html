@@ -22,10 +22,11 @@
       .tab-content { display: none; }
       .tab-content.active { display: block; }
       
-      .checkbox-lista { background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 10px; max-height: 250px; overflow-y: auto; }
-      .checkbox-item { display: flex; align-items: flex-start; margin-bottom: 8px; }
-      .checkbox-item input { margin-right: 10px; margin-top: 3px; width: 18px; height: 18px; accent-color: #3498db; }
-      
+      .grupo-selecao { background: #fff; border: 1px solid #dcdde1; border-radius: 8px; padding: 12px; margin-bottom: 15px; max-height: 180px; overflow-y: auto; }
+      .grid-check { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+      .check-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+      .check-item input { width: 18px; height: 18px; margin: 0; accent-color: var(--cor-secundaria); }
+
       #dropZone { border: 3px dashed var(--cor-secundaria); background: #e8f8f5; border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; margin-bottom: 20px; transition: 0.3s; }
       #dropZone.dragover { background: #d1f2eb; border-color: #219653; transform: scale(1.01); }
       #dropZone p { margin: 0; color: #27ae60; font-weight: bold; font-size: 1.1rem; }
@@ -67,68 +68,58 @@
       </header>
 
       <div class="tabs">
-        <button class="tab-btn active" onclick="mudarAba('gerarPlanoTab', this)">✏️ Gerar Plano</button>
-        <button class="tab-btn" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
+        <button class="tab-btn active" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
         <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📥 Extrator por Imagem & Currículo</button>
         <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Sistema</button>
       </div>
 
-      <!-- Aba 0: Gerar Plano -->
-      <div id="gerarPlanoTab" class="tab-content active">
-        <div class="card">
-          <h3>1. Identificação</h3>
-          <label>Nome do(a) Professor(a)</label>
-          <input type="text" id="nomeProfessor" placeholder="Digite seu nome completo">
-          
-          <label>Tipo de Plano</label>
-          <select id="tipoPlano"><option value="Plano de Aula Diário">Plano de Aula Diário</option><option value="Plano de Aula Semanal">Plano de Aula Semanal</option><option value="Plano de Unidade">Plano de Unidade</option></select>
-
-          <label>Componente Curricular</label>
-          <select id="componente" onchange="buscarMatriz()">
-            <option value="">Selecione...</option><option value="Educação Física">Educação Física</option><option value="Língua Portuguesa">Língua Portuguesa</option><option value="Matemática">Matemática</option><option value="Geografia">Geografia</option><option value="História">História</option><option value="Ciências">Ciências</option><option value="Ensino Religioso">Ensino Religioso</option><option value="Arte">Arte</option><option value="Língua Inglesa">Língua Inglesa</option>
-          </select>
-
-          <div style="display: flex; gap: 10px;">
-            <div style="flex: 1;"><label>Ano/Série</label><select id="ano" onchange="buscarMatriz()"><option value="">Selecione...</option><option value="6º Ano">6º Ano</option><option value="7º Ano">7º Ano</option><option value="8º Ano">8º Ano</option><option value="9º Ano">9º Ano</option></select></div>
-            <div style="flex: 1;"><label>Turma(s)</label><input type="text" id="turma" placeholder="Ex: A e B"></div>
-          </div>
-          <label>Período</label><input type="text" id="periodo" placeholder="Ex: 03/08 a 14/08">
-        </div>
-
-        <div class="card" id="blocoCurriculo" style="display:none;">
-          <h3>2. Estrutura Curricular (Organizada por Trimestre)</h3>
-          <label>Selecione a Habilidade / Unidade</label>
-          <select id="unidade" onchange="montarCheckboxes()"></select>
-          <div id="painelOpcoes" style="display:none; margin-top: 15px;">
-            <h4>🎯 Habilidades</h4><div class="checkbox-lista" id="listaHabilidades"></div><br>
-            <h4>📚 Objetos do Conhecimento</h4><div class="checkbox-lista" id="listaObjetos"></div>
-          </div>
-        </div>
-
-        <div class="card">
-          <h3>3. Sequência das Atividades</h3>
-          <textarea id="desenvolvimento" rows="6" placeholder="Passo a passo..."></textarea>
-        </div>
-
-        <button onclick="gerarPlano()" style="background: #27ae60; margin-bottom: 40px;">📄 Gerar Plano Oficial</button>
-      </div>
-
       <!-- Aba 1: Gestão de Professores -->
-      <div id="gestaoUsuarios" class="tab-content">
+      <div id="gestaoUsuarios" class="tab-content active">
         <h3>Gerenciar Acessos da Rede</h3>
-        <div style="background: #eef2f5; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <div style="background: #eef2f5; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
           <input type="hidden" id="linhaUsuario">
-          <input type="text" id="cadNome" placeholder="Nome Completo">
-          <input type="text" id="cadSenha" placeholder="Senha">
-          <select id="cadPerfil"><option value="Professor">Professor</option><option value="Especialista">Especialista</option></select>
-          <input type="text" id="cadComponentes" placeholder="Componentes">
-          <input type="text" id="cadTurmas" placeholder="Turmas">
-          <button onclick="salvarUsuario()">💾 Salvar Usuário</button>
+          
+          <div style="display: flex; gap: 10px;">
+            <div style="flex: 2;"><label>Nome Completo:</label><input type="text" id="cadNome" placeholder="Ex: Maria da Silva"></div>
+            <div style="flex: 1;"><label>Senha:</label><input type="text" id="cadSenha" placeholder="Ex: 1234"></div>
+            <div style="flex: 1;"><label>Perfil:</label><select id="cadPerfil"><option value="Professor">Professor</option><option value="Especialista">Especialista</option></select></div>
+          </div>
+
+          <label>Componentes Curriculares:</label>
+          <div class="grupo-selecao">
+            <div class="grid-check" id="listaCheckComponentes">
+              <label class="check-item"><input type="checkbox" name="chkComp" value="Matemática"> Matemática</label>
+              <label class="check-item"><input type="checkbox" name="chkComp" value="Língua Portuguesa"> Língua Portuguesa</label>
+              <label class="check-item"><input type="checkbox" name="chkComp" value="Geografia"> Geografia</label>
+              <label class="check-item"><input type="checkbox" name="chkComp" value="História"> História</label>
+              <label class="check-item"><input type="checkbox" name="chkComp" value="Ciências"> Ciências</label>
+              <label class="check-item"><input type="checkbox" name="chkComp" value="Ensino Religioso"> Ensino Religioso</label>
+              <label class="check-item"><input type="checkbox" name="chkComp" value="Arte"> Arte</label>
+              <label class="check-item"><input type="checkbox" name="chkComp" value="Educação Física"> Educação Física</label>
+              <label class="check-item"><input type="checkbox" name="chkComp" value="Língua Inglesa"> Língua Inglesa</label>
+            </div>
+          </div>
+
+          <label>Turmas Atendidas:</label>
+          <div class="grupo-selecao">
+            <div class="grid-check" id="listaCheckTurmas">
+              <label class="check-item"><input type="checkbox" name="chkTurma" value="6º REG 1"> 6º REG 1</label>
+              <label class="check-item"><input type="checkbox" name="chkTurma" value="6º REG 2"> 6º REG 2</label>
+              <label class="check-item"><input type="checkbox" name="chkTurma" value="7º REG 1"> 7º REG 1</label>
+              <label class="check-item"><input type="checkbox" name="chkTurma" value="7º REG 2"> 7º REG 2</label>
+              <label class="check-item"><input type="checkbox" name="chkTurma" value="8º REG 1"> 8º REG 1</label>
+              <label class="check-item"><input type="checkbox" name="chkTurma" value="8º REG 2"> 8º REG 2</label>
+              <label class="check-item"><input type="checkbox" name="chkTurma" value="9º REG 1"> 9º REG 1</label>
+              <label class="check-item"><input type="checkbox" name="chkTurma" value="9º REG 2"> 9º REG 2</label>
+            </div>
+          </div>
+
+          <button onclick="salvarUsuario()" style="background: #27ae60; margin-top: 10px;">💾 Salvar Usuário na Planilha</button>
         </div>
         <div id="listaUsuarios">Carregando...</div>
       </div>
 
-      <!-- Aba 2: Extrator por Imagem (Print / Ctrl + V) -->
+      <!-- Aba 2: Extrator por Imagem -->
       <div id="extratorPDF" class="tab-content">
         <h3>📥 Extrator Inteligente por Imagem (Cole prints com Ctrl + V)</h3>
         
@@ -219,7 +210,7 @@
           if(r.usuarios) {
             r.usuarios.forEach(u => {
               html += `<div style="background:#f9f9f9; padding:10px; border-left:4px solid #2980b9; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                <div><strong>${u.nome}</strong> (${u.perfil})</div>
+                <div><strong>${u.nome}</strong> (${u.perfil})<br><small>Comp: ${u.componentes} | Turmas: ${u.turmas}</small></div>
                 <button onclick='editarUsuario(${JSON.stringify(u)})' style="width:auto; padding:5px 10px; background:#f39c12;">Editar</button>
               </div>`;
             });
@@ -230,13 +221,26 @@
         }
       }
 
+      function marcarCheckboxesPorTexto(nomeInput, texto) {
+        const checkboxes = document.querySelectorAll(`input[name="${nomeInput}"]`);
+        const lista = texto ? texto.split(',').map(s => s.trim()) : [];
+        checkboxes.forEach(cb => {
+          cb.checked = lista.includes(cb.value);
+        });
+      }
+
+      function obterValoresCheckboxes(nomeInput) {
+        const checkboxes = document.querySelectorAll(`input[name="${nomeInput}"]:checked`);
+        return Array.from(checkboxes).map(cb => cb.value).join(', ');
+      }
+
       function editarUsuario(u) {
         document.getElementById('linhaUsuario').value = u.linha;
         document.getElementById('cadNome').value = u.nome;
         document.getElementById('cadSenha').value = u.senha;
         document.getElementById('cadPerfil').value = u.perfil;
-        document.getElementById('cadComponentes').value = u.componentes;
-        document.getElementById('cadTurmas').value = u.turmas;
+        marcarCheckboxesPorTexto('chkComp', u.componentes);
+        marcarCheckboxesPorTexto('chkTurma', u.turmas);
       }
 
       async function salvarUsuario() {
@@ -245,12 +249,15 @@
           nome: document.getElementById('cadNome').value,
           senha: document.getElementById('cadSenha').value,
           perfil: document.getElementById('cadPerfil').value,
-          componentes: document.getElementById('cadComponentes').value,
-          turmas: document.getElementById('cadTurmas').value
+          componentes: obterValoresCheckboxes('chkComp'),
+          turmas: obterValoresCheckboxes('chkTurma')
         };
         const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: u }) });
         const r = await res.json();
         alert(r.mensagem);
+        document.getElementById('linhaUsuario').value = "";
+        document.getElementById('cadNome').value = "";
+        document.getElementById('cadSenha').value = "";
         carregarUsuarios();
       }
 
@@ -258,66 +265,6 @@
         const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) });
         const r = await res.json();
         document.getElementById('msgBackup').innerText = r.mensagem;
-      }
-
-      var dadosLocais = [];
-      var evidenciaGlobal = "";
-
-      async function buscarMatriz() {
-        const comp = document.getElementById('componente').value;
-        const ano = document.getElementById('ano').value;
-        if(comp && ano) {
-          document.getElementById('blocoCurriculo').style.display = 'block';
-          const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "buscarMatriz", componente: comp, ano }) });
-          const r = await res.json();
-          dadosLocais = r.resultados;
-          let sel = document.getElementById('unidade');
-          sel.innerHTML = '<option value="">Escolha...</option>';
-          r.resultados.forEach((item, idx) => {
-            sel.innerHTML += `<option value="${idx}">[${item.trimestre || 'Trimestre N/D'}] - ${item.unidade}</option>`;
-          });
-        }
-      }
-
-      function montarCheckboxes() {
-        const idx = document.getElementById('unidade').value;
-        if(idx !== "") {
-          document.getElementById('painelOpcoes').style.display = 'block';
-          evidenciaGlobal = dadosLocais[idx].evidencias;
-          preencherLista('listaHabilidades', dadosLocais[idx].habilidades, 'chk_hab');
-          preencherLista('listaObjetos', dadosLocais[idx].objetos, 'chk_obj');
-        }
-      }
-
-      function preencherLista(id, texto, nome) {
-        let el = document.getElementById(id); el.innerHTML = "";
-        if(texto) {
-          texto.split('\n').forEach(l => {
-            if(l.trim()) el.innerHTML += `<div class="checkbox-item"><input type="checkbox" name="${nome}" value="${l.trim().replace(/"/g, '&quot;')}"><label>${l.trim()}</label></div>`;
-          });
-        }
-      }
-
-      function getChecked(name) {
-        return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(cb => cb.value);
-      }
-
-      async function gerarPlano() {
-        const dados = {
-          professor: document.getElementById('nomeProfessor').value,
-          tipoPlano: document.getElementById('tipoPlano').value,
-          componente: document.getElementById('componente').value,
-          turma: document.getElementById('ano').value + " " + document.getElementById('turma').value,
-          periodo: document.getElementById('periodo').value,
-          unidade: document.getElementById('unidade').options[document.getElementById('unidade').selectedIndex].text,
-          desenvolvimento: document.getElementById('desenvolvimento').value,
-          evidencias: evidenciaGlobal,
-          habilidades: getChecked('chk_hab'),
-          objetos: getChecked('chk_obj')
-        };
-        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify(dados) });
-        const r = await res.json();
-        alert("✅ Plano gerado com sucesso: " + r.url);
       }
 
       let imagensFila = [];
