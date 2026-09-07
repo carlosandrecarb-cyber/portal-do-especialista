@@ -140,7 +140,7 @@
       <div id="extratorPDF" class="tab-content">
         <div class="guia-card">
           <h4>📌 Guia Operacional - Extrator por Imagem</h4>
-          <p>Cole prints com <strong>Ctrl + V</strong> e execute o OCR para cadastrar as habilidades da matriz.</p>
+          <p>Cole prints com <strong>Ctrl + V</strong> da matriz curricular e execute o OCR para cadastrar as habilidades automaticamente nas colunas corretas.</p>
         </div>
 
         <h3>📥 Extrator Inteligente por Imagem (Cole prints com Ctrl + V)</h3>
@@ -178,7 +178,7 @@
       <div id="cruzamentoHabs" class="tab-content">
         <div class="guia-card">
           <h4>📌 Guia Operacional - Cruzamento de Habilidades (Cobertura Curricular)</h4>
-          <p>Selecione a disciplina e o ano. O sistema cruza todas as habilidades cadastradas na matriz oficial com os planos executados pelos professores, separando em tabelas o que já foi trabalhado e o que está pendente.</p>
+          <p>Selecione a disciplina e o ano. O sistema cruza a matriz oficial com os planos executados pelos professores.</p>
         </div>
 
         <h3>🎯 Termômetro de Cobertura de Habilidades</h3>
@@ -240,14 +240,14 @@
       <div id="monitoramento" class="tab-content">
         <div class="guia-card">
           <h4>📌 Guia Operacional - Monitoramento & Feedback</h4>
-          <p>Acompanhe os envios. Use os botões 🟢 <em>Aprovado</em> e 🟡 <em>Requer Ajuste</em> para dar devolutiva formativa. Gere relatórios em Google Docs com timbre escolar e dados consolidados.</p>
+          <p>Acompanhe os envios. Use os botões 🟢 <em>Aprovado</em> e 🟡 <em>Requer Ajuste</em>. Gere relatórios em Google Docs com timbre escolar e dados em tabelas.</p>
         </div>
 
         <h3>📊 Monitoramento Pedagógico & Feedback Formativo</h3>
         
         <div class="relatorio-card">
           <h4 style="margin-top:0; color:#512e5f;">📑 Gerador de Relatório Executivo (Cobertura, Habilidades & Evidências)</h4>
-          <p style="font-size: 0.85rem; color: #555; margin-bottom: 12px;">Selecione o recorte temporal para consolidar o relatório oficial da escola em Google Docs (com tabelas formatadas):</p>
+          <p style="font-size: 0.85rem; color: #555; margin-bottom: 12px;">Selecione o recorte temporal para consolidar o relatório oficial da escola em Google Docs:</p>
           <div style="display: flex; gap: 15px; align-items: flex-end;">
             <div style="flex: 2;">
               <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:5px;">Período de Análise:</label>
@@ -564,7 +564,7 @@
       async function gerarRelatorioExecutivo() {
         const periodo = document.getElementById('tipoRelatorio').value;
         const msg = document.getElementById('msgRelatorio');
-        msg.innerText = "⏳ Compilando métricas em tabelas e gerando relatório no Docs...";
+        msg.innerText = "⏳ Compilando métricas e gerando relatório no Docs...";
 
         try {
           const res = await fetch(URL_API, {
@@ -573,7 +573,7 @@
           });
           const r = await res.json();
           if(r.status === "sucesso") {
-            msg.innerHTML = `✅ Relatório executivo gerado com sucesso! <a href="${r.url}" target="_blank" style="color:#2980b9; text-decoration:underline; font-weight:bold;">📄 Abrir Google Doc com Tabelas</a>`;
+            msg.innerHTML = `✅ Relatório gerado com sucesso! <a href="${r.url}" target="_blank" style="color:#2980b9; text-decoration:underline; font-weight:bold;">📄 Abrir Google Doc com Tabelas</a>`;
           } else {
             msg.innerText = "⚠️ Erro: " + r.mensagem;
           }
@@ -642,20 +642,46 @@
       }
 
       function dadosExtraidosLotePush(texto) {
-        function buscar(regex) { const m = texto.match(regex); return m && m[1] ? m[1].trim().replace(/\n/g, " ") : "-"; }
+        function buscarTrecho(regexList) {
+          for (let reg of regexList) {
+            const m = texto.match(reg);
+            if (m && m[1] && m[1].trim().length > 2) {
+              return m[1].trim().replace(/\n/g, " ");
+            }
+          }
+          return "-";
+        }
+
+        const unidade = buscarTrecho([
+          /(?:UNIDADE TEMÁTICA|Unidade Temática|Prática de Linguagem|Eixo)[\s:]*([^\n]+)/i,
+          /(?:Unidade)[\s:]*([^\n]+)/i
+        ]);
+
+        const habPriorizada = buscarTrecho([
+          /(?:HABILIDADE(?:S)? (?:DO CRMG|PRIORIZADA(?:S)?|DO ANO ESCOLAR))\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADE DE RECOMPOSIÇÃO|HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|$))/i,
+          /(?:(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Za-z°º]*))\s*[-–]?\s*([^\n]+)/i
+        ]);
+
+        const objetoConhecimento = buscarTrecho([
+          /(?:OBJETO(?:S)? DO CONHECIMENTO|Objeto do Conhecimento)\s*[:\n-]*([\s\S]*?)(?=(?:CONTEÚDO|PRÁTICA|EVIDÊNCIA|$))/i
+        ]);
+
+        const textoLimpo = texto.replace(/\n/g, " ").trim();
+        const fallbackTexto = textoLimpo.length > 10 ? textoLimpo.substring(0, 150) + "..." : "-";
+
         dadosExtraidosLote.push({
           ano: document.getElementById('loteAno').value,
           trimestre: document.getElementById('loteTrimestre').value,
           disciplina: document.getElementById('loteDisciplina').value,
-          unidade: buscar(/(?:UNIDADE TEMÁTICA|Unidade Temática|Mundo do Trabalho|Natureza|Terra e Universo|Matéria e Energia)[\s:]*([^\n]+)/i),
-          genero: buscar(/(?:Gênero Textual|Gênero)[\s:]*([^\n]+)/i),
-          habPriorizada: buscar(/(?:HABILIDADE(?:S)? (?:DO CRMG|PRIORIZADA(?:S)? DO ANO ESCOLAR|PRIORIZADA(?:S)?))\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADE DE RECOMPOSIÇÃO|HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-          habRecomposicao: buscar(/(?:HABILIDADE(?:S)? DE RECOMPOSIÇÃO)\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-          habSuporte: buscar(/(?:HABILIDADE(?:S)? DE SUPORTE)\s*[:\n-]*([\s\S]*?)(?=(?:OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-          objetoConhecimento: buscar(/(?:OBJETO(?:S)? DO CONHECIMENTO)\s*[:\n-]*([\s\S]*?)(?=(?:CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-          conteudosRelacionados: buscar(/(?:CONTEÚDO(?:S)? RELACIONADO(?:S)?)\s*[:\n-]*([\s\S]*?)(?=(?:EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
-          praticas: buscar(/(?:EXEMPLO(?:S)? DE PRÁTICA(?:S)? PEDAGÓGICA(?:S)?)\s*[:\n-]*([\s\S]*?)(?=(?:EVIDÊNCIA(?:S)? DE CONSOLIDAÇÃO|$))/i),
-          evidencias: buscar(/(?:EVIDÊNCIA(?:S)? DE CONSOLIDAÇÃO(?: DE APRENDIZAGEM)?)\s*[:\n-]*([\s\S]*$)/i)
+          unidade: unidade !== "-" ? unidade : "Conteúdo Geral / Unidade Padrão",
+          genero: "-",
+          habPriorizada: habPriorizada !== "-" ? habPriorizada : fallbackTexto,
+          habRecomposicao: "-",
+          habSuporte: "-",
+          objetoConhecimento: objetoConhecimento !== "-" ? objetoConhecimento : "Ver detalhamento no plano",
+          conteudosRelacionados: "-",
+          praticas: "-",
+          evidencias: "-"
         });
       }
 
@@ -666,19 +692,19 @@
           corpo.innerHTML += `<tr><td>${d.ano}</td><td>${d.trimestre}</td><td>${d.unidade}</td><td>${d.habPriorizada}</td><td>${d.objetoConhecimento}</td></tr>`;
         });
         document.getElementById('areaConferencia').style.display = 'block';
-        document.getElementById('statusOCR').innerText = `✅ Leitura concluída! ${dadosExtraidosLote.length} registros prontos para revisão.`;
+        document.getElementById('statusOCR').innerText = `✅ Leitura concluída! ${dadosExtraidosLote.length} registros prontos para conferência.`;
       }
 
       async function enviarLotePlanilha() {
         const status = document.getElementById('statusOCR');
-        status.innerText = "☁️ Enviando dados para o Google Sheets...";
+        status.innerText = "☁️ Enviando dados para o Google Sheets nas colunas corretas...";
         const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: dadosExtraidosLote }) });
         const r = await res.json();
         alert(r.mensagem);
         document.getElementById('areaConferencia').style.display = 'none';
         imagensFila = [];
         atualizarInterfaceFila();
-        status.innerText = "🚀 Sucesso! Dados salvos na planilha.";
+        status.innerText = "🚀 Sucesso! Dados salvos na planilha com sucesso.";
       }
     </script>
   </body>
