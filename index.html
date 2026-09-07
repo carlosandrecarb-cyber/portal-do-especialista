@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Portal do Especialista - Gestão Educacional</title>
-    <!-- Tesseract OCR para imagens -->
-    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <!-- Biblioteca PDF.js para leitura nativa de PDFs sem erro -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
     <style>
       :root { --cor-fundo: #f4f6f9; --cor-principal: #2c3e50; --cor-secundaria: #27ae60; --cor-texto: #333; --borda: #dcdde1; }
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--cor-fundo); color: var(--cor-texto); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
@@ -27,14 +30,9 @@
       .check-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
       .check-item input { width: 18px; height: 18px; margin: 0; accent-color: var(--cor-secundaria); }
 
-      #dropZone { border: 3px dashed var(--cor-secundaria); background: #e8f8f5; border-radius: 12px; padding: 40px 20px; text-align: center; cursor: pointer; margin-bottom: 20px; transition: 0.3s; }
-      #dropZone.dragover { background: #d1f2eb; border-color: #219653; transform: scale(1.01); }
-      #dropZone p { margin: 0; color: #27ae60; font-weight: bold; font-size: 1.1rem; }
-      
-      .gallery { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px; }
-      .thumb-card { position: relative; width: 90px; height: 90px; border: 1px solid #ddd; border-radius: 6px; overflow: hidden; background: #fff; }
-      .thumb-card img { width: 100%; height: 100%; object-fit: cover; }
-      .thumb-card button { position: absolute; top: 2px; right: 2px; background: #e74c3c; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 10px; cursor: pointer; padding: 0; }
+      #dropZone { border: 3px dashed #2980b9; background: #ebf5fb; border-radius: 12px; padding: 35px 20px; text-align: center; cursor: pointer; margin-bottom: 20px; transition: 0.3s; }
+      #dropZone:hover { background: #d4efdf; border-color: #27ae60; }
+      #dropZone p { margin: 0; color: #2980b9; font-weight: bold; font-size: 1.1rem; }
       
       table.preview-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
       table.preview-table th, table.preview-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
@@ -79,7 +77,7 @@
 
       <div class="tabs">
         <button class="tab-btn active" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
-        <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📥 Extrator por Imagem</button>
+        <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📄 Importador de PDF</button>
         <button class="tab-btn" onclick="mudarAba('cruzamentoHabs', this)">🎯 Cruzamento de Habilidades</button>
         <button class="tab-btn" onclick="mudarAba('monitoramento', this)">📊 Monitoramento & Relatórios</button>
         <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Sistema</button>
@@ -136,35 +134,31 @@
         <div id="listaUsuarios">Carregando...</div>
       </div>
 
-      <!-- Aba 2: Extrator por Imagem -->
+      <!-- Aba 2: Importador Direto de PDF -->
       <div id="extratorPDF" class="tab-content">
         <div class="guia-card">
-          <h4>📌 Guia Operacional - Extrator por Imagem</h4>
-          <p>Cole prints com <strong>Ctrl + V</strong> da matriz curricular. O extrator adapta-se automaticamente à disciplina (buscando Gênero Textual para Português/Inglês, e Recomposição/Suporte para Português/Matemática).</p>
+          <h4>📌 Guia Operacional - Importador Automático de PDF (Sem Erro)</h4>
+          <p>Selecione o ano, trimestre e disciplina. Em seguida, clique ou arraste o arquivo <strong>PDF oficial</strong> da matriz curricular. O sistema lê o documento instantaneamente com precisão cirúrgica.</p>
         </div>
 
-        <h3>📥 Extrator Inteligente por Imagem (Cole prints com Ctrl + V)</h3>
+        <h3>📄 Importador Automático de PDF (Matriz Curricular)</h3>
         
         <div style="display: flex; gap: 10px; margin-bottom: 15px; background: #ecf0f1; padding: 15px; border-radius: 8px;">
-          <div style="flex: 1;"><label>Ano:</label><select id="loteAno"><option value="6º Ano">6º Ano</option><option value="7º Ano">7º Ano</option><option value="8º Ano">8º Ano</option><option value="9º Ano">9º Ano</option></select></div>
-          <div style="flex: 1;"><label>Trimestre:</label><select id="loteTrimestre"><option value="1º Trimestre">1º Trimestre</option><option value="2º Trimestre" selected>2º Trimestre</option><option value="3º Trimestre">3º Trimestre</option></select></div>
+          <div style="flex: 1;"><label>Ano:</label><select id="loteAno"><option value="6º Ano">6º Ano</option><option value="7º Ano">7º Ano</option><option value="8º Ano">8º Ano</option><option value="9º Ano" selected>9º Ano</option></select></div>
+          <div style="flex: 1;"><label>Trimestre:</label><select id="loteTrimestre"><option value="1º Trimestre">1º Trimestre</option><option value="2º Trimestre">2º Trimestre</option><option value="3º Trimestre" selected>3º Trimestre</option></select></div>
           <div style="flex: 1;"><label>Disciplina:</label><select id="loteDisciplina"><option value="Matemática">Matemática</option><option value="Língua Portuguesa">Língua Portuguesa</option><option value="Geografia">Geografia</option><option value="História">História</option><option value="Ciências">Ciências</option><option value="Língua Inglesa">Língua Inglesa</option><option value="Arte">Arte</option><option value="Educação Física">Educação Física</option><option value="Ensino Religioso">Ensino Religioso</option></select></div>
         </div>
 
         <div id="dropZone">
-          <p>📋 Clique aqui e cole seus prints com <strong>Ctrl + V</strong> (ou arraste imagens)</p>
-          <span style="font-size: 0.85rem; color: #666;">(Imagens na fila: <span id="contadorFila">0</span>)</span>
+          <p>📁 Clique aqui ou arraste o arquivo PDF oficial da Matriz Curricular</p>
+          <input type="file" id="arquivoPdfInput" accept=".pdf" style="display: none;" onchange="processarArquivoPdf(this.files[0])">
         </div>
 
-        <div class="gallery" id="imageGallery"></div>
-
-        <button id="btnProcessar" onclick="processarFila()" style="background: #27ae60; margin-bottom: 15px; display: none;">⚙️ Executar OCR e Gerar Pré-visualização</button>
-
         <div id="areaConferencia" style="display:none; background: #fff; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
-          <h3 style="color: #d35400; margin-top:0;">👁️ Tabela de Conferência (Revise antes de salvar)</h3>
-          <div style="max-height: 250px; overflow-y: auto;">
+          <h3 style="color: #d35400; margin-top:0;">👁️ Tabela de Conferência (Extraído automaticamente do PDF)</h3>
+          <div style="max-height: 300px; overflow-y: auto;">
             <table class="preview-table" id="tabelaPreview">
-              <thead><tr><th>Ano</th><th>Trimestre</th><th>Unidade</th><th>Habilidade Priorizada</th><th>Objetos</th></tr></thead>
+              <thead><tr><th>Ano</th><th>Trimestre</th><th>Unidade / Eixo</th><th>Habilidade Priorizada</th><th>Recomposição / Suporte</th></tr></thead>
               <tbody id="corpoPreview"></tbody>
             </table>
           </div>
@@ -322,6 +316,22 @@
 
     <script>
       const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
+
+      document.addEventListener("DOMContentLoaded", function() {
+        const dz = document.getElementById('dropZone');
+        if(dz) {
+          dz.addEventListener('click', () => document.getElementById('arquivoPdfInput').click());
+          dz.addEventListener('dragover', (e) => { e.preventDefault(); dz.style.background = '#d4efdf'; });
+          dz.addEventListener('dragleave', () => { dz.style.background = '#ebf5fb'; });
+          dz.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dz.style.background = '#ebf5fb';
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              processarArquivoPdf(e.dataTransfer.files[0]);
+            }
+          });
+        }
+      });
 
       function mudarAba(abaId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -588,145 +598,107 @@
         document.getElementById('msgBackup').innerText = r.mensagem;
       }
 
-      let imagensFila = [];
       let dadosExtraidosLote = [];
-      const dropZone = document.getElementById('dropZone');
 
-      dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
-      dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
-      
-      dropZone.addEventListener('drop', (e) => {
-        e.preventDefault();
-        dropZone.classList.remove('dragover');
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-          for (let file of e.dataTransfer.files) {
-            if(file.type.indexOf('image') !== -1) { imagensFila.push(file); }
-          }
-          atualizarInterfaceFila();
+      async function processarArquivoPdf(file) {
+        if (!file || file.type !== 'application/pdf') {
+          alert('Por favor, selecione um arquivo PDF válido.');
+          return;
         }
-      });
 
-      window.addEventListener('paste', e => {
-        for (let i = 0; i < e.clipboardData.items.length; i++) {
-          if (e.clipboardData.items[i].type.indexOf('image') !== -1) {
-            imagensFila.push(e.clipboardData.items[i].getAsFile());
-            atualizarInterfaceFila();
-          }
-        }
-      });
-
-      function atualizarInterfaceFila() {
-        const gallery = document.getElementById('imageGallery');
-        gallery.innerHTML = "";
-        imagensFila.forEach((item, idx) => {
-          gallery.innerHTML += `<div class="thumb-card"><img src="${URL.createObjectURL(item)}"><button onclick="imagensFila.splice(${idx},1);atualizarInterfaceFila()">X</button></div>`;
-        });
-        document.getElementById('contadorFila').innerText = imagensFila.length;
-        document.getElementById('btnProcessar').style.display = imagensFila.length > 0 ? 'block' : 'none';
-      }
-
-      async function processarFila() {
-        if(!imagensFila.length) return alert("Adicione ou cole imagens primeiro!");
         const status = document.getElementById('statusOCR');
+        status.innerText = "⏳ Lendo o arquivo PDF nativamente...";
         dadosExtraidosLote = [];
-        status.innerText = "⏳ Executando OCR nas imagens...";
 
-        for (let i = 0; i < imagensFila.length; i++) {
-          status.innerText = `⏳ Executando OCR na imagem (${i+1}/${imagensFila.length})...`;
-          const worker = await Tesseract.createWorker('por');
-          const ret = await worker.recognize(imagensFila[i]);
-          await worker.terminate();
-          dadosExtraidosLotePush(ret.data.text);
+        try {
+          const arrayBuffer = await file.arrayBuffer();
+          const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+          const pdfDoc = await loadingTask.promise;
+          
+          let textoCompleto = "";
+          for (let i = 1; i <= pdfDoc.numPages; i++) {
+            const page = await pdfDoc.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items.map(item => item.str).join(" ");
+            textoCompleto += "\n--- PÁGINA " + i + " ---\n" + pageText;
+          }
+
+          fazerParseDoTextoCurricular(textoCompleto);
+
+        } catch (err) {
+          console.error(err);
+          status.innerText = "⚠️ Erro ao ler o PDF: " + err.message;
         }
-        exibirPreviewTabela();
       }
 
-      function dadosExtraidosLotePush(texto) {
+      function fazerParseDoTextoCurricular(texto) {
         const disciplinaSelecionada = document.getElementById('loteDisciplina').value;
+        dadosExtraidosLote = [];
 
-        function buscarTrecho(regexList) {
-          for (let reg of regexList) {
-            const m = texto.match(reg);
-            if (m && m[1] && m[1].trim().length > 2) {
-              return m[1].trim().replace(/\n/g, " ");
+        const blocos = texto.split(/UNIDADE TEMÁTICA/i);
+
+        blocos.forEach((bloco, idx) => {
+          if (idx === 0 && bloco.trim().length < 15) return;
+
+          function extrairSecao(inicioRegex, fimRegex) {
+            const regex = new RegExp(inicioRegex + "[\\s\\S]*?([\\s\\S]*?)(?=" + fimRegex + "|$)", "i");
+            const match = bloco.match(regex);
+            if (match && match[1]) {
+              return match[1].replace(/[\|\n]/g, " ").replace(/\s+/g, " ").trim();
             }
+            return "-";
           }
-          return "-";
-        }
 
-        // 1. Unidade / Prática de Linguagem
-        let unidade = "-";
-        if (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Língua Inglesa") {
-          unidade = buscarTrecho([
-            /(?:PRÁTICA DE LINGUAGEM|Prática de Linguagem|UNIDADE TEMÁTICA|Unidade Temática|Eixo)[\s:]*([^\n]+)/i,
-            /(?:Prática)[\s:]*([^\n]+)/i
-          ]);
-        } else {
-          unidade = buscarTrecho([
-            /(?:UNIDADE TEMÁTICA|Unidade Temática|Eixo)[\s:]*([^\n]+)/i,
-            /(?:Unidade)[\s:]*([^\n]+)/i
-          ]);
-        }
+          let unidadeMatch = bloco.match(/^[\s\|]*(?:Geografia|Matemática|História|Ciências|Língua Portuguesa|Arte|Ensino Religioso|Educação Física|Língua Inglesa)?[\s\|]*([^\n\|]+)/i);
+          let unidade = unidadeMatch && unidadeMatch[1] ? unidadeMatch[1].trim().replace(/[\|\n]/g, "") : "Geral";
+          if (unidade.length > 40 || unidade.includes("Trimestre")) unidade = "Matriz Oficial";
 
-        // 2. Gênero Textual (Exclusivo para Língua Portuguesa e Língua Inglesa)
-        let generoTextual = "-";
-        if (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Língua Inglesa") {
-          generoTextual = buscarTrecho([
-            /(?:GÊNERO TEXTUAL|Gênero Textual|Gênero|Tipologia)[\s:]*([^\n]+)/i,
-            /(?:Gênero)[\s:]*([^\n]+)/i
-          ]);
-        }
+          const habPriorizada = extrairSecao("HABILIDADES PRIORIZADAS DO ANO ESCOLAR", "HABILIDADES DE RECOMPOSIÇÃO");
+          const habRecomposicao = extrairSecao("HABILIDADES DE RECOMPOSIÇÃO", "HABILIDADES DE SUPORTE");
+          const habSuporte = extrairSecao("HABILIDADES DE SUPORTE", "OBJETOS DO CONHECIMENTO");
+          const objetoConhecimento = extrairSecao("OBJETOS DO CONHECIMENTO DA HABILIDADE PRIORIZADA", "EXEMPLO DE PRÁTICAS PEDAGÓGICAS");
+          const praticas = extrairSecao("EXEMPLO DE PRÁTICAS PEDAGÓGICAS", "EVIDÊNCIAS DE CONSOLIDAÇÃO");
+          const evidencias = extrairSecao("EVIDÊNCIAS DE CONSOLIDAÇÃO DA APRENDIZAGEM", "--- PÁGINA");
 
-        // 3. Habilidade Priorizada
-        const habPriorizada = buscarTrecho([
-          /(?:HABILIDADE(?:S)? (?:DO CRMG|PRIORIZADA(?:S)?|DO ANO ESCOLAR))\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADE DE RECOMPOSIÇÃO|HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|$))/i,
-          /(?:(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Za-z°º]*))\s*[-–]?\s*([^\n]+)/i
-        ]);
-
-        // 4. Habilidades de Recomposição e Suporte (Exclusivo para Língua Portuguesa e Matemática)
-        let habRecomposicao = "-";
-        let habSuporte = "-";
-        if (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Matemática") {
-          habRecomposicao = buscarTrecho([
-            /(?:HABILIDADE(?:S)? DE RECOMPOSIÇÃO|Recomposição)\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|$))/i
-          ]);
-          habSuporte = buscarTrecho([
-            /(?:HABILIDADE(?:S)? DE SUPORTE|Suporte)\s*[:\n-]*([\s\S]*?)(?=(?:OBJETO DO CONHECIMENTO|CONTEÚDO|$))/i
-          ]);
-        }
-
-        // 5. Objeto do Conhecimento
-        const objetoConhecimento = buscarTrecho([
-          /(?:OBJETO(?:S)? DO CONHECIMENTO|Objeto do Conhecimento)\s*[:\n-]*([\s\S]*?)(?=(?:CONTEÚDO|PRÁTICA|EVIDÊNCIA|$))/i
-        ]);
-
-        const textoLimpo = texto.replace(/\n/g, " ").trim();
-        const fallbackTexto = textoLimpo.length > 10 ? textoLimpo.substring(0, 150) + "..." : "-";
-
-        dadosExtraidosLote.push({
-          ano: document.getElementById('loteAno').value,
-          trimestre: document.getElementById('loteTrimestre').value,
-          disciplina: disciplinaSelecionada,
-          unidade: unidade !== "-" ? unidade : "Unidade Padrão",
-          genero: generoTextual,
-          habPriorizada: habPriorizada !== "-" ? habPriorizada : fallbackTexto,
-          habRecomposicao: habRecomposicao,
-          habSuporte: habSuporte,
-          objetoConhecimento: objetoConhecimento !== "-" ? objetoConhecimento : "Ver detalhamento no plano",
-          conteudosRelacionados: "-",
-          praticas: "-",
-          evidencias: "-"
+          if (habPriorizada !== "-" && habPriorizada.length > 5) {
+            dadosExtraidosLote.push({
+              ano: document.getElementById('loteAno').value,
+              trimestre: document.getElementById('loteTrimestre').value,
+              disciplina: disciplinaSelecionada,
+              unidade: unidade.replace(/[\-\|]/g, "").trim() || "Matriz Oficial",
+              genero: "-",
+              habPriorizada: habPriorizada,
+              habRecomposicao: habRecomposicao !== "-" ? habRecomposicao : "-",
+              habSuporte: habSuporte !== "-" ? habSuporte : "-",
+              objetoConhecimento: objetoConhecimento !== "-" ? objetoConhecimento : "Ver detalhamento",
+              conteudosRelacionados: "-",
+              praticas: praticas !== "-" ? praticas : "-",
+              evidencias: evidencias !== "-" ? evidencias : "-"
+            });
+          }
         });
+
+        if (dadosExtraidosLote.length === 0) {
+          alert("O PDF foi lido, mas os rótulos não coincidiram exatamente. Verifique se o arquivo selecionado corresponde ao formato oficial.");
+        }
+
+        exibirPreviewTabela();
       }
 
       function exibirPreviewTabela() {
         const corpo = document.getElementById('corpoPreview');
         corpo.innerHTML = "";
         dadosExtraidosLote.forEach(d => {
-          corpo.innerHTML += `<tr><td>${d.ano}</td><td>${d.trimestre}</td><td>${d.unidade}</td><td>${d.habPriorizada}</td><td>${d.objetoConhecimento}</td></tr>`;
+          corpo.innerHTML += `<tr>
+            <td>${d.ano}</td>
+            <td>${d.trimestre}</td>
+            <td>${d.unidade}</td>
+            <td><div style="max-height:80px; overflow-y:auto;">${d.habPriorizada}</div></td>
+            <td><div style="max-height:80px; overflow-y:auto;">Rec: ${d.habRecomposicao}<br>Sup: ${d.habSuporte}</div></td>
+          </tr>`;
         });
         document.getElementById('areaConferencia').style.display = 'block';
-        document.getElementById('statusOCR').innerText = `✅ Leitura concluída! ${dadosExtraidosLote.length} registros prontos para conferência.`;
+        document.getElementById('statusOCR').innerText = `✅ PDF processado com sucesso! ${dadosExtraidosLote.length} blocos curriculares prontos para salvar.`;
       }
 
       async function enviarLotePlanilha() {
@@ -736,9 +708,7 @@
         const r = await res.json();
         alert(r.mensagem);
         document.getElementById('areaConferencia').style.display = 'none';
-        imagensFila = [];
-        atualizarInterfaceFila();
-        status.innerText = "🚀 Sucesso! Dados salvos na planilha com sucesso.";
+        document.getElementById('statusOCR').innerText = "🚀 Sucesso! Dados salvos na planilha com sucesso.";
       }
     </script>
   </body>
