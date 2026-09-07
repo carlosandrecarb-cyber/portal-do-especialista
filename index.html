@@ -6,11 +6,6 @@
     <title>Portal do Especialista - Gestão Educacional</title>
     <!-- Tesseract OCR para imagens -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-    <!-- PDF.js para leitura nativa de arquivos PDF -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>
-      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    </script>
     <style>
       :root { --cor-fundo: #f4f6f9; --cor-principal: #2c3e50; --cor-secundaria: #27ae60; --cor-texto: #333; --borda: #dcdde1; }
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--cor-fundo); color: var(--cor-texto); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
@@ -48,6 +43,7 @@
   <body>
 
     <div style="text-align: center; margin-bottom: 20px; width: 100%;">
+      <img src="https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5" alt="Logo Escola" style="max-height: 90px; display: block; margin: 0 auto 10px auto;">
       <h1 style="color: var(--cor-principal); margin: 0; font-size: 1.5rem;">Portal do Especialista - Gestão Educacional</h1>
     </div>
 
@@ -73,7 +69,7 @@
       <div class="tabs">
         <button class="tab-btn active" onclick="mudarAba('gerarPlanoTab', this)">✏️ Gerar Plano</button>
         <button class="tab-btn" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
-        <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📥 Extrator PDF & Currículo</button>
+        <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📥 Extrator por Imagem & Currículo</button>
         <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Sistema</button>
       </div>
 
@@ -132,9 +128,9 @@
         <div id="listaUsuarios">Carregando...</div>
       </div>
 
-      <!-- Aba 2: Extrator Universal -->
+      <!-- Aba 2: Extrator por Imagem (Print / Ctrl + V) -->
       <div id="extratorPDF" class="tab-content">
-        <h3>📥 Extrator Inteligente Universal (Arraste o PDF ou Cole Prints)</h3>
+        <h3>📥 Extrator Inteligente por Imagem (Cole prints com Ctrl + V)</h3>
         
         <div style="display: flex; gap: 10px; margin-bottom: 15px; background: #ecf0f1; padding: 15px; border-radius: 8px;">
           <div style="flex: 1;"><label>Ano:</label><select id="loteAno"><option value="6º Ano">6º Ano</option><option value="7º Ano">7º Ano</option><option value="8º Ano">8º Ano</option><option value="9º Ano">9º Ano</option></select></div>
@@ -143,13 +139,13 @@
         </div>
 
         <div id="dropZone">
-          <p>📁 Arraste e solte o seu arquivo <strong>PDF</strong> aqui (ou cole prints com <strong>Ctrl + V</strong>)</p>
-          <span style="font-size: 0.85rem; color: #666;">(Arquivos na fila: <span id="contadorFila">0</span>)</span>
+          <p>📋 Clique aqui e cole seus prints com <strong>Ctrl + V</strong> (ou arraste imagens)</p>
+          <span style="font-size: 0.85rem; color: #666;">(Imagens na fila: <span id="contadorFila">0</span>)</span>
         </div>
 
         <div class="gallery" id="imageGallery"></div>
 
-        <button id="btnProcessar" onclick="processarFila()" style="background: #27ae60; margin-bottom: 15px; display: none;">⚙️ Processar e Gerar Pré-visualização</button>
+        <button id="btnProcessar" onclick="processarFila()" style="background: #27ae60; margin-bottom: 15px; display: none;">⚙️ Executar OCR e Gerar Pré-visualização</button>
 
         <div id="areaConferencia" style="display:none; background: #fff; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
           <h3 style="color: #d35400; margin-top:0;">👁️ Tabela de Conferência (Revise antes de salvar)</h3>
@@ -324,7 +320,7 @@
         alert("✅ Plano gerado com sucesso: " + r.url);
       }
 
-      let arquivosFila = [];
+      let imagensFila = [];
       let dadosExtraidosLote = [];
       const dropZone = document.getElementById('dropZone');
 
@@ -335,7 +331,11 @@
         e.preventDefault();
         dropZone.classList.remove('dragover');
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-          for (let file of e.dataTransfer.files) { arquivosFila.push(file); }
+          for (let file of e.dataTransfer.files) {
+            if(file.type.indexOf('image') !== -1) {
+              imagensFila.push(file);
+            }
+          }
           atualizarInterfaceFila();
         }
       });
@@ -343,7 +343,7 @@
       window.addEventListener('paste', e => {
         for (let i = 0; i < e.clipboardData.items.length; i++) {
           if (e.clipboardData.items[i].type.indexOf('image') !== -1) {
-            arquivosFila.push(e.clipboardData.items[i].getAsFile());
+            imagensFila.push(e.clipboardData.items[i].getAsFile());
             atualizarInterfaceFila();
           }
         }
@@ -352,53 +352,36 @@
       function atualizarInterfaceFila() {
         const gallery = document.getElementById('imageGallery');
         gallery.innerHTML = "";
-        arquivosFila.forEach((item, idx) => {
-          if(item.type === "application/pdf") {
-            gallery.innerHTML += `<div class="thumb-card" style="display:flex; align-items:center; justify-content:center; background:#e8f8f5; font-size:0.75rem; font-weight:bold; text-align:center; padding:5px;">📄 PDF<button onclick="arquivosFila.splice(${idx},1);atualizarInterfaceFila()">X</button></div>`;
-          } else {
-            gallery.innerHTML += `<div class="thumb-card"><img src="${URL.createObjectURL(item)}"><button onclick="arquivosFila.splice(${idx},1);atualizarInterfaceFila()">X</button></div>`;
-          }
+        imagensFila.forEach((item, idx) => {
+          gallery.innerHTML += `<div class="thumb-card"><img src="${URL.createObjectURL(item)}"><button onclick="imagensFila.splice(${idx},1);atualizarInterfaceFila()">X</button></div>`;
         });
-        document.getElementById('contadorFila').innerText = arquivosFila.length;
-        document.getElementById('btnProcessar').style.display = arquivosFila.length > 0 ? 'block' : 'none';
+        document.getElementById('contadorFila').innerText = imagensFila.length;
+        document.getElementById('btnProcessar').style.display = imagensFila.length > 0 ? 'block' : 'none';
       }
 
       async function processarFila() {
-        if(!arquivosFila.length) return alert("Adicione um PDF ou imagens primeiro!");
+        if(!imagensFila.length) return alert("Adicione ou cole imagens primeiro!");
         const status = document.getElementById('statusOCR');
         dadosExtraidosLote = [];
-        status.innerText = "⏳ Processando documentos...";
+        status.innerText = "⏳ Executando OCR nas imagens...";
 
-        for (let i = 0; i < arquivosFila.length; i++) {
-          let arquivo = arquivosFila[i];
-          if(arquivo.type === "application/pdf") {
-            status.innerText = `⏳ Lendo PDF inteiro (${i+1}/${arquivosFila.length})...`;
-            const buffer = await arquivo.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument(buffer).promise;
-            for (let p = 1; p <= pdf.numPages; p++) {
-              const page = await pdf.getPage(p);
-              const textContent = await page.getTextContent();
-              const text = textContent.items.map(item => item.str).join(" ");
-              if(text.length > 50) dadosExtraidosLorePush(text);
-            }
-          } else {
-            status.innerText = `⏳ Executando OCR na imagem (${i+1}/${arquivosFila.length})...`;
-            const worker = await Tesseract.createWorker('por');
-            const ret = await worker.recognize(arquivo);
-            await worker.terminate();
-            dadosExtraidosLorePush(ret.data.text);
-          }
+        for (let i = 0; i < imagensFila.length; i++) {
+          status.innerText = `⏳ Executando OCR na imagem (${i+1}/${imagensFila.length})...`;
+          const worker = await Tesseract.createWorker('por');
+          const ret = await worker.recognize(imagensFila[i]);
+          await worker.terminate();
+          dadosExtraidosLotePush(ret.data.text);
         }
         exibirPreviewTabela();
       }
 
-      function dadosExtraidosLorePush(texto) {
+      function dadosExtraidosLotePush(texto) {
         function buscar(regex) { const m = texto.match(regex); return m && m[1] ? m[1].trim().replace(/\n/g, " ") : "-"; }
         dadosExtraidosLote.push({
           ano: document.getElementById('loteAno').value,
           trimestre: document.getElementById('loteTrimestre').value,
           disciplina: document.getElementById('loteDisciplina').value,
-          unidade: buscar(/(?:UNIDADE TEMÁTICA|Unidade Temática|Mundo do Trabalho|Terra e Universo|Matéria e Energia)[\s:]*([^\n]+)/i),
+          unidade: buscar(/(?:UNIDADE TEMÁTICA|Unidade Temática|Mundo do Trabalho|Natureza|Terra e Universo|Matéria e Energia)[\s:]*([^\n]+)/i),
           genero: buscar(/(?:Gênero Textual|Gênero)[\s:]*([^\n]+)/i),
           habPriorizada: buscar(/(?:HABILIDADE(?:S)? (?:DO CRMG|PRIORIZADA(?:S)? DO ANO ESCOLAR|PRIORIZADA(?:S)?))\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADE DE RECOMPOSIÇÃO|HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
           habRecomposicao: buscar(/(?:HABILIDADE(?:S)? DE RECOMPOSIÇÃO)\s*[:\n-]*([\s\S]*?)(?=(?:HABILIDADES DE SUPORTE|OBJETO DO CONHECIMENTO|CONTEÚDOS RELACIONADOS|EXEMPLOS DE PRÁTICAS|EVIDÊNCIA|$))/i),
@@ -427,7 +410,7 @@
         const r = await res.json();
         alert(r.mensagem);
         document.getElementById('areaConferencia').style.display = 'none';
-        arquivosFila = [];
+        imagensFila = [];
         atualizarInterfaceFila();
         status.innerText = "🚀 Sucesso! Dados salvos na planilha.";
       }
