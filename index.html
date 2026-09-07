@@ -44,6 +44,7 @@
       .filtro-item { flex: 1; }
       .filtro-item label { font-weight: bold; font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px; }
       .card-kpi { background: #e8f8f5; border-left: 4px solid var(--cor-secundaria); padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; color: #145a32; }
+      .relatorio-card { background: #f4ecf7; border: 2px solid #8e44ad; padding: 18px; border-radius: 8px; margin-bottom: 20px; }
     </style>
   </head>
   <body>
@@ -75,7 +76,7 @@
       <div class="tabs">
         <button class="tab-btn active" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
         <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📥 Extrator por Imagem</button>
-        <button class="tab-btn" onclick="mudarAba('monitoramento', this)">📊 Monitoramento</button>
+        <button class="tab-btn" onclick="mudarAba('monitoramento', this)">📊 Monitoramento & Relatórios</button>
         <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Sistema</button>
       </div>
 
@@ -158,10 +159,31 @@
         <p id="statusOCR" style="font-weight: bold; margin-top: 15px; color: #e67e22;"></p>
       </div>
 
-      <!-- Aba 3: Monitoramento e Supervisão -->
+      <!-- Aba 3: Monitoramento e Relatórios Executivos -->
       <div id="monitoramento" class="tab-content">
-        <h3>📊 Monitoramento de Planos de Aula e Evidências</h3>
+        <h3>📊 Monitoramento Pedagógico & Relatórios Executivos</h3>
         
+        <!-- Bloco do Gerador de Relatório Executivo -->
+        <div class="relatorio-card">
+          <h4 style="margin-top:0; color:#512e5f;">📑 Gerador de Relatório Executivo (Cobertura & Recomposição)</h4>
+          <p style="font-size: 0.85rem; color: #555; margin-bottom: 12px;">Selecione o recorte temporal desejado para gerar um relatório em Google Docs consolidando a cobertura curricular e o engajamento:</p>
+          <div style="display: flex; gap: 15px; align-items: flex-end;">
+            <div style="flex: 2;">
+              <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:5px;">Período de Análise:</label>
+              <select id="tipoRelatorio" style="margin-bottom:0;">
+                <option value="diario">Diário (Últimas 24 horas)</option>
+                <option value="semanal">Semanal (Últimos 7 dias)</option>
+                <option value="quinzenal" selected>Quinzenal (Últimos 15 dias)</option>
+                <option value="mensal">Mensal (Últimos 30 dias)</option>
+              </select>
+            </div>
+            <div style="flex: 1;">
+              <button onclick="gerarRelatorioExecutivo()" style="background: #8e44ad;">📑 Gerar Relatório</button>
+            </div>
+          </div>
+          <p id="msgRelatorio" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; color: #27ae60;"></p>
+        </div>
+
         <div class="filtros-box">
           <div class="filtro-item">
             <label>Filtrar por Professor(a):</label>
@@ -186,7 +208,7 @@
 
         <div id="kpiResumo" class="card-kpi">Carregando métricas de supervisão...</div>
 
-        <div style="max-height: 450px; overflow-y: auto;">
+        <div style="max-height: 400px; overflow-y: auto;">
           <table class="preview-table">
             <thead>
               <tr>
@@ -194,7 +216,7 @@
                 <th>Professor(a)</th>
                 <th>Componente / Turma</th>
                 <th>Unidade / Habilidades</th>
-                <th>Ações & Evidências</th>
+                <th>Ações</th>
               </tr>
             </thead>
             <tbody id="corpoMonitoramento">
@@ -319,7 +341,7 @@
 
       async function carregarDadosSupervisao() {
         try {
-          document.getElementById('corpoMonitoramento').innerHTML = `<tr><td colspan="5" style="text-align:center;">⏳ Carregando dados instantaneamente...</td></tr>`;
+          document.getElementById('corpoMonitoramento').innerHTML = `<tr><td colspan="5" style="text-align:center;">⏳ Carregando dados...</td></tr>`;
           const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
           const r = await res.json();
           if(r.status === "sucesso") {
@@ -377,6 +399,27 @@
           </tr>`;
         });
         corpo.innerHTML = html;
+      }
+
+      async function gerarRelatorioExecutivo() {
+        const periodo = document.getElementById('tipoRelatorio').value;
+        const msg = document.getElementById('msgRelatorio');
+        msg.innerText = "⏳ Compilando métricas de cobertura e recomposição...";
+
+        try {
+          const res = await fetch(URL_API, {
+            method: 'POST',
+            body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo })
+          });
+          const r = await res.json();
+          if(r.status === "sucesso") {
+            msg.innerHTML = `✅ Relatório gerado com sucesso! <a href="${r.url}" target="_blank" style="color:#2980b9; text-decoration:underline; font-weight:bold;">📄 Abrir Relatório Executivo no Google Docs</a>`;
+          } else {
+            msg.innerText = "⚠️ Erro: " + r.mensagem;
+          }
+        } catch(e) {
+          msg.innerText = "⚠️ Erro de conexão ao gerar o relatório.";
+        }
       }
 
       async function forcarBackup() {
