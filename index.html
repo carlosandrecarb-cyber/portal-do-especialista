@@ -89,7 +89,7 @@
       <div id="gestaoUsuarios" class="tab-content active">
         <div class="guia-card">
           <h4>📌 Guia Operacional - Gestão de Acessos</h4>
-          <p>Cadastre ou edite os docentes da rede. Defina o nome, senha, perfil e selecione quais <strong>Componentes</strong> e <strong>Turmas</strong> ele(a) atende. Os dados salvos vão direto para o banco de dados.</p>
+          <p>Cadastre ou edite os docentes da rede. Defina nome, senha, perfil e selecione os componentes e turmas.</p>
         </div>
         
         <h3>Gerenciar Acessos da Rede</h3>
@@ -140,7 +140,7 @@
       <div id="extratorPDF" class="tab-content">
         <div class="guia-card">
           <h4>📌 Guia Operacional - Extrator por Imagem</h4>
-          <p>Cole prints com <strong>Ctrl + V</strong> da matriz oficial e execute o OCR para cadastrar as habilidades sem redigir manualmente.</p>
+          <p>Cole prints com <strong>Ctrl + V</strong> e execute o OCR para cadastrar as habilidades da matriz.</p>
         </div>
 
         <h3>📥 Extrator Inteligente por Imagem (Cole prints com Ctrl + V)</h3>
@@ -174,11 +174,11 @@
         <p id="statusOCR" style="font-weight: bold; margin-top: 15px; color: #e67e22;"></p>
       </div>
 
-      <!-- Aba 3: Cruzamento de Habilidades (NOVA ABA DESTAQUE) -->
+      <!-- Aba 3: Cruzamento de Habilidades -->
       <div id="cruzamentoHabs" class="tab-content">
         <div class="guia-card">
           <h4>📌 Guia Operacional - Cruzamento de Habilidades (Cobertura Curricular)</h4>
-          <p>Selecione abaixo a disciplina e o ano escolar. O sistema cruza automaticamente o que está prescrito na <strong>Matriz Curricular</strong> com os <strong>Planos Executados pelos Professores</strong>, exibindo quais habilidades já foram trabalhadas e quais ainda estão pendentes (evitando lacunas trimestrais).</p>
+          <p>Selecione a disciplina e o ano. O sistema cruza todas as habilidades cadastradas na matriz oficial com os planos executados pelos professores, separando em tabelas o que já foi trabalhado e o que está pendente.</p>
         </div>
 
         <h3>🎯 Termômetro de Cobertura de Habilidades</h3>
@@ -247,7 +247,7 @@
         
         <div class="relatorio-card">
           <h4 style="margin-top:0; color:#512e5f;">📑 Gerador de Relatório Executivo (Cobertura, Habilidades & Evidências)</h4>
-          <p style="font-size: 0.85rem; color: #555; margin-bottom: 12px;">Selecione o recorte temporal para consolidar o relatório oficial da escola em Google Docs:</p>
+          <p style="font-size: 0.85rem; color: #555; margin-bottom: 12px;">Selecione o recorte temporal para consolidar o relatório oficial da escola em Google Docs (com tabelas formatadas):</p>
           <div style="display: flex; gap: 15px; align-items: flex-end;">
             <div style="flex: 2;">
               <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:5px;">Período de Análise:</label>
@@ -564,7 +564,7 @@
       async function gerarRelatorioExecutivo() {
         const periodo = document.getElementById('tipoRelatorio').value;
         const msg = document.getElementById('msgRelatorio');
-        msg.innerText = "⏳ Compilando métricas de cobertura, habilidades e evidências...";
+        msg.innerText = "⏳ Compilando métricas em tabelas e gerando relatório no Docs...";
 
         try {
           const res = await fetch(URL_API, {
@@ -573,7 +573,7 @@
           });
           const r = await res.json();
           if(r.status === "sucesso") {
-            msg.innerHTML = `✅ Relatório gerado com sucesso! <a href="${r.url}" target="_blank" style="color:#2980b9; text-decoration:underline; font-weight:bold;">📄 Abrir Relatório Executivo no Google Docs</a>`;
+            msg.innerHTML = `✅ Relatório executivo gerado com sucesso! <a href="${r.url}" target="_blank" style="color:#2980b9; text-decoration:underline; font-weight:bold;">📄 Abrir Google Doc com Tabelas</a>`;
           } else {
             msg.innerText = "⚠️ Erro: " + r.mensagem;
           }
