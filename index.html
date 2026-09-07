@@ -9,7 +9,7 @@
     <style>
       :root { --cor-fundo: #f4f6f9; --cor-principal: #2c3e50; --cor-secundaria: #27ae60; --cor-texto: #333; --borda: #dcdde1; }
       body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--cor-fundo); color: var(--cor-texto); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-      .container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 1100px; margin-bottom: 20px; }
+      .container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 1150px; margin-bottom: 20px; }
       h1, h2, h3 { color: var(--cor-principal); margin-top: 0; }
       input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--borda); border-radius: 8px; box-sizing: border-box; font-size: 1rem; font-family: inherit; }
       button { background-color: var(--cor-secundaria); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s; width: 100%; }
@@ -45,6 +45,7 @@
       .filtro-item label { font-weight: bold; font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px; }
       .card-kpi { background: #e8f8f5; border-left: 4px solid var(--cor-secundaria); padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; color: #145a32; }
       .relatorio-card { background: #f4ecf7; border: 2px solid #8e44ad; padding: 18px; border-radius: 8px; margin-bottom: 20px; }
+      .btn-status { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; margin: 2px; }
     </style>
   </head>
   <body>
@@ -76,7 +77,7 @@
       <div class="tabs">
         <button class="tab-btn active" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
         <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📥 Extrator por Imagem</button>
-        <button class="tab-btn" onclick="mudarAba('monitoramento', this)">📊 Monitoramento & Relatórios</button>
+        <button class="tab-btn" onclick="mudarAba('monitoramento', this)">📊 Monitoramento & Validação</button>
         <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Sistema</button>
       </div>
 
@@ -159,14 +160,14 @@
         <p id="statusOCR" style="font-weight: bold; margin-top: 15px; color: #e67e22;"></p>
       </div>
 
-      <!-- Aba 3: Monitoramento e Relatórios Executivos -->
+      <!-- Aba 3: Monitoramento, Validação e Relatórios -->
       <div id="monitoramento" class="tab-content">
-        <h3>📊 Monitoramento Pedagógico & Relatórios Executivos</h3>
+        <h3>📊 Monitoramento Pedagógico & Feedback Formativo</h3>
         
         <!-- Bloco do Gerador de Relatório Executivo -->
         <div class="relatorio-card">
           <h4 style="margin-top:0; color:#512e5f;">📑 Gerador de Relatório Executivo (Cobertura & Recomposição)</h4>
-          <p style="font-size: 0.85rem; color: #555; margin-bottom: 12px;">Selecione o recorte temporal desejado para gerar um relatório em Google Docs consolidando a cobertura curricular e o engajamento:</p>
+          <p style="font-size: 0.85rem; color: #555; margin-bottom: 12px;">Selecione o recorte temporal para consolidar a cobertura curricular e o engajamento docente em Google Docs:</p>
           <div style="display: flex; gap: 15px; align-items: flex-end;">
             <div style="flex: 2;">
               <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:5px;">Período de Análise:</label>
@@ -213,10 +214,10 @@
             <thead>
               <tr>
                 <th>Data</th>
-                <th>Professor(a)</th>
+                <th>Professor(a) & Status</th>
                 <th>Componente / Turma</th>
                 <th>Unidade / Habilidades</th>
-                <th>Ações</th>
+                <th>Ações & Evidências</th>
               </tr>
             </thead>
             <tbody id="corpoMonitoramento">
@@ -389,16 +390,38 @@
         lista.reverse().forEach(item => {
           html += `<tr>
             <td>${item.data}</td>
-            <td><strong>${item.professor}</strong></td>
+            <td>
+              <strong>${item.professor}</strong><br>
+              <span style="font-size:0.8rem;">Status: <strong>${item.status}</strong></span><br>
+              <button class="btn-status" style="background:#27ae60;" onclick="mudarStatus(${item.linha}, '🟢 Aprovado')">🟢 Aprovado</button>
+              <button class="btn-status" style="background:#f39c12;" onclick="mudarStatus(${item.linha}, '🟡 Requer Ajuste')">🟡 Ajustar</button>
+            </td>
             <td>${item.componente}<br><small style="color:#666;">Turma: ${item.turma}</small></td>
             <td><small><strong>Unidade:</strong> ${item.unidade}</small><br><small style="color:#444;"><strong>Habilidades:</strong> ${item.habilidades}</small></td>
             <td>
               <a href="${item.docUrl}" target="_blank" style="display:inline-block; background:#2980b9; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; font-size:0.8rem; margin-bottom:4px;">📄 Ver Doc</a><br>
-              <a href="${item.pastaUrl}" target="_blank" style="display:inline-block; background:#f39c12; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; font-size:0.8rem;">📁 Pasta Drive & Evidências</a>
+              <a href="${item.pastaUrl}" target="_blank" style="display:inline-block; background:#e67e22; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; font-size:0.8rem;">📁 Pasta Drive & Evidências</a>
             </td>
           </tr>`;
         });
         corpo.innerHTML = html;
+      }
+
+      async function mudarStatus(linha, novoStatus) {
+        try {
+          const res = await fetch(URL_API, {
+            method: 'POST',
+            body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus })
+          });
+          const r = await res.json();
+          if(r.status === "sucesso") {
+            carregarDadosSupervisao(); // Recarrega instantaneamente atualizado
+          } else {
+            alert("Erro ao atualizar status.");
+          }
+        } catch(e) {
+          alert("Erro de conexão ao atualizar status.");
+        }
       }
 
       async function gerarRelatorioExecutivo() {
