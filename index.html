@@ -44,8 +44,6 @@
       .filtro-item { flex: 1; }
       .filtro-item label { font-weight: bold; font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px; }
       .card-kpi { background: #e8f8f5; border-left: 4px solid var(--cor-secundaria); padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; color: #145a32; }
-      .badge-evidencia-sim { background: #27ae60; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 4px; }
-      .badge-evidencia-nao { background: #95a5a6; color: white; padding: 3px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; display: inline-block; margin-bottom: 4px; }
     </style>
   </head>
   <body>
@@ -196,7 +194,7 @@
                 <th>Professor(a)</th>
                 <th>Componente / Turma</th>
                 <th>Unidade / Habilidades</th>
-                <th>Evidências & Acessos</th>
+                <th>Ações & Evidências</th>
               </tr>
             </thead>
             <tbody id="corpoMonitoramento">
@@ -321,6 +319,7 @@
 
       async function carregarDadosSupervisao() {
         try {
+          document.getElementById('corpoMonitoramento').innerHTML = `<tr><td colspan="5" style="text-align:center;">⏳ Carregando dados instantaneamente...</td></tr>`;
           const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
           const r = await res.json();
           if(r.status === "sucesso") {
@@ -357,37 +356,23 @@
       function renderizarTabelaSupervisao(lista) {
         const corpo = document.getElementById('corpoMonitoramento');
         const kpi = document.getElementById('kpiResumo');
-        kpi.innerText = `📈 Total de Planos Registrados no Filtro: ${lista.length}`;
+        kpi.innerText = `📈 Total de Planos Registrados: ${lista.length}`;
 
         if(!lista.length) {
-          corpo.innerHTML = `<tr><td colspan="5" style="text-align:center;">Nenhum plano encontrado com estes filtros.</td></tr>`;
+          corpo.innerHTML = `<tr><td colspan="5" style="text-align:center;">Nenhum plano encontrado.</td></tr>`;
           return;
         }
 
         let html = "";
         lista.reverse().forEach(item => {
-          let badgeEvidencia = `<span class="badge-evidencia-nao">❌ Sem Evidências</span>`;
-          let linksEvidencias = "";
-          
-          if(item.evidenciasArquivos && item.evidenciasArquivos.length > 0) {
-            badgeEvidencia = `<span class="badge-evidencia-sim">📸 ${item.evidenciasArquivos.length} Evidência(s)</span>`;
-            item.evidenciasArquivos.forEach((arq, idx) => {
-              linksEvidencias += `<a href="${arq.url}" target="_blank" style="display:block; color:#2980b9; font-size:0.75rem; text-decoration:underline; margin-top:2px;">🖼️ Ver Evidência ${idx+1}</a>`;
-            });
-          }
-
           html += `<tr>
             <td>${item.data}</td>
             <td><strong>${item.professor}</strong></td>
             <td>${item.componente}<br><small style="color:#666;">Turma: ${item.turma}</small></td>
             <td><small><strong>Unidade:</strong> ${item.unidade}</small><br><small style="color:#444;"><strong>Habilidades:</strong> ${item.habilidades}</small></td>
             <td>
-              ${badgeEvidencia}
-              ${linksEvidencias}
-              <div style="margin-top:6px;">
-                <a href="${item.docUrl}" target="_blank" style="display:inline-block; background:#2980b9; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem; margin-right:4px;">📄 Doc</a>
-                <a href="${item.pastaUrl}" target="_blank" style="display:inline-block; background:#f39c12; color:white; padding:4px 8px; border-radius:4px; text-decoration:none; font-size:0.75rem;">📁 Pasta</a>
-              </div>
+              <a href="${item.docUrl}" target="_blank" style="display:inline-block; background:#2980b9; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; font-size:0.8rem; margin-bottom:4px;">📄 Ver Doc</a><br>
+              <a href="${item.pastaUrl}" target="_blank" style="display:inline-block; background:#f39c12; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; font-size:0.8rem;">📁 Pasta Drive & Evidências</a>
             </td>
           </tr>`;
         });
