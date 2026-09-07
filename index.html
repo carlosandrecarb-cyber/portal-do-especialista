@@ -80,6 +80,7 @@
       <div class="tabs">
         <button class="tab-btn active" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
         <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📥 Extrator por Imagem</button>
+        <button class="tab-btn" onclick="mudarAba('cruzamentoHabs', this)">🎯 Cruzamento de Habilidades</button>
         <button class="tab-btn" onclick="mudarAba('monitoramento', this)">📊 Monitoramento & Relatórios</button>
         <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Sistema</button>
       </div>
@@ -88,7 +89,7 @@
       <div id="gestaoUsuarios" class="tab-content active">
         <div class="guia-card">
           <h4>📌 Guia Operacional - Gestão de Acessos</h4>
-          <p>Cadastre ou edite os docentes da rede. Defina o nome, senha, perfil (Professor ou Especialista), e selecione clicando nas caixas quais <strong>Componentes Curriculares</strong> e <strong>Turmas</strong> ele(a) atende. As alterações são salvas diretamente no banco de dados da planilha.</p>
+          <p>Cadastre ou edite os docentes da rede. Defina o nome, senha, perfil e selecione quais <strong>Componentes</strong> e <strong>Turmas</strong> ele(a) atende. Os dados salvos vão direto para o banco de dados.</p>
         </div>
         
         <h3>Gerenciar Acessos da Rede</h3>
@@ -138,8 +139,8 @@
       <!-- Aba 2: Extrator por Imagem -->
       <div id="extratorPDF" class="tab-content">
         <div class="guia-card">
-          <h4>📌 Guia Operacional - Extrator de Currículo por Imagem</h4>
-          <p>Selecione o Ano, Trimestre e Disciplina. Cole capturas de tela (prints) da matriz curricular usando <strong>Ctrl + V</strong> na área pontilhada. Clique em <em>Executar OCR</em>, revise a tabela gerada e clique em salvar para alimentar a base de dados oficial.</p>
+          <h4>📌 Guia Operacional - Extrator por Imagem</h4>
+          <p>Cole prints com <strong>Ctrl + V</strong> da matriz oficial e execute o OCR para cadastrar as habilidades sem redigir manualmente.</p>
         </div>
 
         <h3>📥 Extrator Inteligente por Imagem (Cole prints com Ctrl + V)</h3>
@@ -173,16 +174,77 @@
         <p id="statusOCR" style="font-weight: bold; margin-top: 15px; color: #e67e22;"></p>
       </div>
 
-      <!-- Aba 3: Monitoramento, Validação e Relatórios -->
+      <!-- Aba 3: Cruzamento de Habilidades (NOVA ABA DESTAQUE) -->
+      <div id="cruzamentoHabs" class="tab-content">
+        <div class="guia-card">
+          <h4>📌 Guia Operacional - Cruzamento de Habilidades (Cobertura Curricular)</h4>
+          <p>Selecione abaixo a disciplina e o ano escolar. O sistema cruza automaticamente o que está prescrito na <strong>Matriz Curricular</strong> com os <strong>Planos Executados pelos Professores</strong>, exibindo quais habilidades já foram trabalhadas e quais ainda estão pendentes (evitando lacunas trimestrais).</p>
+        </div>
+
+        <h3>🎯 Termômetro de Cobertura de Habilidades</h3>
+        <div class="filtros-box">
+          <div class="filtro-item">
+            <label>Componente Curricular:</label>
+            <select id="cruzComp">
+              <option value="Matemática">Matemática</option>
+              <option value="Língua Portuguesa">Língua Portuguesa</option>
+              <option value="Geografia">Geografia</option>
+              <option value="História">História</option>
+              <option value="Ciências">Ciências</option>
+              <option value="Língua Inglesa">Língua Inglesa</option>
+              <option value="Arte">Arte</option>
+              <option value="Educação Física">Educação Física</option>
+              <option value="Ensino Religioso">Ensino Religioso</option>
+            </select>
+          </div>
+          <div class="filtro-item">
+            <label>Ano / Série:</label>
+            <select id="cruzAno">
+              <option value="6º Ano">6º Ano</option>
+              <option value="7º Ano">7º Ano</option>
+              <option value="8º Ano">8º Ano</option>
+              <option value="9º Ano">9º Ano</option>
+            </select>
+          </div>
+          <div class="filtro-item" style="display: flex; align-items: flex-end;">
+            <button onclick="executarCruzamentoHabilidades()" style="background: #2980b9; margin-bottom: 15px;">🔍 Analisar Cobertura</button>
+          </div>
+        </div>
+
+        <div id="kpiCruzamento" class="card-kpi" style="display: none;"></div>
+
+        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 450px;">
+            <h4 style="color: #27ae60; margin-bottom: 5px;">✅ Habilidades Já Trabalhadas (Executadas)</h4>
+            <div style="max-height: 400px; overflow-y: auto;">
+              <table class="preview-table">
+                <thead><tr><th>Trimestre / Unidade</th><th>Habilidade</th><th>Docente</th></tr></thead>
+                <tbody id="corpoTrabalhadas"><tr><td colspan="3" style="text-align:center;">Clique em Analisar Cobertura.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-width: 450px;">
+            <h4 style="color: #c0392b; margin-bottom: 5px;">❌ Habilidades Pendentes (Ainda não trabalhadas)</h4>
+            <div style="max-height: 400px; overflow-y: auto;">
+              <table class="preview-table">
+                <thead><tr><th>Trimestre / Unidade</th><th>Habilidade Pendente</th></tr></thead>
+                <tbody id="corpoPendentes"><tr><td colspan="2" style="text-align:center;">Clique em Analisar Cobertura.</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aba 4: Monitoramento e Relatórios -->
       <div id="monitoramento" class="tab-content">
         <div class="guia-card">
           <h4>📌 Guia Operacional - Monitoramento & Feedback</h4>
-          <p>Acompanhe em tempo real os planos gerados pelos professores. Use os botões de status (🟢 <em>Aprovado</em> ou 🟡 <em>Requer Ajuste</em>) para dar devolutiva formativa. Gere relatórios executivos em Google Docs com timbre escolar contendo o rastreio completo de habilidades trabalhadas e inserção de evidências.</p>
+          <p>Acompanhe os envios. Use os botões 🟢 <em>Aprovado</em> e 🟡 <em>Requer Ajuste</em> para dar devolutiva formativa. Gere relatórios em Google Docs com timbre escolar e dados consolidados.</p>
         </div>
 
         <h3>📊 Monitoramento Pedagógico & Feedback Formativo</h3>
         
-        <!-- Bloco do Gerador de Relatório Executivo -->
         <div class="relatorio-card">
           <h4 style="margin-top:0; color:#512e5f;">📑 Gerador de Relatório Executivo (Cobertura, Habilidades & Evidências)</h4>
           <p style="font-size: 0.85rem; color: #555; margin-bottom: 12px;">Selecione o recorte temporal para consolidar o relatório oficial da escola em Google Docs:</p>
@@ -245,11 +307,11 @@
         </div>
       </div>
 
-      <!-- Aba 4: Sistema -->
+      <!-- Aba 5: Sistema -->
       <div id="configuracoes" class="tab-content">
         <div class="guia-card">
           <h4>📌 Guia Operacional - Sistema e Backup</h4>
-          <p>Realize cópias de segurança de toda a estrutura da planilha enviando um arquivo Excel completo (.xlsx) diretamente para o seu e-mail cadastrado no Google.</p>
+          <p>Realize cópias de segurança em formato Excel (.xlsx) enviadas diretamente para o seu e-mail cadastrado.</p>
         </div>
 
         <h3>Backup e Segurança</h3>
@@ -269,6 +331,8 @@
         
         if(abaId === 'monitoramento') {
           carregarDadosSupervisao();
+        } else if(abaId === 'cruzamentoHabs') {
+          executarCruzamentoHabilidades();
         }
       }
 
@@ -359,6 +423,56 @@
         document.getElementById('cadNome').value = "";
         document.getElementById('cadSenha').value = "";
         carregarUsuarios();
+      }
+
+      async function executarCruzamentoHabilidades() {
+        const comp = document.getElementById('cruzComp').value;
+        const ano = document.getElementById('cruzAno').value;
+        const corpoTrab = document.getElementById('corpoTrabalhadas');
+        const corpoPend = document.getElementById('corpoPendentes');
+        const kpiCruz = document.getElementById('kpiCruzamento');
+        
+        corpoTrab.innerHTML = `<tr><td colspan="3" style="text-align:center;">⏳ Cruzando dados da matriz com os planos...</td></tr>`;
+        corpoPend.innerHTML = `<tr><td colspan="2" style="text-align:center;">⏳ Cruzando dados...</td></tr>`;
+        kpiCruz.style.display = 'none';
+
+        try {
+          const res = await fetch(URL_API, {
+            method: 'POST',
+            body: JSON.stringify({ acao: "cruzarHabilidades", componente: comp, ano: ano })
+          });
+          const r = await res.json();
+          if(r.status === "sucesso") {
+            kpiCruz.style.display = 'block';
+            kpiCruz.innerHTML = `📊 Matriz Total: ${r.totalMatriz} habilidades | ✅ Executadas: ${r.trabalhadas.length} | ❌ Pendentes: ${r.pendentes.length}`;
+            
+            let htmlTrab = "";
+            if(r.trabalhadas.length === 0) {
+              htmlTrab = `<tr><td colspan="3" style="text-align:center; color:#7f8c8d;">Nenhuma habilidade desta matriz foi trabalhada ainda.</td></tr>`;
+            } else {
+              r.trabalhadas.forEach(t => {
+                htmlTrab += `<tr><td><strong>[${t.trimestre}]</strong><br>${t.unidade}</td><td>${t.habilidade}</td><td>${t.professor}<br><small>${t.turma}</small></td></tr>`;
+              });
+            }
+            corpoTrab.innerHTML = htmlTrab;
+
+            let htmlPend = "";
+            if(r.pendentes.length === 0) {
+              htmlPend = `<tr><td colspan="2" style="text-align:center; color:#27ae60; font-weight:bold;">🎉 Parabéns! Todas as habilidades da matriz foram trabalhadas.</td></tr>`;
+            } else {
+              r.pendentes.forEach(p => {
+                htmlPend += `<tr><td><strong>[${p.trimestre}]</strong><br>${p.unidade}</td><td>${p.habilidade}</td></tr>`;
+              });
+            }
+            corpoPend.innerHTML = htmlPend;
+          } else {
+            corpoTrab.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">${r.mensagem}</td></tr>`;
+            corpoPend.innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">${r.mensagem}</td></tr>`;
+          }
+        } catch(e) {
+          corpoTrab.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Erro de conexão ao cruzar habilidades.</td></tr>`;
+          corpoPend.innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">Erro de conexão.</td></tr>`;
+        }
       }
 
       var registrosGlobais = [];
