@@ -15,21 +15,26 @@ async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
-  if (!usuario || !senha) return;
+  if (!usuario || !senha) {
+    msg.innerText = "Preencha usuário e senha.";
+    return;
+  }
 
   msg.innerText = "⏳ Autenticando Especialista...";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "login", usuario, senha }) });
     const r = await res.json();
-    if (r.status === "sucesso" && r.perfil === "Especialista") {
+    if (r.status === "sucesso" && r.perfil.toLowerCase() === "especialista") {
       document.getElementById('telaLogin').style.display = 'none';
       document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
       document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Gestor Logado: ${r.nome}`;
       carregarListaUsuarios();
     } else {
-      msg.innerText = "Acesso Negado: Credenciais inválidas ou sem permissão de Gestão.";
+      msg.innerText = "Acesso Negado: Credenciais inválidas ou sem perfil de Especialista.";
     }
-  } catch (e) { msg.innerText = "⚠️ Erro de conexão com o servidor."; }
+  } catch (e) { 
+    msg.innerText = "⚠️ Erro de conexão com o servidor."; 
+  }
 }
 
 function sairDoSistema() {
@@ -253,9 +258,6 @@ async function gerarRaioX() {
   } catch(e) { painel.innerHTML = "<p style='text-align:center; color:#ef4444;'>Erro ao gerar o Raio-X.</p>"; }
 }
 
-// ==========================================
-// FERRAMENTA DE IMPORTAÇÃO EM LOTE DA MATRIZ
-// ==========================================
 async function processarEEnviarMatriz() {
   const texto = document.getElementById('textoMatrizBruto').value.trim();
   const disciplina = document.getElementById('impDisciplina').value;
@@ -277,13 +279,11 @@ async function processarEEnviarMatriz() {
     var l = linhas[i].trim();
     if (!l) continue;
 
-    // Detecta se a linha é uma unidade temática
     if (l.toLowerCase().includes("unidade") || l.toLowerCase().includes("eixo") || l.toLowerCase().includes("práticas de linguagem")) {
       unidadeAtual = l;
       continue;
     }
 
-    // Se a linha tem padrão de habilidade (ex: EF06...)
     if (l.match(/\(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?\)/) || l.length > 20) {
       itensLote.push({
         disciplina: disciplina,
@@ -303,7 +303,6 @@ async function processarEEnviarMatriz() {
   }
 
   if (itensLote.length === 0) {
-    // Se não achou códigos específicos, joga cada linha significativa como habilidade
     linhas.forEach(function(l) {
       if(l.trim().length > 5) {
         itensLote.push({
