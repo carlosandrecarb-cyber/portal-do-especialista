@@ -50,6 +50,10 @@
     @media(max-width: 900px) { .barra-filtros { grid-template-columns: 1fr 1fr; } }
     @media(max-width: 500px) { .barra-filtros { grid-template-columns: 1fr; } }
     .label-filtro { font-size: 0.85rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; }
+
+    /* ESTILO PARA OS BLOCOS SEPARADOS POR COMPONENTE */
+    .card-componente { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 25px; margin-bottom: 25px; box-shadow: var(--sombra-card); }
+    .card-componente h4 { margin-top: 0; color: var(--cor-principal); font-size: 1.25rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
   </style>
 </head>
 <body>
@@ -128,14 +132,16 @@
 
     <!-- 3. RAIO-X CURRICULAR -->
     <div id="abaRaioX" class="tab-content">
-      <h3>📈 Raio-X de Cobertura Curricular (Ao Vivo)</h3>
+      <h3>📈 Raio-X de Cobertura Curricular (Por Componente)</h3>
       <div class="barra-filtros">
         <div><label class="label-filtro">Professor</label><select id="rxFiltroProf"><option value="">👩‍🏫 Todos os Professores</option></select></div>
         <div><label class="label-filtro">Componente</label><select id="rxFiltroComp"><option value="">📚 Todos os Componentes</option></select></div>
         <div><label class="label-filtro">Turma</label><select id="rxFiltroTurma"><option value="">🏷️ Todas as Turmas</option></select></div>
         <div><label class="label-filtro">Trimestre</label><select id="rxFiltroTrimestre"><option value="">⏳ Todos os Trimestres</option></select></div>
       </div>
-      <button onclick="gerarRaioX()" class="btn-primario" style="width: 100%; margin-bottom: 20px; font-size: 1.1rem;">🔍 Analisar Matriz Curricular</button>
+      <button onclick="gerarRaioX()" class="btn-primario" style="width: 100%; margin-bottom: 25px; font-size: 1.1rem;">🔍 Analisar Matriz Curricular</button>
+      
+      <!-- Onde os blocos separados por componente aparecerão -->
       <div id="painelRaioX"></div>
     </div>
 
