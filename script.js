@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // SEU LINK
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // COLE SEU LINK AQUI
 var dadosPlanosGlobais = [];
 
 function mudarAba(abaId, btn) {
@@ -25,8 +25,6 @@ async function fazerLogin() {
       document.getElementById('telaLogin').style.display = 'none';
       document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
       document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Gestor Logado: ${r.nome}`;
-      
-      // Carrega os dados da aba principal (Usuários) logo ao entrar
       carregarListaUsuarios();
     } else {
       msg.innerText = "Acesso Negado: Credenciais inválidas ou sem permissão de Gestão.";
@@ -41,9 +39,6 @@ function sairDoSistema() {
   mudarAba('abaUsuarios', document.querySelector('.tabs button')); 
 }
 
-// ==========================================
-// ABA: USUÁRIOS (Nova aba principal)
-// ==========================================
 async function carregarListaUsuarios() {
   const container = document.getElementById('tabelaUsuariosContainer');
   container.innerHTML = "<p style='text-align:center;'>⏳ Carregando usuários...</p>";
@@ -78,9 +73,6 @@ function editarUsuario(linha, nome, email, senha, perfil, comp, turma) {
 }
 function limparFormUsuario() { document.querySelectorAll('#abaUsuarios input').forEach(i => i.value = ""); }
 
-// ==========================================
-// ABA: PLANOS DE AULA GERADOS
-// ==========================================
 async function carregarPlanosSupervisao() {
   const container = document.getElementById('tabelaPlanosContainer');
   container.innerHTML = "<p style='text-align:center;'>⏳ Buscando planos...</p>";
@@ -101,10 +93,10 @@ function popularDropdownsFiltro(planos) {
   const turmas = [...new Set(planos.map(p => p.turma))].filter(Boolean).sort();
   const trimestres = [...new Set(planos.map(p => p.trimestre))].filter(Boolean).sort();
 
-  preencherSelect('filtroProf', profs, '👩‍🏫 Todos os Professores');
-  preencherSelect('filtroComp', comps, '📚 Todos os Componentes');
-  preencherSelect('filtroTurma', turmas, '🏷️ Todas as Turmas');
-  preencherSelect('filtroTrimestre', trimestres, '⏳ Todos os Trimestres');
+  preencherSelect('filtroProf', profs, '👩‍🏫 Todos');
+  preencherSelect('filtroComp', comps, '📚 Todos');
+  preencherSelect('filtroTurma', turmas, '🏷️ Todas');
+  preencherSelect('filtroTrimestre', trimestres, '⏳ Todos');
 
   preencherSelect('rxFiltroProf', profs, '👩‍🏫 Todos os Professores');
   preencherSelect('rxFiltroComp', comps, '📚 Todos os Componentes');
@@ -180,20 +172,12 @@ async function alterarStatusPlano(linha, novoStatus) {
   } catch(e) { alert("Falha na conexão ao atualizar status."); }
 }
 
-// ==========================================
-// ABA: RAIO-X CURRICULAR
-// ==========================================
 async function gerarRaioX() {
   const painel = document.getElementById('painelRaioX');
   const comp = document.getElementById('rxFiltroComp').value;
   const turma = document.getElementById('rxFiltroTurma').value;
   const prof = document.getElementById('rxFiltroProf').value;
   const trim = document.getElementById('rxFiltroTrimestre').value;
-  
-  if(!comp || !turma) {
-    alert("⚠️ Por favor, selecione pelo menos o COMPONENTE e a TURMA para gerar o Raio-X.");
-    return;
-  }
   
   painel.innerHTML = "<p style='text-align:center;'>⏳ Cruzando matriz curricular com planos enviados...</p>";
   
@@ -205,23 +189,24 @@ async function gerarRaioX() {
       const total = r.totalMatriz;
       const dadas = r.trabalhadas.length;
       const perc = total > 0 ? Math.round((dadas / total) * 100) : 0;
+      const rotuloFiltro = (turma ? turma : "Geral da Escola") + " | " + (comp ? comp : "Todas as Disciplinas");
       
       let html = `<div style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; text-align:center; margin-bottom:20px; box-shadow: var(--sombra-card);">
                     <h2 style="margin:0; color:#1e3a8a; font-size:2rem;">${perc}% Concluído</h2>
-                    <p style="color:#64748b; margin-top:5px;">${dadas} de ${total} habilidades trabalhadas em ${turma}</p>
+                    <p style="color:#64748b; margin-top:5px;">${dadas} de ${total} habilidades trabalhadas (${rotuloFiltro})</p>
                     <div style="width:100%; background:#e2e8f0; height:12px; border-radius:6px; margin-top:10px; overflow:hidden;">
                       <div style="width:${perc}%; background:#10b981; height:100%;"></div>
                     </div>
                   </div>`;
                   
       html += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                <div style="background:#d1fae5; padding:15px; border-radius:12px; border:1px solid #a7f3d0;">
+                <div style="background:#d1fae5; padding:15px; border-radius:12px; border:1px solid #a7f3d0; max-height:450px; overflow-y:auto;">
                   <h4 style="color:#065f46; margin-top:0;">✅ Habilidades Dadas</h4>
                   <ul style="padding-left:20px; font-size:0.9rem; color:#064e3b;">`;
       r.trabalhadas.forEach(h => html += `<li style="margin-bottom:8px;">${h.habilidade} <br><small style="color:#047857;">(Prof. ${h.professor})</small></li>`);
       if(r.trabalhadas.length === 0) html += "<li>Nenhuma registrada neste filtro.</li>";
       html += `</ul></div>
-                <div style="background:#fef3c7; padding:15px; border-radius:12px; border:1px solid #fde68a;">
+                <div style="background:#fef3c7; padding:15px; border-radius:12px; border:1px solid #fde68a; max-height:450px; overflow-y:auto;">
                   <h4 style="color:#92400e; margin-top:0;">⚠️ Faltam Ensinar</h4>
                   <ul style="padding-left:20px; font-size:0.9rem; color:#78350f;">`;
       r.pendentes.forEach(h => html += `<li style="margin-bottom:8px;">${h.habilidade}</li>`);
@@ -233,9 +218,6 @@ async function gerarRaioX() {
   } catch(e) { painel.innerHTML = "<p>Erro ao gerar Raio-X.</p>"; }
 }
 
-// ==========================================
-// ABA: RELATÓRIOS (BOTÃO NOVO)
-// ==========================================
 async function gerarRelatorio() {
   const btn = document.getElementById('btnGerarRelatorio');
   const areaLink = document.getElementById('areaLinkRelatorio');
@@ -243,7 +225,7 @@ async function gerarRelatorio() {
   
   btn.innerText = "⏳ Auditando Matrizes e Gerando Documento...";
   btn.disabled = true;
-  areaLink.style.display = "none"; // Esconde o link antigo enquanto carrega o novo
+  areaLink.style.display = "none";
 
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo }) });
@@ -254,7 +236,6 @@ async function gerarRelatorio() {
       btn.innerText = "📑 Gerar Novo Documento";
       btn.disabled = false;
       
-      // Exibe o link na tela
       areaLink.style.display = "block";
       areaLink.innerHTML = `<a href="${r.url}" target="_blank" style="display:block; padding:15px; background:#10b981; color:white; text-decoration:none; border-radius:10px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">📄 CLIQUE AQUI PARA ABRIR O RELATÓRIO</a>`;
     } else {
