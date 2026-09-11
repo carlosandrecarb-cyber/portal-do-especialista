@@ -1,4 +1,4 @@
-// Substitua pela SUA URL correta se necessário, mas essa é a que estamos usando
+// Substitua pela SUA URL correta se necessário
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 
 function mudarAba(abaId, btn) {
@@ -212,19 +212,44 @@ async function gerarRelatorio() {
   const periodo = document.getElementById('tipoRelatorio').value;
   btn.innerText = "⏳ Auditando e Gerando Relatório...";
   btn.disabled = true;
+  
+  // Reseta o estilo do botão caso tenha sido usado antes
+  btn.style.background = "var(--cor-secundaria)";
+  btn.style.boxShadow = "none";
+  btn.onclick = gerarRelatorio; // Restaura a função original
 
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo }) });
     const r = await res.json();
+    
     if(r.status === "sucesso") {
-      alert("✅ Relatório gerado! O Google Docs será aberto em uma nova aba.");
-      window.open(r.url, '_blank');
+      alert("✅ Relatório gerado com sucesso! Clique no botão verde para abri-lo.");
+      
+      // SOLUÇÃO DO POP-UP: Transforma o botão em um link clicável seguro
+      btn.innerText = "📄 CLIQUE AQUI PARA ABRIR O RELATÓRIO";
+      btn.style.background = "#10b981"; // Muda para verde
+      btn.style.boxShadow = "0 0 15px rgba(16, 185, 129, 0.4)";
+      btn.disabled = false;
+      
+      // Ao clicar de novo, ele abre a nova guia (permitido pelo navegador)
+      btn.onclick = function() {
+        window.open(r.url, '_blank');
+        // Depois de abrir, restaura o botão para o estado original
+        setTimeout(() => {
+          btn.innerText = "📑 Gerar Documento PDF/Word";
+          btn.style.background = "var(--cor-secundaria)";
+          btn.style.boxShadow = "none";
+          btn.onclick = gerarRelatorio;
+        }, 1000);
+      };
+      
     } else {
       alert("⚠️ Erro: " + r.mensagem);
+      btn.innerText = "📑 Gerar Documento PDF/Word";
+      btn.disabled = false;
     }
   } catch(e) {
     alert("Erro de comunicação ao gerar relatório.");
-  } finally {
     btn.innerText = "📑 Gerar Documento PDF/Word";
     btn.disabled = false;
   }
