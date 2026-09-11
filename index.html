@@ -1,742 +1,166 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Portal do Especialista - Gestão Educacional</title>
-    <style>
-      :root { --cor-fundo: #f4f6f9; --cor-principal: #2c3e50; --cor-secundaria: #27ae60; --cor-texto: #333; --borda: #dcdde1; }
-      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--cor-fundo); color: var(--cor-texto); margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-      .container { background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 1150px; margin-bottom: 20px; }
-      h1, h2, h3 { color: var(--cor-principal); margin-top: 0; }
-      input, select, textarea { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid var(--borda); border-radius: 8px; box-sizing: border-box; font-size: 1rem; font-family: inherit; }
-      button { background-color: var(--cor-secundaria); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 1rem; transition: 0.2s; width: 100%; }
-      button:hover { filter: brightness(1.1); }
-      header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #ecf0f1; padding-bottom: 15px; margin-bottom: 20px; }
-      .btn-sair { background: #e74c3c; width: auto; padding: 8px 15px; font-size: 0.9rem; }
-      .tabs { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-      .tab-btn { flex: 1; background: #e0e0e0; color: #333; border-radius: 8px; padding: 12px; border: none; cursor: pointer; font-weight: bold; text-align: center; }
-      .tab-btn.active { background: var(--cor-principal); color: white; }
-      .tab-content { display: none; }
-      .tab-content.active { display: block; }
-      
-      .grupo-selecao { background: #fff; border: 1px solid #dcdde1; border-radius: 8px; padding: 12px; margin-bottom: 15px; max-height: 180px; overflow-y: auto; }
-      .grid-check { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
-      .check-item { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
-      .check-item input { width: 18px; height: 18px; margin: 0; accent-color: var(--cor-secundaria); }
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Portal do Especialista | Gestão Pedagógica</title>
+  <style>
+    :root { --cor-principal: #1e3a8a; --cor-secundaria: #2563eb; --cor-fundo: #f8fafc; --sombra-suave: 0 8px 30px rgba(0,0,0,0.08); }
+    body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: var(--cor-fundo); margin: 0; padding: 0; color: #1e293b; }
+    header { background: linear-gradient(135deg, var(--cor-principal), #0f172a); color: white; padding: 25px 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; position: relative; }
+    header h2 { margin: 10px 0 5px 0; font-size: 1.6rem; font-weight: 700; }
+    header p { margin: 0; font-size: 0.95rem; color: #cbd5e1; }
+    .logo-escola { max-width: 90%; height: auto; max-height: 90px; object-fit: contain; border-radius: 12px; background: white; padding: 6px; }
+    .btn-sair { position: absolute; top: 20px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-sair:hover { background: #c0392b; }
+    .container { max-width: 1000px; margin: 30px auto; background: white; padding: 35px; border-radius: 18px; box-shadow: var(--sombra-suave); border: 1px solid #e2e8f0; }
+    
+    .tabs { display: flex; gap: 12px; margin-bottom: 25px; background: #f1f5f9; padding: 6px; border-radius: 14px; overflow-x: auto; }
+    .tab-btn { flex: 1; padding: 14px; min-width: 150px; border: none; background: transparent; font-weight: 600; font-size: 0.95rem; color: #475569; cursor: pointer; transition: all 0.3s ease; border-radius: 10px; text-align: center; white-space: nowrap; }
+    .tab-btn.active { background: white; color: var(--cor-principal); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    
+    h3 { font-size: 1.3rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--cor-principal); margin-top: 20px; display: flex; align-items: center; gap: 8px; }
+    
+    /* Formulários e Inputs */
+    .bloco-campo { margin-bottom: 20px; }
+    .bloco-campo label { display: block; font-weight: 600; margin-bottom: 8px; color: #334155; font-size: 0.95rem; }
+    input[type="text"], input[type="password"], input[type="email"], select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-family: inherit; font-size: 1rem; transition: 0.2s; background: #fdfdfd; }
+    input:focus, select:focus { border-color: var(--cor-secundaria); outline: none; background: white; }
+    
+    .btn-primario { background: var(--cor-secundaria); color: white; padding: 12px 24px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-primario:hover { background: #1d4ed8; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); }
+    .btn-secundario { background: #e2e8f0; color: #475569; padding: 12px 24px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+    .btn-secundario:hover { background: #cbd5e1; }
+    
+    /* Tabelas */
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; }
+    th { background: var(--cor-principal); color: white; padding: 12px; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    tr:hover { background: #f8fafc; }
+    .badge-status { padding: 5px 10px; border-radius: 20px; font-weight: bold; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
 
-      table.preview-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.85rem; }
-      table.preview-table th, table.preview-table td { border: 1px solid #ddd; padding: 10px; text-align: left; vertical-align: top; word-break: break-word; }
-      table.preview-table th { background: #2c3e50; color: white; }
+  <!-- TELA DE LOGIN (WORKSPACE) -->
+  <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
+    <div style="background: rgba(255,255,255,0.08); padding: 40px; border-radius: 24px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); text-align: center; max-width: 400px; width: 90%;">
+      <h2 style="margin: 0 0 5px 0;">Área de Gestão</h2>
+      <p style="margin-bottom: 25px; color: #94a3b8;">Portal do Especialista</p>
+      <input type="text" id="loginUsuario" placeholder="👤 Usuário (Especialista)" style="margin-bottom: 12px;">
+      <input type="password" id="loginSenha" placeholder="🔒 Senha" style="margin-bottom: 20px;">
+      <button onclick="fazerLogin()" class="btn-primario" style="width: 100%; padding: 16px; font-size: 1.1rem;">Acessar Painel 🚀</button>
+      <p id="msgLogin" style="color: #fca5a5; margin-top: 15px; font-weight: 600;"></p>
+    </div>
+  </div>
 
-      .filtros-box { display: flex; gap: 15px; background: #eef2f5; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
-      .filtro-item { flex: 1; }
-      .filtro-item label { font-weight: bold; font-size: 0.85rem; color: #555; display: block; margin-bottom: 5px; }
-      .card-kpi { background: #e8f8f5; border-left: 4px solid var(--cor-secundaria); padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: bold; color: #145a32; }
-      .relatorio-card { background: #f4ecf7; border: 2px solid #8e44ad; padding: 18px; border-radius: 8px; margin-bottom: 20px; }
-      .btn-status { padding: 4px 8px; font-size: 0.75rem; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; margin: 2px; }
-      
-      .guia-card { background: #ebf5fb; border-left: 4px solid #2980b9; padding: 12px 15px; border-radius: 6px; margin-bottom: 20px; font-size: 0.9rem; color: #1b4f72; }
-      .guia-card h4 { margin: 0 0 5px 0; color: #2471a3; }
-      .instrucao-box { background: #fef9e7; border: 1px solid #f39c12; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; color: #7d6608; }
-    </style>
-  </head>
-  <body>
+  <!-- CABEÇALHO -->
+  <header>
+    <h2>⚙️ Gestão Pedagógica</h2>
+    <p>Acompanhamento de Planos, Relatórios e Usuários</p>
+    <div id="infoUsuarioBoasVindas" style="margin-top: 10px; background: rgba(255,255,255,0.15); padding: 6px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; color: #fef08a; display: none;"></div>
+    <button class="btn-sair" onclick="sairDoSistema()">Sair 🚪</button>
+  </header>
 
-    <div style="text-align: center; margin-bottom: 20px; width: 100%;">
-      <img src="https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5" alt="Logo Escola" style="max-height: 90px; display: block; margin: 0 auto 10px auto;">
-      <h1 style="color: var(--cor-principal); margin: 0; font-size: 1.5rem;">Portal do Especialista - Gestão Educacional</h1>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" onclick="mudarAba('abaSupervisao', this)">📋 Planos Recebidos</button>
+      <button class="tab-btn" onclick="mudarAba('abaUsuarios', this)">👥 Gestão de Usuários</button>
+      <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatórios & Backup</button>
     </div>
 
-    <!-- Tela de Login -->
-    <div id="telaLogin" class="container">
-      <h2>Acesso da Gestão Escolar</h2>
-      <input type="text" id="loginUsuario" placeholder="Usuário (ex: Carlos André Vieira)">
-      <input type="password" id="loginSenha" placeholder="Senha (ex: 1234)">
-      <button onclick="fazerLogin()">Acessar Painel</button>
-      <p id="msgLogin" style="color: #e74c3c; font-weight: bold; text-align: center; margin-top: 15px;"></p>
+    <!-- ABA 1: SUPERVISÃO DE PLANOS -->
+    <div id="abaSupervisao" class="tab-content active">
+      <h3>📋 Controle de Planos de Aula (Recebidos)</h3>
+      <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 0.95rem; color: #1e3a8a;">
+        Aqui você visualiza todos os planos enviados pelos professores, pode acessar os documentos no Drive e aprovar ou devolver para ajuste.
+      </div>
+      <button class="btn-primario" onclick="carregarPlanosSupervisao()" style="margin-bottom: 15px;">🔄 Atualizar Lista de Planos</button>
+      <div id="tabelaPlanosContainer" style="overflow-x: auto;">
+        <p style="color:#64748b;">Clique em "Atualizar Lista" para carregar.</p>
+      </div>
     </div>
 
-    <!-- Painel Principal -->
-    <div id="painelEspecialista" class="container" style="display: none;">
-      <header>
-        <div>
-          <h2 style="margin:0;">Centro de Comando</h2>
-          <span id="infoUsuarioBoasVindas" style="font-size: 0.85rem; color: #666;"></span>
-        </div>
-        <button class="btn-sair" onclick="location.reload()">Sair</button>
-      </header>
-
-      <div class="tabs">
-        <button class="tab-btn active" onclick="mudarAba('gestaoUsuarios', this)">👥 Professores</button>
-        <button class="tab-btn" onclick="mudarAba('extratorPDF', this)">📄 Importador por Copia e Cola</button>
-        <button class="tab-btn" onclick="mudarAba('cruzamentoHabs', this)">🎯 Cruzamento de Habilidades</button>
-        <button class="tab-btn" onclick="mudarAba('monitoramento', this)">📊 Monitoramento & Relatórios</button>
-        <button class="tab-btn" onclick="mudarAba('configuracoes', this)">⚙️ Sistema</button>
-      </div>
-
-      <!-- Aba 1: Gestão de Professores -->
-      <div id="gestaoUsuarios" class="tab-content active">
-        <div class="guia-card">
-          <h4>📌 Guia Operacional - Gestão de Acessos</h4>
-          <p>Cadastre ou edite os docentes da rede. Defina nome, senha, perfil e selecione os componentes e turmas.</p>
-        </div>
+    <!-- ABA 2: GESTÃO DE USUÁRIOS (A MÁGICA ACONTECE AQUI) -->
+    <div id="abaUsuarios" class="tab-content">
+      <h3>👥 Gestão de Professores e Acessos</h3>
+      
+      <div style="background: #f8fafc; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+        <h4 style="margin-top:0; color:#334155; margin-bottom:15px;">Cadastrar ou Editar Usuário</h4>
+        <input type="hidden" id="usuarioLinha">
         
-        <h3>Gerenciar Acessos da Rede</h3>
-        <div style="background: #eef2f5; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <input type="hidden" id="linhaUsuario">
-          
-          <div style="display: flex; gap: 10px;">
-            <div style="flex: 2;"><label>Nome Completo:</label><input type="text" id="cadNome" placeholder="Ex: Maria da Silva"></div>
-            <div style="flex: 1;"><label>Senha:</label><input type="text" id="cadSenha" placeholder="Ex: 1234"></div>
-            <div style="flex: 1;"><label>Perfil:</label><select id="cadPerfil"><option value="Professor">Professor</option><option value="Especialista">Especialista</option></select></div>
-          </div>
-
-          <label>Componentes Curriculares:</label>
-          <div class="grupo-selecao">
-            <div class="grid-check" id="listaCheckComponentes">
-              <label class="check-item"><input type="checkbox" name="chkComp" value="Matemática"> Matemática</label>
-              <label class="check-item"><input type="checkbox" name="chkComp" value="Língua Portuguesa"> Língua Portuguesa</label>
-              <label class="check-item"><input type="checkbox" name="chkComp" value="Geografia"> Geografia</label>
-              <label class="check-item"><input type="checkbox" name="chkComp" value="História"> História</label>
-              <label class="check-item"><input type="checkbox" name="chkComp" value="Ciências"> Ciências</label>
-              <label class="check-item"><input type="checkbox" name="chkComp" value="Ensino Religioso"> Ensino Religioso</label>
-              <label class="check-item"><input type="checkbox" name="chkComp" value="Arte"> Arte</label>
-              <label class="check-item"><input type="checkbox" name="chkComp" value="Educação Física"> Educação Física</label>
-              <label class="check-item"><input type="checkbox" name="chkComp" value="Língua Inglesa"> Língua Inglesa</label>
-            </div>
-          </div>
-
-          <label>Turmas Atendidas:</label>
-          <div class="grupo-selecao">
-            <div class="grid-check" id="listaCheckTurmas">
-              <label class="check-item"><input type="checkbox" name="chkTurma" value="6º REG 1"> 6º REG 1</label>
-              <label class="check-item"><input type="checkbox" name="chkTurma" value="6º REG 2"> 6º REG 2</label>
-              <label class="check-item"><input type="checkbox" name="chkTurma" value="7º REG 1"> 7º REG 1</label>
-              <label class="check-item"><input type="checkbox" name="chkTurma" value="7º REG 2"> 7º REG 2</label>
-              <label class="check-item"><input type="checkbox" name="chkTurma" value="8º REG 1"> 8º REG 1</label>
-              <label class="check-item"><input type="checkbox" name="chkTurma" value="8º REG 2"> 8º REG 2</label>
-              <label class="check-item"><input type="checkbox" name="chkTurma" value="9º REG 1"> 9º REG 1</label>
-              <label class="check-item"><input type="checkbox" name="chkTurma" value="9º REG 2"> 9º REG 2</label>
-            </div>
-          </div>
-
-          <button onclick="salvarUsuario()" style="background: #27ae60; margin-top: 10px;">💾 Salvar Usuário na Planilha</button>
-        </div>
-        <div id="listaUsuarios">Carregando...</div>
-      </div>
-
-      <!-- Aba 2: Importador por Copia e Cola (Texto Totalmente Visível) -->
-      <div id="extratorPDF" class="tab-content">
-        <div class="guia-card">
-          <h4>📌 Guia Operacional - Importador Instantâneo</h4>
-          <p>Cole o texto selecionado do PDF oficial. O sistema organiza tudo sozinho na tela, com visualização completa do conteúdo.</p>
-        </div>
-
-        <div class="instrucao-box">
-          <strong>💡 Lembrete de Uso:</strong> Abra o PDF oficial no seu computador, selecione o texto completo da página (desde <em>"UNIDADE TEMÁTICA"</em> até <em>"EVIDÊNCIAS DE CONSOLIDAÇÃO"</em>), aperte <strong>Ctrl + C</strong> para copiar e cole na caixa abaixo (Ctrl + V). Tudo aparecerá visível por completo na tabela abaixo!
-        </div>
-
-        <h3>📄 Importador por Copia e Cola (Matriz Curricular)</h3>
-        
-        <div style="display: flex; gap: 10px; margin-bottom: 15px; background: #ecf0f1; padding: 15px; border-radius: 8px;">
-          <div style="flex: 1;"><label>Ano:</label><select id="loteAno"><option value="6º Ano">6º Ano</option><option value="7º Ano">7º Ano</option><option value="8º Ano">8º Ano</option><option value="9º Ano" selected>9º Ano</option></select></div>
-          <div style="flex: 1;"><label>Trimestre:</label><select id="loteTrimestre"><option value="1º Trimestre">1º Trimestre</option><option value="2º Trimestre">2º Trimestre</option><option value="3º Trimestre" selected>3º Trimestre</option></select></div>
-          <div style="flex: 1;"><label>Disciplina:</label><select id="loteDisciplina"><option value="Matemática">Matemática</option><option value="Língua Portuguesa">Língua Portuguesa</option><option value="Geografia">Geografia</option><option value="História">História</option><option value="Ciências">Ciências</option><option value="Língua Inglesa">Língua Inglesa</option><option value="Arte">Arte</option><option value="Educação Física">Educação Física</option><option value="Ensino Religioso">Ensino Religioso</option></select></div>
-        </div>
-
-        <label><strong>Cole o texto copiado do PDF oficial aqui (Ctrl + V):</strong></label>
-        <textarea id="textoCopiadoInput" rows="8" placeholder="Cole aqui o texto copiado do PDF... (ex: UNIDADE TEMÁTICA Geometria HABILIDADES PRIORIZADAS...)"></textarea>
-        
-        <button onclick="processarTextoColado()" style="background: #27ae60; margin-bottom: 20px; font-size: 1.05rem;">⚙️ Organizar Dados e Gerar Pré-visualização</button>
-
-        <div id="areaConferencia" style="display:none; background: #fff; border: 2px solid #f39c12; padding: 20px; border-radius: 8px;">
-          <h3 style="color: #d35400; margin-top:0;">👁️ Tabela de Conferência (Conteúdo 100% Visível)</h3>
-          <!-- Removida a rolagem restritiva para exibir todo o texto na íntegra -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div>
-            <table class="preview-table" id="tabelaPreview">
-              <thead><tr><th>Ano</th><th>Trimestre</th><th>Unidade / Eixo</th><th>Habilidade Priorizada</th><th>Detalhes Curriculares (Rec/Sup/Gênero)</th></tr></thead>
-              <tbody id="corpoPreview"></tbody>
-            </table>
+            <label style="font-weight:bold; font-size:0.9rem; color:#475569;">Nome Completo</label>
+            <input type="text" id="cadNome" placeholder="Ex: Carlos André Vieira">
           </div>
-          <button onclick="enviarLotePlanilha()" style="background: #2980b9; margin-top: 20px; font-size: 1.1rem;">🚀 Confirmar e Salvar Tudo na Planilha do Google</button>
-        </div>
-
-        <p id="statusOCR" style="font-weight: bold; margin-top: 15px; color: #e67e22;"></p>
-      </div>
-
-      <!-- Aba 3: Cruzamento de Habilidades -->
-      <div id="cruzamentoHabs" class="tab-content">
-        <div class="guia-card">
-          <h4>📌 Guia Operacional - Cruzamento de Habilidades (Cobertura Curricular)</h4>
-          <p>Selecione a disciplina e o ano. O sistema cruza a matriz oficial com os planos executados pelos professores.</p>
-        </div>
-
-        <h3>🎯 Termômetro de Cobertura de Habilidades</h3>
-        <div class="filtros-box">
-          <div class="filtro-item">
-            <label>Componente Curricular:</label>
-            <select id="cruzComp">
-              <option value="Matemática">Matemática</option>
-              <option value="Língua Portuguesa">Língua Portuguesa</option>
-              <option value="Geografia">Geografia</option>
-              <option value="História">História</option>
-              <option value="Ciências">Ciências</option>
-              <option value="Língua Inglesa">Língua Inglesa</option>
-              <option value="Arte">Arte</option>
-              <option value="Educação Física">Educação Física</option>
-              <option value="Ensino Religioso">Ensino Religioso</option>
-            </select>
+          <div>
+            <label style="font-weight:bold; font-size:0.9rem; color:#475569;">E-mail Institucional (Trava de Segurança)</label>
+            <input type="email" id="cadEmail" placeholder="Ex: carlos@educacao.mg.gov.br">
           </div>
-          <div class="filtro-item">
-            <label>Ano / Série:</label>
-            <select id="cruzAno">
-              <option value="6º Ano">6º Ano</option>
-              <option value="7º Ano">7º Ano</option>
-              <option value="8º Ano">8º Ano</option>
-              <option value="9º Ano">9º Ano</option>
-            </select>
+          <div>
+            <label style="font-weight:bold; font-size:0.9rem; color:#475569;">Senha de Acesso</label>
+            <input type="text" id="cadSenha" placeholder="Ex: 1234">
           </div>
-          <div class="filtro-item" style="display: flex; align-items: flex-end;">
-            <button onclick="executarCruzamentoHabilidades()" style="background: #2980b9; margin-bottom: 15px;">🔍 Analisar Cobertura</button>
-          </div>
-        </div>
-
-        <div id="kpiCruzamento" class="card-kpi" style="display: none;"></div>
-
-        <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-          <div style="flex: 1; min-width: 450px;">
-            <h4 style="color: #27ae60; margin-bottom: 5px;">✅ Habilidades Já Trabalhadas (Executadas)</h4>
-            <div style="max-height: 400px; overflow-y: auto;">
-              <table class="preview-table">
-                <thead><tr><th>Trimestre / Unidade</th><th>Habilidade</th><th>Docente</th></tr></thead>
-                <tbody id="corpoTrabalhadas"><tr><td colspan="3" style="text-align:center;">Clique em Analisar Cobertura.</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-
-          <div style="flex: 1; min-width: 450px;">
-            <h4 style="color: #c0392b; margin-bottom: 5px;">❌ Habilidades Pendentes (Ainda não trabalhadas)</h4>
-            <div style="max-height: 400px; overflow-y: auto;">
-              <table class="preview-table">
-                <thead><tr><th>Trimestre / Unidade</th><th>Habilidade Pendente</th></tr></thead>
-                <tbody id="corpoPendentes"><tr><td colspan="2" style="text-align:center;">Clique em Analisar Cobertura.</td></tr></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Aba 4: Monitoramento e Relatórios -->
-      <div id="monitoramento" class="tab-content">
-        <div class="guia-card">
-          <h4>📌 Guia Operacional - Monitoramento & Feedback</h4>
-          <p>Acompanhe os envios. Use os botões 🟢 <em>Aprovado</em> e 🟡 <em>Requer Ajuste</em>. Gere relatórios em Google Docs com timbre escolar e dados em tabelas.</p>
-        </div>
-
-        <h3>📊 Monitoramento Pedagógico & Feedback Formativo</h3>
-        
-        <div class="relatorio-card">
-          <h4 style="margin-top:0; color:#512e5f;">📑 Gerador de Relatório Executivo (Cobertura, Habilidades & Evidências)</h4>
-          <p style="font-size: 0.85rem; color: #555; margin-bottom: 12px;">Selecione o recorte temporal para consolidar o relatório oficial da escola em Google Docs:</p>
-          <div style="display: flex; gap: 15px; align-items: flex-end;">
-            <div style="flex: 2;">
-              <label style="font-size:0.85rem; font-weight:bold; display:block; margin-bottom:5px;">Período de Análise:</label>
-              <select id="tipoRelatorio" style="margin-bottom:0;">
-                <option value="diario">Diário (Últimas 24 horas)</option>
-                <option value="semanal">Semanal (Últimos 7 dias)</option>
-                <option value="quinzenal" selected>Quinzenal (Últimos 15 dias)</option>
-                <option value="mensal">Mensal (Últimos 30 dias)</option>
-              </select>
-            </div>
-            <div style="flex: 1;">
-              <button onclick="gerarRelatorioExecutivo()" style="background: #8e44ad;">📑 Gerar Relatório</button>
-            </div>
-          </div>
-          <p id="msgRelatorio" style="margin-top: 12px; font-weight: bold; font-size: 0.9rem; color: #27ae60;"></p>
-        </div>
-
-        <div class="filtros-box">
-          <div class="filtro-item">
-            <label>Filtrar por Professor(a):</label>
-            <select id="filtroProfessor" onchange="filtrarSupervisao()"><option value="">Todos os Professores</option></select>
-          </div>
-          <div class="filtro-item">
-            <label>Filtrar por Componente:</label>
-            <select id="filtroComponente" onchange="filtrarSupervisao()">
-              <option value="">Todas as Disciplinas</option>
-              <option value="Matemática">Matemática</option>
-              <option value="Língua Portuguesa">Língua Portuguesa</option>
-              <option value="Geografia">Geografia</option>
-              <option value="História">História</option>
-              <option value="Ciências">Ciências</option>
-              <option value="Ensino Religioso">Ensino Religioso</option>
-              <option value="Arte">Arte</option>
-              <option value="Educação Física">Educação Física</option>
-              <option value="Língua Inglesa">Língua Inglesa</option>
+          <div>
+            <label style="font-weight:bold; font-size:0.9rem; color:#475569;">Perfil no Sistema</label>
+            <select id="cadPerfil">
+              <option value="Professor">Professor</option>
+              <option value="Especialista">Especialista (Direção/Supervisão)</option>
             </select>
           </div>
         </div>
 
-        <div id="kpiResumo" class="card-kpi">Carregando métricas de supervisão...</div>
-
-        <div style="max-height: 400px; overflow-y: auto;">
-          <table class="preview-table">
-            <thead>
-              <tr>
-                <th>Data</th>
-                <th>Professor(a) & Status</th>
-                <th>Componente / Turma</th>
-                <th>Unidade / Habilidades</th>
-                <th>Ações & Evidências</th>
-              </tr>
-            </thead>
-            <tbody id="corpoMonitoramento">
-              <tr><td colspan="5" style="text-align:center;">Carregando registros...</td></tr>
-            </tbody>
-          </table>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div>
+            <label style="font-weight:bold; font-size:0.9rem; color:#475569;">Disciplinas (Separadas por vírgula)</label>
+            <input type="text" id="cadComponentes" placeholder="Ex: Matemática, Arte">
+          </div>
+          <div>
+            <label style="font-weight:bold; font-size:0.9rem; color:#475569;">Turmas (Separadas por vírgula)</label>
+            <input type="text" id="cadTurmas" placeholder="Ex: 6º REG 1, 7º REG 2">
+          </div>
         </div>
+
+        <button onclick="salvarUsuario()" class="btn-primario">💾 Salvar / Atualizar Usuário</button>
+        <button onclick="limparFormUsuario()" class="btn-secundario" style="margin-left: 10px;">🧹 Limpar Campos</button>
       </div>
 
-      <!-- Aba 5: Sistema -->
-      <div id="configuracoes" class="tab-content">
-        <div class="guia-card">
-          <h4>📌 Guia Operacional - Sistema e Backup</h4>
-          <p>Realize cópias de segurança em formato Excel (.xlsx) enviadas diretamente para o seu e-mail cadastrado.</p>
-        </div>
-
-        <h3>Backup e Segurança</h3>
-        <button onclick="forcarBackup()" style="background: #e67e22;">📦 Enviar Backup para o E-mail</button>
-        <p id="msgBackup" style="margin-top: 15px; font-weight: bold;"></p>
+      <div id="tabelaUsuariosContainer" style="overflow-x: auto;">
+        <p style="color:#64748b;">Carregando usuários do sistema...</p>
       </div>
     </div>
 
-    <script>
-      const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
+    <!-- ABA 3: RELATÓRIOS E BACKUP -->
+    <div id="abaRelatorios" class="tab-content">
+      <h3>📊 Relatórios Executivos & Segurança</h3>
+      
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+        <div style="background: #fdfdfd; padding: 20px; border-radius: 14px; border: 1px solid #e2e8f0; text-align:center;">
+          <h4 style="margin-top:0; color:#1e3a8a;">Gerar Relatório de Cobertura</h4>
+          <p style="font-size:0.9rem; color:#64748b; margin-bottom:20px;">Auditoria de planos enviados, habilidades trabalhadas e inserção de evidências.</p>
+          <select id="tipoRelatorio" style="margin-bottom:15px;">
+            <option value="diario">Diário (Últimas 24h)</option>
+            <option value="semanal">Semanal (Últimos 7 dias)</option>
+            <option value="quinzenal">Quinzenal (Últimos 15 dias)</option>
+            <option value="mensal" selected>Mensal (Últimos 30 dias)</option>
+          </select>
+          <button onclick="gerarRelatorio()" class="btn-primario" style="width:100%;" id="btnGerarRelatorio">📑 Gerar Documento PDF/Word</button>
+        </div>
 
-      function mudarAba(abaId, btn) {
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
-        document.getElementById(abaId).classList.add('active');
-        btn.classList.add('active');
-        
-        if(abaId === 'monitoramento') {
-          carregarDadosSupervisao();
-        } else if(abaId === 'cruzamentoHabs') {
-          executarCruzamentoHabilidades();
-        }
-      }
+        <div style="background: #fffbeb; padding: 20px; border-radius: 14px; border: 1px solid #fde68a; text-align:center;">
+          <h4 style="margin-top:0; color:#d97706;">Cópia de Segurança (Backup)</h4>
+          <p style="font-size:0.9rem; color:#64748b; margin-bottom:20px;">Faça o download de toda a matriz e do banco de dados completo para o seu e-mail institucional.</p>
+          <button onclick="forcarBackup()" class="btn-primario" style="background:#d97706; width:100%; margin-top: 55px;" id="btnBackup">📦 Enviar Backup para meu E-mail</button>
+        </div>
+      </div>
+    </div>
 
-      async function fazerLogin() {
-        const usuario = document.getElementById('loginUsuario').value.trim();
-        const senha = document.getElementById('loginSenha').value.trim();
-        const msg = document.getElementById('msgLogin');
-        
-        if(!usuario || !senha) {
-          msg.innerText = "Preencha o usuário e a senha!";
-          return;
-        }
+  </div>
 
-        msg.innerText = "⏳ Autenticando...";
-        try {
-          const res = await fetch(URL_API, {
-            method: 'POST',
-            body: JSON.stringify({ acao: "login", usuario, senha })
-          });
-          const r = await res.json();
-
-          if(r.status === "sucesso") {
-            document.getElementById('telaLogin').style.display = 'none';
-            document.getElementById('painelEspecialista').style.display = 'block';
-            document.getElementById('infoUsuarioBoasVindas').innerText = `${r.nome} (${r.perfil})`;
-            carregarUsuarios();
-          } else {
-            msg.innerText = r.mensagem || "Usuário ou senha incorretos.";
-          }
-        } catch(e) {
-          msg.innerText = "⚠️ Erro de conexão com o servidor.";
-          console.error(e);
-        }
-      }
-
-      async function carregarUsuarios() {
-        try {
-          const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
-          const r = await res.json();
-          let html = "";
-          if(r.usuarios) {
-            r.usuarios.forEach(u => {
-              html += `<div style="background:#f9f9f9; padding:10px; border-left:4px solid #2980b9; margin-bottom:8px; display:flex; justify-content:space-between; align-items:center;">
-                <div><strong>${u.nome}</strong> (${u.perfil})<br><small>Comp: ${u.componentes} | Turmas: ${u.turmas}</small></div>
-                <button onclick='editarUsuario(${JSON.stringify(u)})' style="width:auto; padding:5px 10px; background:#f39c12;">Editar</button>
-              </div>`;
-            });
-          }
-          document.getElementById('listaUsuarios').innerHTML = html || "Nenhum usuário encontrado.";
-        } catch(e) {
-          document.getElementById('listaUsuarios').innerText = "Erro ao carregar usuários.";
-        }
-      }
-
-      function marcarCheckboxesPorTexto(nomeInput, texto) {
-        const checkboxes = document.querySelectorAll(`input[name="${nomeInput}"]`);
-        const lista = texto ? texto.split(',').map(s => s.trim()) : [];
-        checkboxes.forEach(cb => { cb.checked = lista.includes(cb.value); });
-      }
-
-      function obterValoresCheckboxes(nomeInput) {
-        const checkboxes = document.querySelectorAll(`input[name="${nomeInput}"]:checked`);
-        return Array.from(checkboxes).map(cb => cb.value).join(', ');
-      }
-
-      function editarUsuario(u) {
-        document.getElementById('linhaUsuario').value = u.linha;
-        document.getElementById('cadNome').value = u.nome;
-        document.getElementById('cadSenha').value = u.senha;
-        document.getElementById('cadPerfil').value = u.perfil;
-        marcarCheckboxesPorTexto('chkComp', u.componentes);
-        marcarCheckboxesPorTexto('chkTurma', u.turmas);
-      }
-
-      async function salvarUsuario() {
-        const u = {
-          linha: document.getElementById('linhaUsuario').value,
-          nome: document.getElementById('cadNome').value,
-          senha: document.getElementById('cadSenha').value,
-          perfil: document.getElementById('cadPerfil').value,
-          componentes: obterValoresCheckboxes('chkComp'),
-          turmas: obterValoresCheckboxes('chkTurma')
-        };
-        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: u }) });
-        const r = await res.json();
-        alert(r.mensagem);
-        document.getElementById('linhaUsuario').value = "";
-        document.getElementById('cadNome').value = "";
-        document.getElementById('cadSenha').value = "";
-        carregarUsuarios();
-      }
-
-      async function executarCruzamentoHabilidades() {
-        const comp = document.getElementById('cruzComp').value;
-        const ano = document.getElementById('cruzAno').value;
-        const corpoTrab = document.getElementById('corpoTrabalhadas');
-        const corpoPend = document.getElementById('corpoPendentes');
-        const kpiCruz = document.getElementById('kpiCruzamento');
-        
-        corpoTrab.innerHTML = `<tr><td colspan="3" style="text-align:center;">⏳ Cruzando dados da matriz com os planos...</td></tr>`;
-        corpoPend.innerHTML = `<tr><td colspan="2" style="text-align:center;">⏳ Cruzando dados...</td></tr>`;
-        kpiCruz.style.display = 'none';
-
-        try {
-          const res = await fetch(URL_API, {
-            method: 'POST',
-            body: JSON.stringify({ acao: "cruzarHabilidades", componente: comp, ano: ano })
-          });
-          const r = await res.json();
-          if(r.status === "sucesso") {
-            kpiCruz.style.display = 'block';
-            kpiCruz.innerHTML = `📊 Matriz Total: ${r.totalMatriz} habilidades | ✅ Executadas: ${r.trabalhadas.length} | ❌ Pendentes: ${r.pendentes.length}`;
-            
-            let htmlTrab = "";
-            if(r.trabalhadas.length === 0) {
-              htmlTrab = `<tr><td colspan="3" style="text-align:center; color:#7f8c8d;">Nenhuma habilidade desta matriz foi trabalhada ainda.</td></tr>`;
-            } else {
-              r.trabalhadas.forEach(t => {
-                htmlTrab += `<tr><td><strong>[${t.trimestre}]</strong><br>${t.unidade}</td><td>${t.habilidade}</td><td>${t.professor}<br><small>${t.turma}</small></td></tr>`;
-              });
-            }
-            corpoTrab.innerHTML = htmlTrab;
-
-            let htmlPend = "";
-            if(r.pendentes.length === 0) {
-              htmlPend = `<tr><td colspan="2" style="text-align:center; color:#27ae60; font-weight:bold;">🎉 Parabéns! Todas as habilidades da matriz foram trabalhadas.</td></tr>`;
-            } else {
-              r.pendentes.forEach(p => {
-                htmlPend += `<tr><td><strong>[${p.trimestre}]</strong><br>${p.unidade}</td><td>${p.habilidade}</td></tr>`;
-              });
-            }
-            corpoPend.innerHTML = htmlPend;
-          } else {
-            corpoTrab.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">${r.mensagem}</td></tr>`;
-            corpoPend.innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">${r.mensagem}</td></tr>`;
-          }
-        } catch(e) {
-          corpoTrab.innerHTML = `<tr><td colspan="3" style="color:red; text-align:center;">Erro de conexão ao cruzar habilidades.</td></tr>`;
-          corpoPend.innerHTML = `<tr><td colspan="2" style="color:red; text-align:center;">Erro de conexão.</td></tr>`;
-        }
-      }
-
-      var registrosGlobais = [];
-
-      async function carregarDadosSupervisao() {
-        try {
-          document.getElementById('corpoMonitoramento').innerHTML = `<tr><td colspan="5" style="text-align:center;">⏳ Carregando dados...</td></tr>`;
-          const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
-          const r = await res.json();
-          if(r.status === "sucesso") {
-            registrosGlobais = r.registros;
-            atualizarFiltrosSelects(r.registros);
-            renderizarTabelaSupervisao(r.registros);
-          }
-        } catch(e) {
-          document.getElementById('corpoMonitoramento').innerHTML = `<tr><td colspan="5" style="color:red; text-align:center;">Erro ao carregar dados de monitoramento.</td></tr>`;
-        }
-      }
-
-      function atualizarFiltrosSelects(registros) {
-        const selectProf = document.getElementById('filtroProfessor');
-        const profsUnicos = [...new Set(registros.map(item => item.professor))];
-        let html = '<option value="">Todos os Professores</option>';
-        profsUnicos.forEach(p => { html += `<option value="${p}">${p}</option>`; });
-        selectProf.innerHTML = html;
-      }
-
-      function filtrarSupervisao() {
-        const profFiltro = document.getElementById('filtroProfessor').value;
-        const compFiltro = document.getElementById('filtroComponente').value;
-
-        const filtrados = registrosGlobais.filter(item => {
-          const matchProf = !profFiltro || item.professor === profFiltro;
-          const matchComp = !compFiltro || item.componente === compFiltro;
-          return matchProf && matchComp;
-        });
-
-        renderizarTabelaSupervisao(filtrados);
-      }
-
-      function renderizarTabelaSupervisao(lista) {
-        const corpo = document.getElementById('corpoMonitoramento');
-        const kpi = document.getElementById('kpiResumo');
-        kpi.innerText = `📈 Total de Planos Registrados: ${lista.length}`;
-
-        if(!lista.length) {
-          corpo.innerHTML = `<tr><td colspan="5" style="text-align:center;">Nenhum plano encontrado.</td></tr>`;
-          return;
-        }
-
-        let html = "";
-        lista.reverse().forEach(item => {
-          html += `<tr>
-            <td>${item.data}</td>
-            <td>
-              <strong>${item.professor}</strong><br>
-              <span style="font-size:0.8rem;">Status: <strong>${item.status}</strong></span><br>
-              <button class="btn-status" style="background:#27ae60;" onclick="mudarStatus(${item.linha}, '🟢 Aprovado')">🟢 Aprovado</button>
-              <button class="btn-status" style="background:#f39c12;" onclick="mudarStatus(${item.linha}, '🟡 Requer Ajuste')">🟡 Ajustar</button>
-            </td>
-            <td>${item.componente}<br><small style="color:#666;">Turma: ${item.turma}</small></td>
-            <td><small><strong>Unidade:</strong> ${item.unidade}</small><br><small style="color:#444;"><strong>Habilidades:</strong> ${item.habilidades}</small></td>
-            <td>
-              <a href="${item.docUrl}" target="_blank" style="display:inline-block; background:#2980b9; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; font-size:0.8rem; margin-bottom:4px;">📄 Ver Doc</a><br>
-              <a href="${item.pastaUrl}" target="_blank" style="display:inline-block; background:#e67e22; color:white; padding:5px 10px; border-radius:4px; text-decoration:none; font-size:0.8rem;">📁 Pasta Drive & Evidências</a>
-            </td>
-          </tr>`;
-        });
-        corpo.innerHTML = html;
-      }
-
-      async function mudarStatus(linha, novoStatus) {
-        try {
-          const res = await fetch(URL_API, {
-            method: 'POST',
-            body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus })
-          });
-          const r = await res.json();
-          if(r.status === "sucesso") {
-            carregarDadosSupervisao();
-          } else {
-            alert("Erro ao atualizar status.");
-          }
-        } catch(e) {
-          alert("Erro de conexão ao atualizar status.");
-        }
-      }
-
-      async function gerarRelatorioExecutivo() {
-        const periodo = document.getElementById('tipoRelatorio').value;
-        const msg = document.getElementById('msgRelatorio');
-        msg.innerText = "⏳ Compilando métricas e gerando relatório no Docs...";
-
-        try {
-          const res = await fetch(URL_API, {
-            method: 'POST',
-            body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo })
-          });
-          const r = await res.json();
-          if(r.status === "sucesso") {
-            msg.innerHTML = `✅ Relatório gerado com sucesso! <a href="${r.url}" target="_blank" style="color:#2980b9; text-decoration:underline; font-weight:bold;">📄 Abrir Google Doc com Tabelas</a>`;
-          } else {
-            msg.innerText = "⚠️ Erro: " + r.mensagem;
-          }
-        } catch(e) {
-          msg.innerText = "⚠️ Erro de conexão ao gerar o relatório.";
-        }
-      }
-
-      async function forcarBackup() {
-        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) });
-        const r = await res.json();
-        document.getElementById('msgBackup').innerText = r.mensagem;
-      }
-
-      let dadosExtraidosLote = [];
-
-      function processarTextoColado() {
-        const texto = document.getElementById('textoCopiadoInput').value;
-        const disciplinaSelecionada = document.getElementById('loteDisciplina').value;
-        const status = document.getElementById('statusOCR');
-
-        if (!texto.trim()) {
-          alert("Cole o texto copiado do PDF na caixa de texto!");
-          return;
-        }
-
-        status.innerText = "⏳ Organizando dados automaticamente...";
-        dadosExtraidosLote = [];
-
-        const textoLimpo = texto.replace(/\|/g, " ");
-        const blocos = textoLimpo.split(/UNIDADE\s*TEM[AÁ]TICA|PR[ÁA]TICA\s*DE\s*LINGUAGEM/i);
-
-        blocos.forEach((bloco, idx) => {
-          if (idx === 0 && bloco.trim().length < 10) return;
-
-          function extrairSecao(inicioRegex, fimRegexList) {
-            try {
-              const fimPadded = fimRegexList.join("|");
-              const regex = new RegExp(inicioRegex + "[\\s\\:\\|]*([\\s\\S]*?)(?=" + fimPadded + "|$)", "i");
-              const match = bloco.match(regex);
-              if (match && match[1]) {
-                let res = match[1].replace(/7\.\s*PLANOS\s*DE\s*CURSO[\s\S]*?Trimestre/gi, " ");
-                res = res.replace(/\d+\s*Área de Conhecimento[\s\S]*?Ensino Fundamental/gi, " ");
-                return res.replace(/\s+/g, " ").trim();
-              }
-            } catch(e) {}
-            return "-";
-          }
-
-          let unidadeMatch = bloco.match(/^[\s\:\-]*(?:Geografia|Matemática|História|Ciências|Língua Portuguesa|Arte|Ensino Religioso|Educação Física|Língua Inglesa)?[\s\:\-]*([^\n]+?)(?=HABILIDADES|OBJETOS|$)/i);
-          let unidade = unidadeMatch && unidadeMatch[1] ? unidadeMatch[1].replace(/HABILIDADES[\s\S]*$/i, "").trim() : "Geometria / Geral";
-          if (unidade.length > 50 || unidade.toLowerCase().includes("trimestre") || unidade.toLowerCase().includes("matemática")) {
-            unidade = "Geometria / Geral";
-          }
-
-          const habPriorizada = extrairSecao("HABILIDADES\\s*PRIORIZADAS(?:\\s*DO\\s*ANO\\s*ESCOLAR)?", [
-            "HABILIDADES\\s*DE\\s*RECOMPOSIÇÃO",
-            "HABILIDADES\\s*DE\\s*SUPORTE",
-            "OBJETOS\\s*DO\\s*CONHECIMENTO"
-          ]);
-
-          let habRecomposicao = "-";
-          let habSuporte = "-";
-          if (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Matemática") {
-            habRecomposicao = extrairSecao("HABILIDADES\\s*DE\\s*RECOMPOSIÇÃO", [
-              "HABILIDADES\\s*DE\\s*SUPORTE",
-              "OBJETOS\\s*DO\\s*CONHECIMENTO"
-            ]);
-            habSuporte = extrairSecao("HABILIDADES\\s*DE\\s*SUPORTE", [
-              "OBJETOS\\s*DO\\s*CONHECIMENTO",
-              "EXEMPLO\\s*DE\\s*PRÁTICAS"
-            ]);
-          }
-
-          let genero = "-";
-          if (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Língua Inglesa") {
-            genero = extrairSecao("G[ÊE]NERO\\s*TEXTUAL", [
-              "HABILIDADES",
-              "OBJETOS"
-            ]);
-          }
-
-          const objetoConhecimento = extrairSecao("OBJETOS\\s*DO\\s*CONHECIMENTO(?:\\s*DA\\s*HABILIDADE\\s*PRIORIZADA)?", [
-            "EXEMPLO\\s*DE\\s*PRÁTICAS",
-            "EVIDÊNCIAS"
-          ]);
-          const praticas = extrairSecao("EXEMPLO\\s*DE\\s*PRÁTICAS\\s*PEDAGÓGICAS", [
-            "EVIDÊNCIAS\\s*DE\\s*CONSOLIDAÇÃO"
-          ]);
-          const evidencias = extrairSecao("EVIDÊNCIAS\\s*DE\\s*CONSOLIDAÇÃO(?:\\s*DA\\s*APRENDIZAGEM)?", [
-            "7\\.\\s*PLANOS",
-            "Área de Conhecimento"
-          ]);
-
-          if (habPriorizada !== "-" && habPriorizada.length > 3) {
-            dadosExtraidosLote.push({
-              ano: document.getElementById('loteAno').value,
-              trimestre: document.getElementById('loteTrimestre').value,
-              disciplina: disciplinaSelecionada,
-              unidade: unidade,
-              genero: genero,
-              habPriorizada: habPriorizada,
-              habRecomposicao: habRecomposicao,
-              habSuporte: habSuporte,
-              objetoConhecimento: objetoConhecimento !== "-" ? objetoConhecimento : "Ver detalhamento",
-              conteudosRelacionados: "-",
-              praticas: praticas,
-              evidencias: evidencias
-            });
-          }
-        });
-
-        if (dadosExtraidosLote.length === 0) {
-          const habP = extrairTextoSimples(textoLimpo, "HABILIDADES\\s*PRIORIZADAS", "OBJETOS");
-          const habR = (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Matemática") ? extrairTextoSimples(textoLimpo, "HABILIDADES\\s*DE\\s*RECOMPOSIÇÃO", "HABILIDADES\\s*DE\\s*SUPORTE") : "-";
-          const habS = (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Matemática") ? extrairTextoSimples(textoLimpo, "HABILIDADES\\s*DE\\s*SUPORTE", "OBJETOS") : "-";
-          const genT = (disciplinaSelecionada === "Língua Portuguesa" || disciplinaSelecionada === "Língua Inglesa") ? extrairTextoSimples(textoLimpo, "G[ÊE]NERO\\s*TEXTUAL", "HABILIDADES") : "-";
-
-          dadosExtraidosLote.push({
-            ano: document.getElementById('loteAno').value,
-            trimestre: document.getElementById('loteTrimestre').value,
-            disciplina: disciplinaSelecionada,
-            unidade: "Geometria / Geral",
-            genero: genT,
-            habPriorizada: habP !== "-" ? habP : textoLimpo.substring(0, 400),
-            habRecomposicao: habR,
-            habSuporte: habS,
-            objetoConhecimento: "Ver detalhamento",
-            conteudosRelacionados: "-",
-            praticas: "-",
-            evidencias: "-"
-          });
-        }
-
-        exibirPreviewTabela();
-        status.innerText = `✅ Dados organizados com sucesso! ${dadosExtraidosLote.length} registros prontos para revisão.`;
-      }
-
-      function extrairTextoSimples(fonte, inicio, fim) {
-        try {
-          const reg = new RegExp(inicio + "[\\s\\:\\|]*([\\s\\S]*?)(?=" + fim + "|$)", "i");
-          const m = fonte.match(reg);
-          return m && m[1] ? m[1].replace(/\s+/g, " ").trim() : "-";
-        } catch(e) {
-          return "-";
-        }
-      }
-
-      function exibirPreviewTabela() {
-        const corpo = document.getElementById('corpoPreview');
-        corpo.innerHTML = "";
-        dadosExtraidosLote.forEach(d => {
-          corpo.innerHTML += `<tr>
-            <td>${d.ano}</td>
-            <td>${d.trimestre}</td>
-            <td>${d.unidade}</td>
-            <td><div>${d.habPriorizada}</div></td>
-            <td><div>Gênero: ${d.genero}<br>Rec: ${d.habRecomposicao}<br>Sup: ${d.habSuporte}</div></td>
-          </tr>`;
-        });
-        document.getElementById('areaConferencia').style.display = 'block';
-      }
-
-      async function enviarLotePlanilha() {
-        const status = document.getElementById('statusOCR');
-        status.innerText = "☁️ Enviando dados para o Google Sheets nas colunas corretas...";
-        const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: dadosExtraidosLote }) });
-        const r = await res.json();
-        alert(r.mensagem);
-        document.getElementById('areaConferencia').style.display = 'none';
-        status.innerText = "🚀 Sucesso! Dados salvos na planilha com sucesso.";
-      }
-    </script>
-  </body>
+  <script src="script.js"></script>
+</body>
 </html>
