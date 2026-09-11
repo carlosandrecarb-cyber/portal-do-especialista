@@ -255,7 +255,7 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// LÓGICA DE PRÉVIA COM 11 COLUNAS E DIFERENÇA DE COMPONENTES
+// EXTRATOR EXATO DAS 11 COLUNAS PARA O PLANO DE CURSO
 // ==========================================
 function gerarPreviaMatriz() {
   const texto = document.getElementById('textoMatrizBruto').value.trim();
@@ -268,41 +268,83 @@ function gerarPreviaMatriz() {
 
   if (!texto) { alert("⚠️ Cole o texto do plano de curso/matriz antes de gerar a prévia."); return; }
 
-  msg.innerText = "⏳ Processando colunas e estruturando dados...";
+  msg.innerText = "⏳ Extraindo e estruturando as 11 colunas do plano de curso...";
   loteMatrizPronto = [];
 
-  var linhas = texto.split('\n');
-  var unidadeAtual = "Unidade Padrão";
-
-  for (var i = 0; i < linhas.length; i++) {
-    var l = linhas[i].trim();
-    if (!l) continue;
-
-    if (l.toLowerCase().includes("unidade") || l.toLowerCase().includes("eixo") || l.toLowerCase().includes("práticas de linguagem")) {
-      unidadeAtual = l;
-      continue;
-    }
-
-    var contemHabilidade = l.match(/\(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?\)/i) || l.match(/EF[0-9]{2}[A-Z]{2}[0-9]{2}/i);
-
-    if (contemHabilidade && l.length > 15) {
-      var itemObj = {
-        disciplina: disciplina,
-        ano: ano,
-        trimestre: trimestre,
-        unidade: unidadeAtual,
-        genero: disciplina === "Língua Portuguesa" ? "Gênero Textual do Eixo" : "-",
-        habPriorizada: l,
-        habRecomposicao: (disciplina === "Língua Portuguesa" || disciplina === "Matemática") ? "Habilidade de Recomposição associada" : "-",
-        habSuporte: (disciplina === "Língua Portuguesa" || disciplina === "Matemática") ? "Habilidade de Suporte associada" : "-",
-        objetoConhecimento: (disciplina === "Língua Portuguesa" || disciplina === "Matemática") ? "Objeto de Conhecimento da Habilidade" : "-",
-        conteudosRelacionados: (disciplina !== "Língua Portuguesa" && disciplina !== "Matemática") ? "Conteúdos Relacionados do CRMG" : "-",
-        praticas: (disciplina !== "Língua Portuguesa" && disciplina !== "Matemática") ? "Exemplos de Práticas Pedagógicas" : "-",
-        evidencias: "Avaliação formativa contínua observando participação"
-      };
-      loteMatrizPronto.push(itemObj);
-    }
+  // Fatiar o texto por blocos de habilidades (identificados por códigos EF...)
+  var blocos = texto.split(/(?=\(?(?:EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?)\)?)/i);
+  if (blocos.length <= 1) {
+    blocos = texto.split(/Habilidades do CRMG/i);
   }
+
+  var unidadeAtual = "Vida e Evolução";
+
+  blocos.forEach(function(bloco) {
+    if (!bloco || bloco.trim().length < 15) return;
+
+    // 1. Unidade Temática
+    if (bloco.toLowerCase().includes("unidades temáticas") || bloco.toLowerCase().includes("unidade temática")) {
+      var matchUnidade = bloco.match(/(?:Unidades Temáticas|Unidade Temática[:\s]*)([^\n]+)/i);
+      if (matchUnidade && matchUnidade[1]) {
+        unidadeAtual = matchUnidade[1].replace(/Habilidades do CRMG/gi, "").trim();
+      }
+    }
+
+    // 2. Habilidade Priorizada
+    var matchHab = bloco.match(/\(?(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?)\)?([^\nObjetos]+)/i);
+    var habPriorizada = "";
+    if (matchHab) {
+      habPriorizada = "(" + matchHab[1] + ")" + matchHab[2].trim();
+    } else {
+      habPriorizada = bloco.split('\n')[0].trim();
+    }
+
+    // 3. Objeto do Conhecimento
+    var objetoConhecimento = "-";
+    var matchObj = bloco.match(/Objetos do conhecimento[:\s]*([^\nConteúdos]+)/i);
+    if (matchObj && matchObj[1]) {
+      objetoConhecimento = matchObj[1].trim();
+    }
+
+    // 4. Conteúdos Relacionados
+    var conteudosRelacionados = "-";
+    var matchCont = bloco.match(/Conteúdos Relacionados[:\s]*([^\nExemplos]+)/i);
+    if (matchCont && matchCont[1]) {
+      conteudosRelacionados = matchCont[1].trim();
+    }
+
+    // 5. Exemplos de Práticas Pedagógicas
+    var praticas = "-";
+    var matchPraticas = bloco.match(/(?:Exemplos de Práticas Pedagógicas|Práticas Pedagógicas)[:\s]*([^\nEvidência]+)/i);
+    if (matchPraticas && matchPraticas[1]) {
+      praticas = matchPraticas[1].trim();
+    }
+
+    // 6. Evidências de Consolidação
+    var evidencias = "Avaliação formativa contínua observando participação";
+    var matchEvid = bloco.match(/(?:Evidência de Consolidação de Aprendizagem|Evidências)[:\s]*([\s\S]+)/i);
+    if (matchEvid && matchEvid[1]) {
+      evidencias = matchEvid[1].trim().substring(0, 300);
+    }
+
+    // Regras de colunas adicionais para Língua Portuguesa e Matemática vs Demais Componentes
+    var isLinguaOuMat = (disciplina === "Língua Portuguesa" || disciplina === "Matemática");
+
+    loteMatrizPronto.push({
+      disciplina: disciplina,
+      ano: ano,
+      trimestre: trimestre,
+      unidade: unidadeAtual,
+      genero: isLinguaOuMat ? "Gênero Textual do Eixo" : "-",
+      habPriorizada: habPriorizada,
+      habRecomposicao: isLinguaOuMat ? "Habilidade de Recomposição associada" : "-",
+      habSuporte: isLinguaOuMat ? "Habilidade de Suporte associada" : "-",
+      objetoConhecimento: objetoConhecimento,
+      conteudosRelacionados: !isLinguaOuMat ? conteudosRelacionados : "-",
+      praticas: !isLinguaOuMat ? praticas : "-",
+      evidencias: evidencias
+    });
+  });
 
   if (loteMatrizPronto.length === 0) {
     msg.innerText = "⚠️ Nenhuma habilidade válida com o padrão (EF...) foi encontrada.";
@@ -310,31 +352,32 @@ function gerarPreviaMatriz() {
     return;
   }
 
-  // Monta tabela resumida para conferência das 11 colunas
-  let htmlTabela = `<table>
+  // Tabela detalhada de conferência na tela
+  let htmlTabela = `<table style="font-size:0.82rem;">
                       <tr>
                         <th>#</th>
-                        <th>Ano / Trimestre</th>
-                        <th>Unidade / Eixo</th>
+                        <th>Ano/Trim</th>
+                        <th>Unidade</th>
                         <th>Habilidade Priorizada</th>
-                        <th>Estrutura Aplicada</th>
+                        <th>Objeto do Conhecimento</th>
+                        <th>Conteúdos Relacionados</th>
                       </tr>`;
   
   loteMatrizPronto.forEach((item, index) => {
-    let tipoEstrutura = (disciplina === "Língua Portuguesa" || disciplina === "Matemática") ? "Padrão Língua/Matemática (3 Níveis + Objeto)" : "Padrão Outros Componentes (CRMG + Práticas)";
     htmlTabela += `<tr>
                     <td>${index + 1}</td>
-                    <td>${item.ano} <br><small>${item.trimestre}</small></td>
-                    <td><small>${item.unidade}</small></td>
+                    <td>${item.ano}<br>${item.trimestre}</td>
+                    <td>${item.unidade}</td>
                     <td><strong>${item.habPriorizada}</strong></td>
-                    <td><span style="font-size:0.8rem; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px;">${tipoEstrutura}</span></td>
+                    <td>${item.objetoConhecimento}</td>
+                    <td>${item.conteudosRelacionados}</td>
                    </tr>`;
   });
   htmlTabela += `</table>`;
 
   conteudoPrevia.innerHTML = htmlTabela;
   containerPrevia.style.display = "block";
-  msg.innerText = `✅ Prévia gerada com sucesso! ${loteMatrizPronto.length} itens estruturados nas 11 colunas.`;
+  msg.innerText = `✅ Prévia gerada com sucesso! ${loteMatrizPronto.length} itens estruturados perfeitamente nas 11 colunas.`;
 }
 
 async function enviarLoteConfirmado() {
