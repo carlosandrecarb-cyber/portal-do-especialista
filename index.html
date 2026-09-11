@@ -143,11 +143,11 @@
       <div id="painelRaioX"></div>
     </div>
 
-    <!-- 4. IMPORTAR MATRIZ -->
+    <!-- 4. IMPORTAR MATRIZ (COM PRÉVIA E CONFERÊNCIA) -->
     <div id="abaMatriz" class="tab-content">
-      <h3>📥 Importação em Lote da Matriz Curricular (PDF / Texto)</h3>
+      <h3>📥 Importação da Matriz Curricular (Com Prévia e Conferência)</h3>
       <div style="background: #ffffff; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: var(--sombra-card);">
-        <p style="color:#64748b; margin-top:0;">Cole abaixo o texto copiado do PDF do plano de curso ou matriz. O sistema processará as informações e injetará na aba correspondente do banco de dados.</p>
+        <p style="color:#64748b; margin-top:0;">Cole o texto do PDF, clique em <strong>"Gerar Prévia"</strong> para conferir os dados na tabela abaixo e depois confirme o envio.</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div><label class="label-filtro">Disciplina / Componente</label>
@@ -173,10 +173,18 @@
 
         <div class="bloco-campo" style="margin-bottom:15px;">
           <label class="label-filtro">Texto Copiado do PDF / Plano de Curso</label>
-          <textarea id="textoMatrizBruto" rows="8" placeholder="Cole aqui o conteúdo copiado do PDF do plano de curso..."></textarea>
+          <textarea id="textoMatrizBruto" rows="6" placeholder="Cole aqui o conteúdo copiado do PDF..."></textarea>
         </div>
 
-        <button onclick="processarEEnviarMatriz()" class="btn-primario" id="btnProcessarMatriz">⚡ Processar e Injetar na Planilha</button>
+        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7;">🔍 1. Gerar Prévia para Conferência</button>
+        
+        <!-- ONDE APARECE A PRÉVIA ANTES DE ENVIAR -->
+        <div id="containerPrevia" style="margin-top: 25px; display: none;">
+          <h4 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📋 Tabela de Conferência (Prévia)</h4>
+          <div id="tabelaPreviaConteudo" style="max-height: 350px; overflow-y: auto; margin-bottom: 15px;"></div>
+          <button onclick="enviarLoteConfirmado()" class="btn-primario" id="btnEnviarOficial" style="background: #10b981; font-size: 1.1rem; width: 100%;">🚀 2. Confirmar e Enviar para a Planilha Oficial</button>
+        </div>
+
         <p id="msgImportacao" style="margin-top: 15px; font-weight:bold; color:#059669;"></p>
       </div>
     </div>
