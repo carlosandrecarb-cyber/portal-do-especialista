@@ -24,7 +24,7 @@
     
     h3 { font-size: 1.3rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--cor-principal); margin-top: 20px; display: flex; align-items: center; gap: 8px; }
     
-    input[type="text"], input[type="password"], input[type="email"], select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-family: inherit; font-size: 1rem; transition: 0.2s; background: #fdfdfd; }
+    input[type="text"], input[type="password"], input[type="email"], select { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 10px; box-sizing: border-box; font-family: inherit; font-size: 1rem; transition: 0.2s; background: #fdfdfd; cursor: pointer; }
     input:focus, select:focus { border-color: var(--cor-secundaria); outline: none; background: white; }
     
     .btn-primario { background: var(--cor-secundaria); color: white; padding: 12px 24px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
@@ -35,7 +35,9 @@
     td { padding: 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
     tr:hover { background: #f8fafc; }
     
-    .barra-filtros { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+    .barra-filtros { display: grid; grid-template-columns: repeat(5, 1fr); gap: 15px; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
+    @media(max-width: 900px) { .barra-filtros { grid-template-columns: 1fr 1fr; } }
+    @media(max-width: 500px) { .barra-filtros { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -67,15 +69,17 @@
       <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatório Avançado</button>
     </div>
 
-    <!-- ABA 1: SUPERVISÃO COM FILTROS E FEEDBACK -->
+    <!-- ABA 1: SUPERVISÃO COM FILTROS DINÂMICOS -->
     <div id="abaSupervisao" class="tab-content active">
       <h3>📋 Controle e Aprovação de Planos</h3>
       
       <div class="barra-filtros">
-        <input type="text" id="filtroProf" placeholder="🔍 Buscar por Professor..." onkeyup="filtrarPlanos()">
-        <input type="text" id="filtroTurma" placeholder="🔍 Buscar por Turma..." onkeyup="filtrarPlanos()">
+        <select id="filtroProf" onchange="filtrarPlanos()"><option value="">👩‍🏫 Todos os Professores</option></select>
+        <select id="filtroComp" onchange="filtrarPlanos()"><option value="">📚 Todos os Componentes</option></select>
+        <select id="filtroTurma" onchange="filtrarPlanos()"><option value="">🏷️ Todas as Turmas</option></select>
+        <select id="filtroTrimestre" onchange="filtrarPlanos()"><option value="">⏳ Todos os Trimestres</option></select>
         <select id="filtroStatus" onchange="filtrarPlanos()">
-          <option value="">Todos os Status</option>
+          <option value="">📌 Todos os Status</option>
           <option value="Pendente">🟡 Pendentes</option>
           <option value="Aprovado">✅ Aprovados</option>
           <option value="Devolvido">🔴 Devolvidos</option>
@@ -88,7 +92,7 @@
       </div>
     </div>
 
-    <!-- NOVA ABA: RAIO-X CURRICULAR -->
+    <!-- ABA: RAIO-X CURRICULAR -->
     <div id="abaRaioX" class="tab-content">
       <h3>📈 Raio-X de Cobertura Curricular (Ao Vivo)</h3>
       <div style="background: #f8fafc; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end;">
@@ -120,7 +124,7 @@
       <div id="painelRaioX"></div>
     </div>
 
-    <!-- ABA DE USUÁRIOS -->
+    <!-- ABA: USUÁRIOS -->
     <div id="abaUsuarios" class="tab-content">
       <h3>👥 Gestão de Professores e Acessos</h3>
       <div style="background: #f8fafc; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
@@ -141,7 +145,7 @@
       <div id="tabelaUsuariosContainer"></div>
     </div>
 
-    <!-- ABA DE RELATÓRIOS -->
+    <!-- ABA: RELATÓRIOS -->
     <div id="abaRelatorios" class="tab-content">
       <h3>📊 Documento Oficial Executivo & Backup</h3>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
@@ -152,6 +156,7 @@
             <option value="semanal">Semanal (Últimos 7 dias)</option>
             <option value="quinzenal">Quinzenal (Últimos 15 dias)</option>
             <option value="mensal" selected>Mensal (Últimos 30 dias)</option>
+            <option value="todos" style="font-weight:bold; color:#d97706;">Completo (Todo o Histórico)</option>
           </select>
           <button onclick="gerarRelatorio()" class="btn-primario" style="width:100%;" id="btnGerarRelatorio">📑 Gerar Documento Oficial</button>
         </div>
