@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // COLE SEU LINK AQUI
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // COLE O SEU LINK
 var dadosPlanosGlobais = [];
 
 function mudarAba(abaId, btn) {
@@ -15,7 +15,6 @@ async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
-
   if (!usuario || !senha) return;
 
   msg.innerText = "⏳ Autenticando Especialista...";
@@ -39,7 +38,9 @@ function sairDoSistema() {
   document.getElementById('infoUsuarioBoasVindas').style.display = 'none';
 }
 
-// ABA 1: SUPERVISÃO COM FILTROS E FEEDBACK DEVOLUTIVA
+// ==========================================
+// ABA 1: SUPERVISÃO COM FILTROS INTELIGENTES (SELECTS)
+// ==========================================
 async function carregarPlanosSupervisao() {
   const container = document.getElementById('tabelaPlanosContainer');
   container.innerHTML = "<p>⏳ Buscando planos...</p>";
@@ -48,9 +49,47 @@ async function carregarPlanosSupervisao() {
     const r = await res.json();
     if (r.status === "sucesso") {
       dadosPlanosGlobais = r.registros.reverse();
+      popularDropdownsFiltro(dadosPlanosGlobais);
       renderizarTabelaPlanos(dadosPlanosGlobais);
     }
   } catch (e) { container.innerHTML = "<p>Erro ao conectar.</p>"; }
+}
+
+function popularDropdownsFiltro(planos) {
+  const profs = [...new Set(planos.map(p => p.professor))].filter(Boolean).sort();
+  const comps = [...new Set(planos.map(p => p.componente))].filter(Boolean).sort();
+  const turmas = [...new Set(planos.map(p => p.turma))].filter(Boolean).sort();
+  const trimestres = [...new Set(planos.map(p => p.trimestre))].filter(Boolean).sort();
+
+  preencherSelect('filtroProf', profs, '👩‍🏫 Todos os Professores');
+  preencherSelect('filtroComp', comps, '📚 Todos os Componentes');
+  preencherSelect('filtroTurma', turmas, '🏷️ Todas as Turmas');
+  preencherSelect('filtroTrimestre', trimestres, '⏳ Todos os Trimestres');
+}
+
+function preencherSelect(id, lista, padrao) {
+  const sel = document.getElementById(id);
+  if(!sel) return;
+  const valorAtual = sel.value; // Guarda o valor caso já estivesse filtrando
+  sel.innerHTML = `<option value="">${padrao}</option>` + lista.map(i => `<option value="${i}">${i}</option>`).join('');
+  sel.value = valorAtual; 
+}
+
+function filtrarPlanos() {
+  const tProf = document.getElementById('filtroProf').value;
+  const tComp = document.getElementById('filtroComp').value;
+  const tTurma = document.getElementById('filtroTurma').value;
+  const tTrimestre = document.getElementById('filtroTrimestre').value;
+  const tStatus = document.getElementById('filtroStatus').value;
+  
+  const filtrados = dadosPlanosGlobais.filter(p => {
+    return (tProf === "" || p.professor === tProf) && 
+           (tComp === "" || p.componente === tComp) && 
+           (tTurma === "" || p.turma === tTurma) &&
+           (tTrimestre === "" || p.trimestre === tTrimestre) &&
+           (tStatus === "" || p.status.includes(tStatus));
+  });
+  renderizarTabelaPlanos(filtrados);
 }
 
 function renderizarTabelaPlanos(planos) {
@@ -64,7 +103,7 @@ function renderizarTabelaPlanos(planos) {
     
     html += `<tr>
               <td><strong>${p.data}</strong><br><span style="color:#475569; font-size:0.9rem;">${p.professor}</span></td>
-              <td><strong>${p.componente}</strong><br><span style="color:#64748b; font-size:0.85rem;">${p.turma}</span></td>
+              <td><strong>${p.componente}</strong><br><span style="color:#64748b; font-size:0.85rem;">${p.turma} (${p.trimestre})</span></td>
               <td>
                 <a href="${p.docUrl}" target="_blank" style="text-decoration:none; color:#2563eb; font-weight:bold; display:block; margin-bottom:5px;">📄 Abrir Plano (Doc)</a>
                 <a href="${p.pastaUrl}" target="_blank" style="text-decoration:none; color:#d97706; font-weight:bold; font-size:0.85rem;">📁 Pasta Evidências</a>
@@ -83,34 +122,22 @@ function renderizarTabelaPlanos(planos) {
   container.innerHTML = html;
 }
 
-function filtrarPlanos() {
-  const tProf = document.getElementById('filtroProf').value.toLowerCase();
-  const tTurma = document.getElementById('filtroTurma').value.toLowerCase();
-  const tStatus = document.getElementById('filtroStatus').value;
-  
-  const filtrados = dadosPlanosGlobais.filter(p => {
-    return p.professor.toLowerCase().includes(tProf) && 
-           p.turma.toLowerCase().includes(tTurma) &&
-           (tStatus === "" || p.status.includes(tStatus));
-  });
-  renderizarTabelaPlanos(filtrados);
-}
-
 async function alterarStatusPlano(linha, novoStatus) {
   let feedback = "";
   if(novoStatus.includes('Devolvido')) {
     feedback = prompt("Qual o motivo da devolução? (O professor verá esta mensagem)");
     if(feedback === null) { carregarPlanosSupervisao(); return; } // Cancelou
   }
-  
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus, feedback: feedback }) });
     const r = await res.json();
-    if(r.status === "sucesso") carregarPlanosSupervisao(); // Recarrega para atualizar cor e feedback
+    if(r.status === "sucesso") carregarPlanosSupervisao(); 
   } catch(e) { alert("Falha na conexão ao atualizar status."); }
 }
 
-// NOVA ABA: RAIO-X CURRICULAR
+// ==========================================
+// ABA 2: RAIO-X CURRICULAR
+// ==========================================
 async function gerarRaioX() {
   const painel = document.getElementById('painelRaioX');
   const comp = document.getElementById('rxComponente').value;
@@ -154,7 +181,9 @@ async function gerarRaioX() {
   } catch(e) { painel.innerHTML = "<p>Erro ao gerar Raio-X.</p>"; }
 }
 
-// ABA: USUÁRIOS
+// ==========================================
+// ABA 3: USUÁRIOS E RELATÓRIOS
+// ==========================================
 async function carregarListaUsuarios() {
   const container = document.getElementById('tabelaUsuariosContainer');
   container.innerHTML = "<p>⏳ Carregando usuários...</p>";
@@ -189,7 +218,6 @@ function editarUsuario(linha, nome, email, senha, perfil, comp, turma) {
 }
 function limparFormUsuario() { document.querySelectorAll('#abaUsuarios input').forEach(i => i.value = ""); }
 
-// ABA: RELATÓRIOS (CORREÇÃO DO POP-UP AQUI)
 async function gerarRelatorio() {
   const btn = document.getElementById('btnGerarRelatorio');
   const periodo = document.getElementById('tipoRelatorio').value;
