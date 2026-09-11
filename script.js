@@ -1,6 +1,6 @@
+// Substitua pela SUA URL correta se necessário, mas essa é a que estamos usando
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 
-// Controle de Abas
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
@@ -11,7 +11,6 @@ function mudarAba(abaId, btn) {
   if (abaId === 'abaSupervisao') carregarPlanosSupervisao();
 }
 
-// Login
 async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
@@ -35,7 +34,6 @@ async function fazerLogin() {
       headerBoasVindas.style.display = 'inline-block';
       headerBoasVindas.innerText = `👋 Gestor Logado: ${r.nome}`;
 
-      // Carrega os dados iniciais
       carregarPlanosSupervisao();
       carregarListaUsuarios();
     } else {
@@ -50,7 +48,7 @@ function sairDoSistema() {
   document.getElementById('loginSenha').value = ""; 
   document.getElementById('telaLogin').style.display = 'flex';
   document.getElementById('infoUsuarioBoasVindas').style.display = 'none';
-  mudarAba('abaSupervisao', document.querySelector('.tabs button')); // Volta para a primeira aba
+  mudarAba('abaSupervisao', document.querySelector('.tabs button')); 
 }
 
 // ==========================================
@@ -84,10 +82,10 @@ async function carregarPlanosSupervisao() {
                     <a href="${p.pastaUrl}" target="_blank" style="text-decoration:none; color:#d97706; font-weight:bold; font-size:0.85rem;">📁 Pasta Evidências</a>
                   </td>
                   <td>
-                    <select onchange="alterarStatusPlano(${p.linha}, this.value)" style="padding:6px; font-weight:bold; border:2px solid ${corStatus}; color:${corStatus}; border-radius:8px; width:100%;">
+                    <select onchange="alterarStatusPlano(${p.linha}, this.value)" style="padding:6px; font-weight:bold; border:2px solid ${corStatus}; color:${corStatus}; border-radius:8px; width:100%; cursor:pointer;">
                       <option value="🟡 Pendente" ${p.status.includes('Pendente') ? 'selected' : ''}>🟡 Pendente</option>
                       <option value="✅ Aprovado" ${p.status.includes('Aprovado') ? 'selected' : ''}>✅ Aprovado</option>
-                      <option value="🔴 Devolvido p/ Ajuste" ${p.status.includes('Devolvido') ? 'selected' : ''}>🔴 Devolvido p/ Ajuste</option>
+                      <option value="🔴 Devolvido p/ Ajuste" ${p.status.includes('Devolvido') ? 'selected' : ''}>🔴 Devolvido</option>
                     </select>
                   </td>
                  </tr>`;
@@ -133,7 +131,7 @@ async function carregarListaUsuarios() {
                     </tr>`;
       
       r.usuarios.forEach(u => {
-        let emailDisplay = (u.email && u.email !== "undefined") ? u.email : "Sem e-mail (Link Público)";
+        let emailDisplay = (u.email && u.email !== "undefined" && u.email !== "null") ? u.email : "Sem e-mail (Link Público)";
         html += `<tr>
                   <td><strong>${u.nome}</strong><br><span style="font-size:0.8rem; color:#64748b;">${emailDisplay}</span></td>
                   <td>${u.perfil}</td>
@@ -154,12 +152,12 @@ async function carregarListaUsuarios() {
 async function salvarUsuario() {
   const dados = {
     linha: document.getElementById('usuarioLinha').value,
-    nome: document.getElementById('cadNome').value,
-    email: document.getElementById('cadEmail').value,
-    senha: document.getElementById('cadSenha').value,
+    nome: document.getElementById('cadNome').value.trim(),
+    email: document.getElementById('cadEmail').value.trim(),
+    senha: document.getElementById('cadSenha').value.trim(),
     perfil: document.getElementById('cadPerfil').value,
-    componentes: document.getElementById('cadComponentes').value,
-    turmas: document.getElementById('cadTurmas').value
+    componentes: document.getElementById('cadComponentes').value.trim(),
+    turmas: document.getElementById('cadTurmas').value.trim()
   };
 
   if(!dados.nome || !dados.senha) {
@@ -193,7 +191,7 @@ function editarUsuario(linha, nome, email, senha, perfil, componentes, turmas) {
   document.getElementById('cadPerfil').value = perfil;
   document.getElementById('cadComponentes').value = (componentes !== "undefined" && componentes !== "null") ? componentes : "";
   document.getElementById('cadTurmas').value = (turmas !== "undefined" && turmas !== "null") ? turmas : "";
-  window.scrollTo({ top: 0, behavior: 'smooth' }); // Sobe a tela para o formulário
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function limparFormUsuario() {
