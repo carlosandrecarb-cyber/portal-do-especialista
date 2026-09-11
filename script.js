@@ -1,6 +1,6 @@
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 var dadosPlanosGlobais = [];
-var loteMatrizPronto = []; // Guarda os dados da prévia temporariamente
+var loteMatrizPronto = [];
 
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -255,7 +255,7 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// LÓGICA DE PRÉVIA E CONFERÊNCIA DA MATRIZ
+// LÓGICA DE PRÉVIA COM 11 COLUNAS E DIFERENÇA DE COMPONENTES
 // ==========================================
 function gerarPreviaMatriz() {
   const texto = document.getElementById('textoMatrizBruto').value.trim();
@@ -268,7 +268,7 @@ function gerarPreviaMatriz() {
 
   if (!texto) { alert("⚠️ Cole o texto do plano de curso/matriz antes de gerar a prévia."); return; }
 
-  msg.innerText = "⏳ Processando texto para conferência...";
+  msg.innerText = "⏳ Processando colunas e estruturando dados...";
   loteMatrizPronto = [];
 
   var linhas = texto.split('\n');
@@ -278,59 +278,63 @@ function gerarPreviaMatriz() {
     var l = linhas[i].trim();
     if (!l) continue;
 
-    if (l.toLowerCase().includes("unidade temática") || l.toLowerCase().includes("eixo") || l.toLowerCase().includes("práticas de linguagem")) {
+    if (l.toLowerCase().includes("unidade") || l.toLowerCase().includes("eixo") || l.toLowerCase().includes("práticas de linguagem")) {
       unidadeAtual = l;
       continue;
     }
 
-    var contemCodigoHabilidade = l.match(/\(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?\)/i) || l.match(/EF[0-9]{2}[A-Z]{2}[0-9]{2}/i);
+    var contemHabilidade = l.match(/\(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?\)/i) || l.match(/EF[0-9]{2}[A-Z]{2}[0-9]{2}/i);
 
-    if (contemCodigoHabilidade && l.length > 15) {
-      loteMatrizPronto.push({
+    if (contemHabilidade && l.length > 15) {
+      var itemObj = {
         disciplina: disciplina,
         ano: ano,
         trimestre: trimestre,
         unidade: unidadeAtual,
-        genero: "-",
+        genero: disciplina === "Língua Portuguesa" ? "Gênero Textual do Eixo" : "-",
         habPriorizada: l,
-        habRecomposicao: "-",
-        habSuporte: "-",
-        objetoConhecimento: "Extraído do Plano de Curso",
-        conteudosRelacionados: "-",
-        praticas: "-",
-        evidencias: "Avaliação formativa contínua"
-      });
+        habRecomposicao: (disciplina === "Língua Portuguesa" || disciplina === "Matemática") ? "Habilidade de Recomposição associada" : "-",
+        habSuporte: (disciplina === "Língua Portuguesa" || disciplina === "Matemática") ? "Habilidade de Suporte associada" : "-",
+        objetoConhecimento: (disciplina === "Língua Portuguesa" || disciplina === "Matemática") ? "Objeto de Conhecimento da Habilidade" : "-",
+        conteudosRelacionados: (disciplina !== "Língua Portuguesa" && disciplina !== "Matemática") ? "Conteúdos Relacionados do CRMG" : "-",
+        praticas: (disciplina !== "Língua Portuguesa" && disciplina !== "Matemática") ? "Exemplos de Práticas Pedagógicas" : "-",
+        evidencias: "Avaliação formativa contínua observando participação"
+      };
+      loteMatrizPronto.push(itemObj);
     }
   }
 
   if (loteMatrizPronto.length === 0) {
-    msg.innerText = "⚠️ Nenhuma habilidade válida com o padrão (EF...) foi encontrada. Verifique o texto copiado.";
+    msg.innerText = "⚠️ Nenhuma habilidade válida com o padrão (EF...) foi encontrada.";
     containerPrevia.style.display = "none";
     return;
   }
 
-  // Desenha a tabela de conferência na tela
+  // Monta tabela resumida para conferência das 11 colunas
   let htmlTabela = `<table>
                       <tr>
                         <th>#</th>
                         <th>Ano / Trimestre</th>
                         <th>Unidade / Eixo</th>
-                        <th>Habilidade Priorizada Detectada</th>
+                        <th>Habilidade Priorizada</th>
+                        <th>Estrutura Aplicada</th>
                       </tr>`;
   
   loteMatrizPronto.forEach((item, index) => {
+    let tipoEstrutura = (disciplina === "Língua Portuguesa" || disciplina === "Matemática") ? "Padrão Língua/Matemática (3 Níveis + Objeto)" : "Padrão Outros Componentes (CRMG + Práticas)";
     htmlTabela += `<tr>
                     <td>${index + 1}</td>
                     <td>${item.ano} <br><small>${item.trimestre}</small></td>
                     <td><small>${item.unidade}</small></td>
                     <td><strong>${item.habPriorizada}</strong></td>
+                    <td><span style="font-size:0.8rem; background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px;">${tipoEstrutura}</span></td>
                    </tr>`;
   });
   htmlTabela += `</table>`;
 
   conteudoPrevia.innerHTML = htmlTabela;
   containerPrevia.style.display = "block";
-  msg.innerText = `✅ Prévia gerada com sucesso! ${loteMatrizPronto.length} habilidades prontas para conferência e envio.`;
+  msg.innerText = `✅ Prévia gerada com sucesso! ${loteMatrizPronto.length} itens estruturados nas 11 colunas.`;
 }
 
 async function enviarLoteConfirmado() {
@@ -338,7 +342,7 @@ async function enviarLoteConfirmado() {
   
   const btnEnvio = document.getElementById('btnEnviarOficial');
   const msg = document.getElementById('msgImportacao');
-  btnEnvio.innerText = "⏳ Enviando para a Planilha Oficial...";
+  btnEnvio.innerText = "⏳ Gravando nas 11 colunas da Planilha Oficial...";
   btnEnvio.disabled = true;
 
   try {
