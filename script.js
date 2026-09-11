@@ -172,50 +172,70 @@ async function alterarStatusPlano(linha, novoStatus) {
   } catch(e) { alert("Falha na conexão ao atualizar status."); }
 }
 
+// ==========================================
+// RAIO-X SEPARADO POR BLOCOS DE COMPONENTE
+// ==========================================
 async function gerarRaioX() {
   const painel = document.getElementById('painelRaioX');
-  const comp = document.getElementById('rxFiltroComp').value;
+  const compSelecionado = document.getElementById('rxFiltroComp').value;
   const turma = document.getElementById('rxFiltroTurma').value;
   const prof = document.getElementById('rxFiltroProf').value;
   const trim = document.getElementById('rxFiltroTrimestre').value;
   
-  painel.innerHTML = "<p style='text-align:center;'>⏳ Cruzando matriz curricular com planos enviados...</p>";
+  painel.innerHTML = "<p style='text-align:center;'>⏳ Analisando componentes curriculares e matrizes...</p>";
   
   try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "cruzarHabilidades", componente: comp, turma: turma, professor: prof, trimestre: trim }) });
-    const r = await res.json();
-    
-    if (r.status === "sucesso") {
-      const total = r.totalMatriz;
-      const dadas = r.trabalhadas.length;
-      const perc = total > 0 ? Math.round((dadas / total) * 100) : 0;
-      const rotuloFiltro = (turma ? turma : "Geral da Escola") + " | " + (comp ? comp : "Todas as Disciplinas");
+    // Se o usuário selecionou um componente específico, buscamos só ele. Se deixou vazio, buscamos os principais componentes da escola.
+    const listaComponentes = compSelecionado ? [compSelecionado] : [
+      "Língua Portuguesa", "Matemática", "Geografia", "História", 
+      "Ciências", "Educação Física", "Ensino Religioso", "Arte", "Língua Inglesa"
+    ];
+
+    let htmlGeral = "";
+
+    for (let i = 0; i < listaComponentes.length; i++) {
+      let c = listaComponentes[i];
       
-      let html = `<div style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; text-align:center; margin-bottom:20px; box-shadow: var(--sombra-card);">
-                    <h2 style="margin:0; color:#1e3a8a; font-size:2rem;">${perc}% Concluído</h2>
-                    <p style="color:#64748b; margin-top:5px;">${dadas} de ${total} habilidades trabalhadas (${rotuloFiltro})</p>
-                    <div style="width:100%; background:#e2e8f0; height:12px; border-radius:6px; margin-top:10px; overflow:hidden;">
-                      <div style="width:${perc}%; background:#10b981; height:100%;"></div>
-                    </div>
-                  </div>`;
-                  
-      html += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
-                <div style="background:#d1fae5; padding:15px; border-radius:12px; border:1px solid #a7f3d0; max-height:450px; overflow-y:auto;">
-                  <h4 style="color:#065f46; margin-top:0;">✅ Habilidades Dadas</h4>
-                  <ul style="padding-left:20px; font-size:0.9rem; color:#064e3b;">`;
-      r.trabalhadas.forEach(h => html += `<li style="margin-bottom:8px;">${h.habilidade} <br><small style="color:#047857;">(Prof. ${h.professor})</small></li>`);
-      if(r.trabalhadas.length === 0) html += "<li>Nenhuma registrada neste filtro.</li>";
-      html += `</ul></div>
-                <div style="background:#fef3c7; padding:15px; border-radius:12px; border:1px solid #fde68a; max-height:450px; overflow-y:auto;">
-                  <h4 style="color:#92400e; margin-top:0;">⚠️ Faltam Ensinar</h4>
-                  <ul style="padding-left:20px; font-size:0.9rem; color:#78350f;">`;
-      r.pendentes.forEach(h => html += `<li style="margin-bottom:8px;">${h.habilidade}</li>`);
-      if(r.pendentes.length === 0) html += "<li>Matriz completa para este filtro! 🎉</li>";
-      html += `</ul></div></div>`;
+      const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "cruzarHabilidades", componente: c, turma: turma, professor: prof, trimestre: trim }) });
+      const r = await res.json();
       
-      painel.innerHTML = html;
+      if (r.status === "sucesso" && r.totalMatriz > 0) {
+        const total = r.totalMatriz;
+        const dadas = r.trabalhadas.length;
+        const perc = total > 0 ? Math.round((dadas / total) * 100) : 0;
+        
+        htmlGeral += `<div class="card-componente">
+                        <h4>
+                          <span>📚 ${c}</span>
+                          <span style="font-size: 1rem; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px;">${perc}% Concluído (${dadas}/${total})</span>
+                        </h4>
+                        
+                        <div style="width:100%; background:#e2e8f0; height:8px; border-radius:4px; margin-bottom:15px; overflow:hidden;">
+                          <div style="width:${perc}%; background:#10b981; height:100%;"></div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+                          <div style="background:#d1fae5; padding:12px; border-radius:10px; border:1px solid #a7f3d0; max-height:250px; overflow-y:auto;">
+                            <h5 style="color:#065f46; margin:0 0 8px 0;">✅ Habilidades Dadas</h5>
+                            <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#064e3b;">`;
+        r.trabalhadas.forEach(h => htmlGeral += `<li style="margin-bottom:6px;">${h.habilidade.replace(`[${c}]`, '')} <br><small style="color:#047857;">(Prof. ${h.professor})</small></li>`);
+        if(r.trabalhadas.length === 0) htmlGeral += "<li>Nenhuma registrada.</li>";
+        htmlGeral += `</ul></div>
+                          
+                          <div style="background:#fef3c7; padding:12px; border-radius:10px; border:1px solid #fde68a; max-height:250px; overflow-y:auto;">
+                            <h5 style="color:#92400e; margin:0 0 8px 0;">⚠️ Faltam Ensinar</h5>
+                            <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#78350f;">`;
+        r.pendentes.forEach(h => htmlGeral += `<li style="margin-bottom:6px;">${h.habilidade.replace(`[${c}]`, '')}</li>`);
+        if(r.pendentes.length === 0) htmlGeral += "<li>Matriz completa! 🎉</li>";
+        htmlGeral += `</ul></div>
+                        </div>
+                      </div>`;
+      }
     }
-  } catch(e) { painel.innerHTML = "<p>Erro ao gerar Raio-X.</p>"; }
+
+    painel.innerHTML = htmlGeral || "<p style='text-align:center;'>Nenhum dado encontrado para os filtros selecionados.</p>";
+
+  } catch(e) { painel.innerHTML = "<p style='text-align:center;'>Erro ao gerar Raio-X por componente.</p>"; }
 }
 
 async function gerarRelatorio() {
