@@ -172,9 +172,6 @@ async function alterarStatusPlano(linha, novoStatus) {
   } catch(e) { alert("Falha na conexão ao atualizar status."); }
 }
 
-// ==========================================
-// RAIO-X SEPARADO POR BLOCOS DE COMPONENTE
-// ==========================================
 async function gerarRaioX() {
   const painel = document.getElementById('painelRaioX');
   const compSelecionado = document.getElementById('rxFiltroComp').value;
@@ -185,17 +182,17 @@ async function gerarRaioX() {
   painel.innerHTML = "<p style='text-align:center;'>⏳ Analisando componentes curriculares e matrizes...</p>";
   
   try {
-    // Se o usuário selecionou um componente específico, buscamos só ele. Se deixou vazio, buscamos os principais componentes da escola.
     const listaComponentes = compSelecionado ? [compSelecionado] : [
       "Língua Portuguesa", "Matemática", "Geografia", "História", 
       "Ciências", "Educação Física", "Ensino Religioso", "Arte", "Língua Inglesa"
     ];
 
     let htmlGeral = "";
+    let totalGeralMatriz = 0;
+    let totalGeralDadas = 0;
 
     for (let i = 0; i < listaComponentes.length; i++) {
       let c = listaComponentes[i];
-      
       const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "cruzarHabilidades", componente: c, turma: turma, professor: prof, trimestre: trim }) });
       const r = await res.json();
       
@@ -203,11 +200,13 @@ async function gerarRaioX() {
         const total = r.totalMatriz;
         const dadas = r.trabalhadas.length;
         const perc = total > 0 ? Math.round((dadas / total) * 100) : 0;
-        
+        totalGeralMatriz += total;
+        totalGeralDadas += dadas;
+
         htmlGeral += `<div class="card-componente">
                         <h4>
                           <span>📚 ${c}</span>
-                          <span style="font-size: 1rem; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px;">${perc}% Concluído (${dadas}/${total})</span>
+                          <span style="font-size: 0.9rem; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 600;">${perc}% Concluído (${dadas}/${total})</span>
                         </h4>
                         
                         <div style="width:100%; background:#e2e8f0; height:8px; border-radius:4px; margin-bottom:15px; overflow:hidden;">
@@ -215,34 +214,127 @@ async function gerarRaioX() {
                         </div>
 
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                          <div style="background:#d1fae5; padding:12px; border-radius:10px; border:1px solid #a7f3d0; max-height:250px; overflow-y:auto;">
-                            <h5 style="color:#065f46; margin:0 0 8px 0;">✅ Habilidades Dadas</h5>
+                          <div style="background:#d1fae5; padding:15px; border-radius:10px; border:1px solid #a7f3d0; max-height:220px; overflow-y:auto;">
+                            <h5 style="color:#065f46; margin:0 0 10px 0; font-size:0.95rem;">✅ Habilidades Dadas</h5>
                             <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#064e3b;">`;
-        r.trabalhadas.forEach(h => htmlGeral += `<li style="margin-bottom:6px;">${h.habilidade.replace(`[${c}]`, '')} <br><small style="color:#047857;">(Prof. ${h.professor})</small></li>`);
-        if(r.trabalhadas.length === 0) htmlGeral += "<li>Nenhuma registrada.</li>";
+        r.trabalhadas.forEach(h => htmlGeral += `<li style="margin-bottom:8px; line-height:1.4;">${h.habilidade.replace(`[${c}]`, '')} <br><small style="color:#047857; font-weight:600;">(Prof. ${h.professor})</small></li>`);
+        if(r.trabalhadas.length === 0) htmlGeral += "<li style='color:#065f46;'>Nenhuma habilidade registrada.</li>";
         htmlGeral += `</ul></div>
                           
-                          <div style="background:#fef3c7; padding:12px; border-radius:10px; border:1px solid #fde68a; max-height:250px; overflow-y:auto;">
-                            <h5 style="color:#92400e; margin:0 0 8px 0;">⚠️ Faltam Ensinar</h5>
+                          <div style="background:#fef3c7; padding:15px; border-radius:10px; border:1px solid #fde68a; max-height:220px; overflow-y:auto;">
+                            <h5 style="color:#92400e; margin:0 0 10px 0; font-size:0.95rem;">⚠️ Faltam Ensinar</h5>
                             <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#78350f;">`;
-        r.pendentes.forEach(h => htmlGeral += `<li style="margin-bottom:6px;">${h.habilidade.replace(`[${c}]`, '')}</li>`);
-        if(r.pendentes.length === 0) htmlGeral += "<li>Matriz completa! 🎉</li>";
+        r.pendentes.forEach(h => htmlGeral += `<li style="margin-bottom:8px; line-height:1.4;">${h.habilidade.replace(`[${c}]`, '')}</li>`);
+        if(r.pendentes.length === 0) htmlGeral += "<li style='color:#92400e; font-weight:600;'>Parabéns! Matriz completa neste componente! 🎉</li>";
         htmlGeral += `</ul></div>
                         </div>
                       </div>`;
       }
     }
 
-    painel.innerHTML = htmlGeral || "<p style='text-align:center;'>Nenhum dado encontrado para os filtros selecionados.</p>";
+    if(htmlGeral === "") {
+      painel.innerHTML = "<p style='text-align:center; padding:20px; color:#64748b;'>Nenhum dado encontrado para os filtros selecionados.</p>";
+      return;
+    }
 
-  } catch(e) { painel.innerHTML = "<p style='text-align:center;'>Erro ao gerar Raio-X por componente.</p>"; }
+    const percGeral = totalGeralMatriz > 0 ? Math.round((totalGeralDadas / totalGeralMatriz) * 100) : 0;
+    const rotuloFiltro = (turma ? turma : "Geral da Escola") + (compSelecionado ? " | " + compSelecionado : " | Todas as Disciplinas");
+
+    let painelResumoTopo = `<div style="background:#ffffff; padding:20px; border-radius:14px; border:1px solid #e2e8f0; text-align:center; margin-bottom:25px; box-shadow: var(--sombra-card);">
+                              <h2 style="margin:0; color:var(--cor-principal); font-size:1.8rem;">${percGeral}% Concluído Geral</h2>
+                              <p style="color:#64748b; margin:5px 0 12px 0; font-size:0.95rem; font-weight:600;">${totalGeralDadas} de ${totalGeralMatriz} habilidades trabalhadas (${rotuloFiltro})</p>
+                              <div style="width:100%; background:#e2e8f0; height:10px; border-radius:5px; overflow:hidden;">
+                                <div style="width:${percGeral}%; background:#10b981; height:100%;"></div>
+                              </div>
+                            </div>`;
+
+    painel.innerHTML = painelResumoTopo + htmlGeral;
+
+  } catch(e) { painel.innerHTML = "<p style='text-align:center; color:#ef4444;'>Erro ao gerar o Raio-X.</p>"; }
+}
+
+// ==========================================
+// FERRAMENTA DE IMPORTAÇÃO EM LOTE DA MATRIZ
+// ==========================================
+async function processarEEnviarMatriz() {
+  const texto = document.getElementById('textoMatrizBruto').value.trim();
+  const disciplina = document.getElementById('impDisciplina').value;
+  const ano = document.getElementById('impAno').value;
+  const trimestre = document.getElementById('impTrimestre').value;
+  const msg = document.getElementById('msgImportacao');
+  const btn = document.getElementById('btnProcessarMatriz');
+
+  if (!texto) { alert("⚠️ Cole o texto do plano de curso/matriz antes de processar."); return; }
+
+  msg.innerText = "⏳ Processando linhas e enviando para a planilha...";
+  btn.disabled = true;
+
+  var linhas = texto.split('\n');
+  var itensLote = [];
+  var unidadeAtual = "Unidade Geral";
+
+  for (var i = 0; i < linhas.length; i++) {
+    var l = linhas[i].trim();
+    if (!l) continue;
+
+    // Detecta se a linha é uma unidade temática
+    if (l.toLowerCase().includes("unidade") || l.toLowerCase().includes("eixo") || l.toLowerCase().includes("práticas de linguagem")) {
+      unidadeAtual = l;
+      continue;
+    }
+
+    // Se a linha tem padrão de habilidade (ex: EF06...)
+    if (l.match(/\(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?\)/) || l.length > 20) {
+      itensLote.push({
+        disciplina: disciplina,
+        ano: ano,
+        trimestre: trimestre,
+        unidade: unidadeAtual,
+        genero: "-",
+        habPriorizada: l,
+        habRecomposicao: "-",
+        habSuporte: "-",
+        objetoConhecimento: "Conteúdo padrão extraído do plano",
+        conteudosRelacionados: "-",
+        praticas: "-",
+        evidencias: "Avaliação formativa contínua"
+      });
+    }
+  }
+
+  if (itensLote.length === 0) {
+    // Se não achou códigos específicos, joga cada linha significativa como habilidade
+    linhas.forEach(function(l) {
+      if(l.trim().length > 5) {
+        itensLote.push({
+          disciplina: disciplina, ano: ano, trimestre: trimestre, unidade: unidadeAtual,
+          genero: "-", habPriorizada: l.trim(), habRecomposicao: "-", habSuporte: "-",
+          objetoConhecimento: "-", conteudosRelacionados: "-", praticas: "-", evidencias: "-"
+        });
+      }
+    });
+  }
+
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: itensLote }) });
+    const r = await res.json();
+    if (r.status === "sucesso") {
+      msg.innerText = "✅ " + r.mensagem;
+      document.getElementById('textoMatrizBruto').value = "";
+    } else {
+      msg.innerText = "⚠️ Erro ao salvar: " + r.mensagem;
+    }
+  } catch (e) {
+    msg.innerText = "⚠️ Erro de comunicação com o servidor.";
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function gerarRelatorio() {
   const btn = document.getElementById('btnGerarRelatorio');
   const areaLink = document.getElementById('areaLinkRelatorio');
   const periodo = document.getElementById('tipoRelatorio').value;
-  
   btn.innerText = "⏳ Auditando Matrizes e Gerando Documento...";
   btn.disabled = true;
   areaLink.style.display = "none";
@@ -250,24 +342,16 @@ async function gerarRelatorio() {
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo }) });
     const r = await res.json();
-    
     if(r.status === "sucesso") {
       alert("✅ Relatório Avançado concluído!");
       btn.innerText = "📑 Gerar Novo Documento";
       btn.disabled = false;
-      
       areaLink.style.display = "block";
       areaLink.innerHTML = `<a href="${r.url}" target="_blank" style="display:block; padding:15px; background:#10b981; color:white; text-decoration:none; border-radius:10px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">📄 CLIQUE AQUI PARA ABRIR O RELATÓRIO</a>`;
     } else {
-      alert("⚠️ Erro: " + r.mensagem); 
-      btn.innerText = "📑 Gerar Documento Oficial (Google Docs)"; 
-      btn.disabled = false;
+      alert("⚠️ Erro: " + r.mensagem); btn.innerText = "📑 Gerar Documento Oficial (Google Docs)"; btn.disabled = false;
     }
-  } catch(e) { 
-    alert("Erro de comunicação."); 
-    btn.innerText = "📑 Gerar Documento Oficial (Google Docs)"; 
-    btn.disabled = false; 
-  }
+  } catch(e) { alert("Erro de comunicação."); btn.innerText = "📑 Gerar Documento Oficial (Google Docs)"; btn.disabled = false; }
 }
 
 async function forcarBackup() {
