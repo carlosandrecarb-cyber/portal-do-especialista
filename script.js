@@ -1,5 +1,6 @@
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 var dadosPlanosGlobais = [];
+var loteMatrizPronto = []; // Guarda os dados da prévia temporariamente
 
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -15,10 +16,7 @@ async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
-  if (!usuario || !senha) {
-    msg.innerText = "Preencha usuário e senha.";
-    return;
-  }
+  if (!usuario || !senha) { msg.innerText = "Preencha usuário e senha."; return; }
 
   msg.innerText = "⏳ Autenticando Especialista...";
   try {
@@ -30,11 +28,9 @@ async function fazerLogin() {
       document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Gestor Logado: ${r.nome}`;
       carregarListaUsuarios();
     } else {
-      msg.innerText = "Acesso Negado: Credenciais inválidas ou sem perfil de Especialista.";
+      msg.innerText = "Acesso Negado: Sem perfil de Especialista.";
     }
-  } catch (e) { 
-    msg.innerText = "⚠️ Erro de conexão com o servidor."; 
-  }
+  } catch (e) { msg.innerText = "⚠️ Erro de conexão."; }
 }
 
 function sairDoSistema() {
@@ -258,34 +254,39 @@ async function gerarRaioX() {
   } catch(e) { painel.innerHTML = "<p style='text-align:center; color:#ef4444;'>Erro ao gerar o Raio-X.</p>"; }
 }
 
-async function processarEEnviarMatriz() {
+// ==========================================
+// LÓGICA DE PRÉVIA E CONFERÊNCIA DA MATRIZ
+// ==========================================
+function gerarPreviaMatriz() {
   const texto = document.getElementById('textoMatrizBruto').value.trim();
   const disciplina = document.getElementById('impDisciplina').value;
   const ano = document.getElementById('impAno').value;
   const trimestre = document.getElementById('impTrimestre').value;
   const msg = document.getElementById('msgImportacao');
-  const btn = document.getElementById('btnProcessarMatriz');
+  const containerPrevia = document.getElementById('containerPrevia');
+  const conteudoPrevia = document.getElementById('tabelaPreviaConteudo');
 
-  if (!texto) { alert("⚠️ Cole o texto do plano de curso/matriz antes de processar."); return; }
+  if (!texto) { alert("⚠️ Cole o texto do plano de curso/matriz antes de gerar a prévia."); return; }
 
-  msg.innerText = "⏳ Processando linhas e enviando para a planilha...";
-  btn.disabled = true;
+  msg.innerText = "⏳ Processando texto para conferência...";
+  loteMatrizPronto = [];
 
   var linhas = texto.split('\n');
-  var itensLote = [];
-  var unidadeAtual = "Unidade Geral";
+  var unidadeAtual = "Unidade Padrão";
 
   for (var i = 0; i < linhas.length; i++) {
     var l = linhas[i].trim();
     if (!l) continue;
 
-    if (l.toLowerCase().includes("unidade") || l.toLowerCase().includes("eixo") || l.toLowerCase().includes("práticas de linguagem")) {
+    if (l.toLowerCase().includes("unidade temática") || l.toLowerCase().includes("eixo") || l.toLowerCase().includes("práticas de linguagem")) {
       unidadeAtual = l;
       continue;
     }
 
-    if (l.match(/\(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?\)/) || l.length > 20) {
-      itensLote.push({
+    var contemCodigoHabilidade = l.match(/\(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?\)/i) || l.match(/EF[0-9]{2}[A-Z]{2}[0-9]{2}/i);
+
+    if (contemCodigoHabilidade && l.length > 15) {
+      loteMatrizPronto.push({
         disciplina: disciplina,
         ano: ano,
         trimestre: trimestre,
@@ -294,7 +295,7 @@ async function processarEEnviarMatriz() {
         habPriorizada: l,
         habRecomposicao: "-",
         habSuporte: "-",
-        objetoConhecimento: "Conteúdo padrão extraído do plano",
+        objetoConhecimento: "Extraído do Plano de Curso",
         conteudosRelacionados: "-",
         praticas: "-",
         evidencias: "Avaliação formativa contínua"
@@ -302,31 +303,60 @@ async function processarEEnviarMatriz() {
     }
   }
 
-  if (itensLote.length === 0) {
-    linhas.forEach(function(l) {
-      if(l.trim().length > 5) {
-        itensLote.push({
-          disciplina: disciplina, ano: ano, trimestre: trimestre, unidade: unidadeAtual,
-          genero: "-", habPriorizada: l.trim(), habRecomposicao: "-", habSuporte: "-",
-          objetoConhecimento: "-", conteudosRelacionados: "-", praticas: "-", evidencias: "-"
-        });
-      }
-    });
+  if (loteMatrizPronto.length === 0) {
+    msg.innerText = "⚠️ Nenhuma habilidade válida com o padrão (EF...) foi encontrada. Verifique o texto copiado.";
+    containerPrevia.style.display = "none";
+    return;
   }
 
+  // Desenha a tabela de conferência na tela
+  let htmlTabela = `<table>
+                      <tr>
+                        <th>#</th>
+                        <th>Ano / Trimestre</th>
+                        <th>Unidade / Eixo</th>
+                        <th>Habilidade Priorizada Detectada</th>
+                      </tr>`;
+  
+  loteMatrizPronto.forEach((item, index) => {
+    htmlTabela += `<tr>
+                    <td>${index + 1}</td>
+                    <td>${item.ano} <br><small>${item.trimestre}</small></td>
+                    <td><small>${item.unidade}</small></td>
+                    <td><strong>${item.habPriorizada}</strong></td>
+                   </tr>`;
+  });
+  htmlTabela += `</table>`;
+
+  conteudoPrevia.innerHTML = htmlTabela;
+  containerPrevia.style.display = "block";
+  msg.innerText = `✅ Prévia gerada com sucesso! ${loteMatrizPronto.length} habilidades prontas para conferência e envio.`;
+}
+
+async function enviarLoteConfirmado() {
+  if (loteMatrizPronto.length === 0) { alert("⚠️ Nenhuma habilidade na prévia para enviar."); return; }
+  
+  const btnEnvio = document.getElementById('btnEnviarOficial');
+  const msg = document.getElementById('msgImportacao');
+  btnEnvio.innerText = "⏳ Enviando para a Planilha Oficial...";
+  btnEnvio.disabled = true;
+
   try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: itensLote }) });
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: loteMatrizPronto }) });
     const r = await res.json();
     if (r.status === "sucesso") {
       msg.innerText = "✅ " + r.mensagem;
       document.getElementById('textoMatrizBruto').value = "";
+      document.getElementById('containerPrevia').style.display = "none";
+      loteMatrizPronto = [];
     } else {
       msg.innerText = "⚠️ Erro ao salvar: " + r.mensagem;
     }
   } catch (e) {
     msg.innerText = "⚠️ Erro de comunicação com o servidor.";
   } finally {
-    btn.disabled = false;
+    btnEnvio.innerText = "🚀 2. Confirmar e Enviar para a Planilha Oficial";
+    btnEnvio.disabled = false;
   }
 }
 
