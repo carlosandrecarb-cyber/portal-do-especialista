@@ -1,5 +1,5 @@
-// Substitua pela SUA URL correta se necessário
-const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // COLE SEU LINK AQUI
+var dadosPlanosGlobais = [];
 
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -16,258 +16,208 @@ async function fazerLogin() {
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
 
-  if (!usuario || !senha) { msg.innerText = "Preencha usuário e senha."; return; }
+  if (!usuario || !senha) return;
 
   msg.innerText = "⏳ Autenticando Especialista...";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "login", usuario, senha }) });
     const r = await res.json();
-
-    if (r.status === "sucesso") {
-      if (r.perfil !== "Especialista") {
-        msg.innerText = "Acesso Negado: Área restrita à equipe de Gestão.";
-        return;
-      }
+    if (r.status === "sucesso" && r.perfil === "Especialista") {
       document.getElementById('telaLogin').style.display = 'none';
-      
-      const headerBoasVindas = document.getElementById('infoUsuarioBoasVindas');
-      headerBoasVindas.style.display = 'inline-block';
-      headerBoasVindas.innerText = `👋 Gestor Logado: ${r.nome}`;
-
+      document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
+      document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Gestor Logado: ${r.nome}`;
       carregarPlanosSupervisao();
-      carregarListaUsuarios();
     } else {
-      msg.innerText = r.mensagem || "Usuário ou senha incorretos.";
+      msg.innerText = "Acesso Negado: Credenciais inválidas ou sem permissão de Gestão.";
     }
-  } catch (e) {
-    msg.innerText = "⚠️ Erro de conexão com o servidor.";
-  }
+  } catch (e) { msg.innerText = "⚠️ Erro de conexão com o servidor."; }
 }
 
 function sairDoSistema() {
   document.getElementById('loginSenha').value = ""; 
   document.getElementById('telaLogin').style.display = 'flex';
   document.getElementById('infoUsuarioBoasVindas').style.display = 'none';
-  mudarAba('abaSupervisao', document.querySelector('.tabs button')); 
 }
 
-// ==========================================
-// ABA 1: SUPERVISÃO DE PLANOS
-// ==========================================
+// ABA 1: SUPERVISÃO COM FILTROS E FEEDBACK DEVOLUTIVA
 async function carregarPlanosSupervisao() {
   const container = document.getElementById('tabelaPlanosContainer');
-  container.innerHTML = "<p>⏳ Buscando planos de aula recentes...</p>";
-  
+  container.innerHTML = "<p>⏳ Buscando planos...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
     const r = await res.json();
-    
-    if (r.status === "sucesso" && r.registros && r.registros.length > 0) {
-      let html = `<table>
-                    <tr>
-                      <th>Data / Professor</th>
-                      <th>Turma & Componente</th>
-                      <th>Links (Acesso Restrito)</th>
-                      <th>Status Pedagógico</th>
-                    </tr>`;
-      
-      r.registros.reverse().forEach(p => {
-        let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
-        
-        html += `<tr>
-                  <td><strong>${p.data}</strong><br><span style="color:#475569; font-size:0.9rem;">${p.professor}</span></td>
-                  <td><strong>${p.componente}</strong><br><span style="color:#64748b; font-size:0.85rem;">${p.turma} (${p.trimestre || '-'})</span></td>
-                  <td>
-                    <a href="${p.docUrl}" target="_blank" style="text-decoration:none; color:#2563eb; font-weight:bold; display:block; margin-bottom:5px;">📄 Abrir Plano (Doc)</a>
-                    <a href="${p.pastaUrl}" target="_blank" style="text-decoration:none; color:#d97706; font-weight:bold; font-size:0.85rem;">📁 Pasta Evidências</a>
-                  </td>
-                  <td>
-                    <select onchange="alterarStatusPlano(${p.linha}, this.value)" style="padding:6px; font-weight:bold; border:2px solid ${corStatus}; color:${corStatus}; border-radius:8px; width:100%; cursor:pointer;">
-                      <option value="🟡 Pendente" ${p.status.includes('Pendente') ? 'selected' : ''}>🟡 Pendente</option>
-                      <option value="✅ Aprovado" ${p.status.includes('Aprovado') ? 'selected' : ''}>✅ Aprovado</option>
-                      <option value="🔴 Devolvido p/ Ajuste" ${p.status.includes('Devolvido') ? 'selected' : ''}>🔴 Devolvido</option>
-                    </select>
-                  </td>
-                 </tr>`;
-      });
-      html += `</table>`;
-      container.innerHTML = html;
-    } else {
-      container.innerHTML = "<p>Nenhum plano foi enviado para a supervisão ainda.</p>";
+    if (r.status === "sucesso") {
+      dadosPlanosGlobais = r.registros.reverse();
+      renderizarTabelaPlanos(dadosPlanosGlobais);
     }
-  } catch (e) {
-    container.innerHTML = "<p>Erro ao conectar com a base de dados.</p>";
-  }
+  } catch (e) { container.innerHTML = "<p>Erro ao conectar.</p>"; }
+}
+
+function renderizarTabelaPlanos(planos) {
+  const container = document.getElementById('tabelaPlanosContainer');
+  if(planos.length === 0) { container.innerHTML = "<p>Nenhum plano encontrado com estes filtros.</p>"; return; }
+  
+  let html = `<table><tr><th>Data / Professor</th><th>Turma & Componente</th><th>Links (Docs e Evidências)</th><th>Status & Feedback</th></tr>`;
+  planos.forEach(p => {
+    let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
+    let feedbackView = p.feedback ? `<div style="margin-top:8px; padding:6px; background:#fee2e2; border-radius:6px; font-size:0.8rem; color:#991b1b;">💬 <strong>Motivo:</strong> ${p.feedback}</div>` : '';
+    
+    html += `<tr>
+              <td><strong>${p.data}</strong><br><span style="color:#475569; font-size:0.9rem;">${p.professor}</span></td>
+              <td><strong>${p.componente}</strong><br><span style="color:#64748b; font-size:0.85rem;">${p.turma}</span></td>
+              <td>
+                <a href="${p.docUrl}" target="_blank" style="text-decoration:none; color:#2563eb; font-weight:bold; display:block; margin-bottom:5px;">📄 Abrir Plano (Doc)</a>
+                <a href="${p.pastaUrl}" target="_blank" style="text-decoration:none; color:#d97706; font-weight:bold; font-size:0.85rem;">📁 Pasta Evidências</a>
+              </td>
+              <td>
+                <select onchange="alterarStatusPlano(${p.linha}, this.value)" style="padding:6px; font-weight:bold; border:2px solid ${corStatus}; color:${corStatus}; border-radius:8px; width:100%; cursor:pointer;">
+                  <option value="🟡 Pendente" ${p.status.includes('Pendente') ? 'selected' : ''}>🟡 Pendente</option>
+                  <option value="✅ Aprovado" ${p.status.includes('Aprovado') ? 'selected' : ''}>✅ Aprovado</option>
+                  <option value="🔴 Devolvido p/ Ajuste" ${p.status.includes('Devolvido') ? 'selected' : ''}>🔴 Devolvido p/ Ajuste</option>
+                </select>
+                ${feedbackView}
+              </td>
+             </tr>`;
+  });
+  html += `</table>`;
+  container.innerHTML = html;
+}
+
+function filtrarPlanos() {
+  const tProf = document.getElementById('filtroProf').value.toLowerCase();
+  const tTurma = document.getElementById('filtroTurma').value.toLowerCase();
+  const tStatus = document.getElementById('filtroStatus').value;
+  
+  const filtrados = dadosPlanosGlobais.filter(p => {
+    return p.professor.toLowerCase().includes(tProf) && 
+           p.turma.toLowerCase().includes(tTurma) &&
+           (tStatus === "" || p.status.includes(tStatus));
+  });
+  renderizarTabelaPlanos(filtrados);
 }
 
 async function alterarStatusPlano(linha, novoStatus) {
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus }) });
-    const r = await res.json();
-    if(r.status !== "sucesso") alert("Erro ao atualizar o status.");
-  } catch(e) {
-    alert("Falha na conexão ao atualizar status.");
+  let feedback = "";
+  if(novoStatus.includes('Devolvido')) {
+    feedback = prompt("Qual o motivo da devolução? (O professor verá esta mensagem)");
+    if(feedback === null) { carregarPlanosSupervisao(); return; } // Cancelou
   }
-}
-
-// ==========================================
-// ABA 2: GESTÃO DE USUÁRIOS
-// ==========================================
-async function carregarListaUsuarios() {
-  const container = document.getElementById('tabelaUsuariosContainer');
-  container.innerHTML = "<p>⏳ Carregando banco de usuários...</p>";
   
   try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus, feedback: feedback }) });
+    const r = await res.json();
+    if(r.status === "sucesso") carregarPlanosSupervisao(); // Recarrega para atualizar cor e feedback
+  } catch(e) { alert("Falha na conexão ao atualizar status."); }
+}
+
+// NOVA ABA: RAIO-X CURRICULAR
+async function gerarRaioX() {
+  const painel = document.getElementById('painelRaioX');
+  const comp = document.getElementById('rxComponente').value;
+  const ano = document.getElementById('rxAno').value;
+  
+  painel.innerHTML = "<p>⏳ Cruzando matriz curricular com planos enviados...</p>";
+  
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "cruzarHabilidades", componente: comp, ano: ano }) });
     const r = await res.json();
     
     if (r.status === "sucesso") {
-      let html = `<table>
-                    <tr>
-                      <th>Nome / E-mail</th>
-                      <th>Perfil</th>
-                      <th>Acesso (Senha)</th>
-                      <th>Ação</th>
-                    </tr>`;
+      const total = r.totalMatriz;
+      const dadas = r.trabalhadas.length;
+      const perc = total > 0 ? Math.round((dadas / total) * 100) : 0;
       
-      r.usuarios.forEach(u => {
-        let emailDisplay = (u.email && u.email !== "undefined" && u.email !== "null") ? u.email : "Sem e-mail (Link Público)";
-        html += `<tr>
-                  <td><strong>${u.nome}</strong><br><span style="font-size:0.8rem; color:#64748b;">${emailDisplay}</span></td>
-                  <td>${u.perfil}</td>
-                  <td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; letter-spacing:1px; font-family:monospace;">${u.senha}</span></td>
-                  <td>
-                    <button onclick="editarUsuario(${u.linha}, '${u.nome}', '${u.email}', '${u.senha}', '${u.perfil}', '${u.componentes}', '${u.turmas}')" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">Editar / Ver Dados</button>
-                  </td>
-                 </tr>`;
-      });
-      html += `</table>`;
-      container.innerHTML = html;
+      let html = `<div style="background:#fff; padding:20px; border-radius:12px; border:1px solid #e2e8f0; text-align:center; margin-bottom:20px;">
+                    <h2 style="margin:0; color:#1e3a8a; font-size:2rem;">${perc}% Concluído</h2>
+                    <p style="color:#64748b; margin-top:5px;">${dadas} de ${total} habilidades trabalhadas no ${ano}</p>
+                    <div style="width:100%; background:#e2e8f0; height:12px; border-radius:6px; margin-top:10px; overflow:hidden;">
+                      <div style="width:${perc}%; background:#10b981; height:100%;"></div>
+                    </div>
+                  </div>`;
+                  
+      html += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+                <div style="background:#d1fae5; padding:15px; border-radius:12px;">
+                  <h4 style="color:#065f46; margin-top:0;">✅ Habilidades Dadas</h4>
+                  <ul style="padding-left:20px; font-size:0.9rem; color:#064e3b;">`;
+      r.trabalhadas.forEach(h => html += `<li style="margin-bottom:8px;">${h.habilidade} <br><small>(${h.professor})</small></li>`);
+      if(r.trabalhadas.length === 0) html += "<li>Nenhuma registrada.</li>";
+      html += `</ul></div>
+                <div style="background:#fef3c7; padding:15px; border-radius:12px;">
+                  <h4 style="color:#92400e; margin-top:0;">⚠️ Faltam Ensinar</h4>
+                  <ul style="padding-left:20px; font-size:0.9rem; color:#78350f;">`;
+      r.pendentes.forEach(h => html += `<li style="margin-bottom:8px;">${h.habilidade}</li>`);
+      if(r.pendentes.length === 0) html += "<li>Matriz completa! 🎉</li>";
+      html += `</ul></div></div>`;
+      
+      painel.innerHTML = html;
     }
-  } catch(e) {
-    container.innerHTML = "<p>Erro ao carregar lista de usuários.</p>";
-  }
+  } catch(e) { painel.innerHTML = "<p>Erro ao gerar Raio-X.</p>"; }
+}
+
+// ABA: USUÁRIOS
+async function carregarListaUsuarios() {
+  const container = document.getElementById('tabelaUsuariosContainer');
+  container.innerHTML = "<p>⏳ Carregando usuários...</p>";
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
+    const r = await res.json();
+    if (r.status === "sucesso") {
+      let html = `<table><tr><th>Nome / E-mail</th><th>Perfil</th><th>Senha</th><th>Ação</th></tr>`;
+      r.usuarios.forEach(u => {
+        let emailD = (u.email && u.email !== "undefined") ? u.email : "Sem e-mail";
+        html += `<tr><td><strong>${u.nome}</strong><br><span style="font-size:0.8rem; color:#64748b;">${emailD}</span></td><td>${u.perfil}</td><td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-family:monospace;">${u.senha}</span></td><td><button onclick="editarUsuario(${u.linha}, '${u.nome}', '${u.email}', '${u.senha}', '${u.perfil}', '${u.componentes}', '${u.turmas}')" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">Editar</button></td></tr>`;
+      });
+      container.innerHTML = html + `</table>`;
+    }
+  } catch(e) { container.innerHTML = "<p>Erro.</p>"; }
 }
 
 async function salvarUsuario() {
-  const dados = {
-    linha: document.getElementById('usuarioLinha').value,
-    nome: document.getElementById('cadNome').value.trim(),
-    email: document.getElementById('cadEmail').value.trim(),
-    senha: document.getElementById('cadSenha').value.trim(),
-    perfil: document.getElementById('cadPerfil').value,
-    componentes: document.getElementById('cadComponentes').value.trim(),
-    turmas: document.getElementById('cadTurmas').value.trim()
-  };
-
-  if(!dados.nome || !dados.senha) {
-    alert("⚠️ Nome e Senha são obrigatórios para criar acesso."); 
-    return;
-  }
-
-  const btn = document.querySelector('button[onclick="salvarUsuario()"]');
-  btn.innerText = "⏳ Salvando...";
-  btn.disabled = true;
-
+  const dados = { linha: document.getElementById('usuarioLinha').value, nome: document.getElementById('cadNome').value.trim(), email: document.getElementById('cadEmail').value.trim(), senha: document.getElementById('cadSenha').value.trim(), perfil: document.getElementById('cadPerfil').value, componentes: document.getElementById('cadComponentes').value.trim(), turmas: document.getElementById('cadTurmas').value.trim() };
+  if(!dados.nome || !dados.senha) { alert("Nome e Senha são obrigatórios."); return; }
   try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) });
-    const r = await res.json();
-    alert("✅ " + r.mensagem);
-    limparFormUsuario();
-    carregarListaUsuarios();
-  } catch(e) {
-    alert("⚠️ Erro ao salvar usuário.");
-  } finally {
-    btn.innerText = "💾 Salvar / Atualizar Usuário";
-    btn.disabled = false;
-  }
+    await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) });
+    alert("✅ Usuário salvo!"); limparFormUsuario(); carregarListaUsuarios();
+  } catch(e) { alert("⚠️ Erro ao salvar."); }
 }
 
-function editarUsuario(linha, nome, email, senha, perfil, componentes, turmas) {
-  document.getElementById('usuarioLinha').value = linha;
-  document.getElementById('cadNome').value = nome;
-  document.getElementById('cadEmail').value = (email !== "undefined" && email !== "null") ? email : "";
-  document.getElementById('cadSenha').value = senha;
-  document.getElementById('cadPerfil').value = perfil;
-  document.getElementById('cadComponentes').value = (componentes !== "undefined" && componentes !== "null") ? componentes : "";
-  document.getElementById('cadTurmas').value = (turmas !== "undefined" && turmas !== "null") ? turmas : "";
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function editarUsuario(linha, nome, email, senha, perfil, comp, turma) {
+  document.getElementById('usuarioLinha').value = linha; document.getElementById('cadNome').value = nome;
+  document.getElementById('cadEmail').value = email !== "undefined" ? email : ""; document.getElementById('cadSenha').value = senha;
+  document.getElementById('cadPerfil').value = perfil; document.getElementById('cadComponentes').value = comp !== "undefined" ? comp : "";
+  document.getElementById('cadTurmas').value = turma !== "undefined" ? turma : ""; window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+function limparFormUsuario() { document.querySelectorAll('#abaUsuarios input').forEach(i => i.value = ""); }
 
-function limparFormUsuario() {
-  document.getElementById('usuarioLinha').value = "";
-  document.getElementById('cadNome').value = "";
-  document.getElementById('cadEmail').value = "";
-  document.getElementById('cadSenha').value = "";
-  document.getElementById('cadPerfil').value = "Professor";
-  document.getElementById('cadComponentes').value = "";
-  document.getElementById('cadTurmas').value = "";
-}
-
-// ==========================================
-// ABA 3: RELATÓRIOS E BACKUP
-// ==========================================
+// ABA: RELATÓRIOS (CORREÇÃO DO POP-UP AQUI)
 async function gerarRelatorio() {
   const btn = document.getElementById('btnGerarRelatorio');
   const periodo = document.getElementById('tipoRelatorio').value;
-  btn.innerText = "⏳ Auditando e Gerando Relatório...";
+  btn.innerText = "⏳ Auditando Matrizes e Gerando Documento...";
   btn.disabled = true;
-  
-  // Reseta o estilo do botão caso tenha sido usado antes
-  btn.style.background = "var(--cor-secundaria)";
-  btn.style.boxShadow = "none";
-  btn.onclick = gerarRelatorio; // Restaura a função original
+  btn.style.background = "var(--cor-secundaria)"; btn.onclick = gerarRelatorio; 
 
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo }) });
     const r = await res.json();
     
     if(r.status === "sucesso") {
-      alert("✅ Relatório gerado com sucesso! Clique no botão verde para abri-lo.");
-      
-      // SOLUÇÃO DO POP-UP: Transforma o botão em um link clicável seguro
+      alert("✅ Relatório Avançado concluído! Clique no botão verde abaixo para abrir no Google Docs.");
       btn.innerText = "📄 CLIQUE AQUI PARA ABRIR O RELATÓRIO";
-      btn.style.background = "#10b981"; // Muda para verde
-      btn.style.boxShadow = "0 0 15px rgba(16, 185, 129, 0.4)";
+      btn.style.background = "#10b981"; 
       btn.disabled = false;
-      
-      // Ao clicar de novo, ele abre a nova guia (permitido pelo navegador)
       btn.onclick = function() {
         window.open(r.url, '_blank');
-        // Depois de abrir, restaura o botão para o estado original
-        setTimeout(() => {
-          btn.innerText = "📑 Gerar Documento PDF/Word";
-          btn.style.background = "var(--cor-secundaria)";
-          btn.style.boxShadow = "none";
-          btn.onclick = gerarRelatorio;
-        }, 1000);
+        setTimeout(() => { btn.innerText = "📑 Gerar Documento Oficial"; btn.style.background = "var(--cor-secundaria)"; btn.onclick = gerarRelatorio; }, 1000);
       };
-      
     } else {
-      alert("⚠️ Erro: " + r.mensagem);
-      btn.innerText = "📑 Gerar Documento PDF/Word";
-      btn.disabled = false;
+      alert("⚠️ Erro: " + r.mensagem); btn.innerText = "📑 Gerar Documento Oficial"; btn.disabled = false;
     }
-  } catch(e) {
-    alert("Erro de comunicação ao gerar relatório.");
-    btn.innerText = "📑 Gerar Documento PDF/Word";
-    btn.disabled = false;
-  }
+  } catch(e) { alert("Erro de comunicação."); btn.innerText = "📑 Gerar Documento Oficial"; btn.disabled = false; }
 }
 
 async function forcarBackup() {
-  const btn = document.getElementById('btnBackup');
-  btn.innerText = "⏳ Extraindo dados (Aguarde)...";
-  btn.disabled = true;
-
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) });
-    const r = await res.json();
-    alert("✅ " + r.mensagem);
-  } catch(e) {
-    alert("Erro ao solicitar o backup.");
-  } finally {
-    btn.innerText = "📦 Enviar Backup para meu E-mail";
-    btn.disabled = false;
-  }
+  const btn = document.getElementById('btnBackup'); btn.innerText = "⏳ Extraindo dados..."; btn.disabled = true;
+  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) }); const r = await res.json(); alert("✅ " + r.mensagem); } 
+  catch(e) { alert("Erro."); } finally { btn.innerText = "📦 Enviar para E-mail"; btn.disabled = false; }
 }
