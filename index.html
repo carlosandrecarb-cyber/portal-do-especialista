@@ -81,7 +81,7 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="mudarAba('abaUsuarios', this)">👥 Usuários</button>
       <button class="tab-btn" onclick="mudarAba('abaSupervisao', this)">📋 Planos</button>
-      <button class="tab-btn" onclick="mudarAba('abaRaioX', this)">📈 Raio-X</button>
+      <button class="tab-btn" onclick="mudarAba('abaRaioX', this)">📈 Raio-X Curricular</button>
       <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📥 Importar Matriz</button>
       <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatórios</button>
     </div>
@@ -143,11 +143,11 @@
       <div id="painelRaioX"></div>
     </div>
 
-    <!-- 4. IMPORTAR MATRIZ (COM MAPEAMENTO DAS 11 COLUNAS) -->
+    <!-- 4. IMPORTAR MATRIZ (COM MÁQUINA DE ESTADOS) -->
     <div id="abaMatriz" class="tab-content">
-      <h3>📥 Importação da Matriz Curricular (Com Prévia e Conferência)</h3>
+      <h3>📥 Importação da Matriz Curricular (Extração Profunda)</h3>
       <div style="background: #ffffff; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: var(--sombra-card);">
-        <p style="color:#64748b; margin-top:0;">Cole o texto do plano de curso, clique em <strong>"Gerar Prévia"</strong> para conferir o preenchimento das 11 colunas e depois confirme o envio.</p>
+        <p style="color:#64748b; margin-top:0;">O extrator analisará o texto do PDF com precisão para encontrar e preencher as 11 colunas corretamente.</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div><label class="label-filtro">Disciplina / Componente</label>
@@ -173,13 +173,13 @@
 
         <div class="bloco-campo" style="margin-bottom:15px;">
           <label class="label-filtro">Texto Copiado do PDF / Plano de Curso</label>
-          <textarea id="textoMatrizBruto" rows="8" placeholder="Cole aqui o conteúdo copiado do PDF (ex: Unidades Temáticas, Habilidades, Objetos, Conteúdos, Práticas, Evidências)..."></textarea>
+          <textarea id="textoMatrizBruto" rows="8" placeholder="Cole aqui o conteúdo copiado do PDF..."></textarea>
         </div>
 
-        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7;">🔍 1. Gerar Prévia para Conferência</button>
+        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7;">🔍 1. Extrair e Gerar Prévia</button>
         
         <div id="containerPrevia" style="margin-top: 25px; display: none;">
-          <h4 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📋 Tabela de Conferência das Colunas (Prévia)</h4>
+          <h4 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📋 Tabela de Conferência (Prévia)</h4>
           <div id="tabelaPreviaConteudo" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px;"></div>
           <button onclick="enviarLoteConfirmado()" class="btn-primario" id="btnEnviarOficial" style="background: #10b981; font-size: 1.1rem; width: 100%;">🚀 2. Confirmar e Enviar para a Planilha Oficial</button>
         </div>
