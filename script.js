@@ -255,8 +255,7 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// MÁQUINA DE ESTADOS: EXTRATOR PROFUNDO DE MATRIZ
-// Lê as 11 colunas com precisão milimétrica, sem cortar frases.
+// EXTRATOR DEFITINIVO - IMPEDE CORTES DE CABEÇALHO POR QUEBRAS DE LINHA DO PDF
 // ==========================================
 function gerarPreviaMatriz() {
   const texto = document.getElementById('textoMatrizBruto').value.trim();
@@ -269,26 +268,29 @@ function gerarPreviaMatriz() {
 
   if (!texto) { alert("⚠️ Cole o texto do plano de curso/matriz antes de gerar a prévia."); return; }
 
-  msg.innerText = "⏳ Analisando e reconstruindo a estrutura do PDF...";
+  msg.innerText = "⏳ Extraindo 11 colunas e formatando informações...";
   loteMatrizPronto = [];
 
-  // 1. HIGIENIZAÇÃO E INJEÇÃO DE ÂNCORAS
-  let txt = texto.replace(/\r\n/g, "\n");
-  txt = txt.replace(/Ciências\s*-\s*\dº\s*Trimestre/gi, "");
-  txt = txt.replace(/História\s*-\s*\dº\s*Trimestre/gi, "");
-  txt = txt.replace(/Geografia\s*-\s*\dº\s*Trimestre/gi, "");
+  // 1. HIGIENIZAÇÃO SUPERIOR
+  // Substitui múltiplos espaços por um só, mantendo as quebras de linha essenciais do PDF
+  let txt = texto.replace(/[ \t]+/g, " ");
 
-  txt = txt.replace(/(Unidades Temáticas|Unidade Temática|Práticas de Linguagem|Eixo Temático)/gi, "\n[UNIDADE]");
-  txt = txt.replace(/(Habilidades do CRMG|Habilidade Priorizada|Habilidades Priorizadas)/gi, "\n[HAB_PRIORIZADA]");
-  txt = txt.replace(/(Habilidades de Recomposição|Habilidade de Recomposição)/gi, "\n[HAB_RECOMPOSICAO]");
-  txt = txt.replace(/(Habilidades de Suporte|Habilidade de Suporte)/gi, "\n[HAB_SUPORTE]");
-  txt = txt.replace(/(Objetos do conhecimento|Objeto do conhecimento)/gi, "\n[OBJETO]");
-  txt = txt.replace(/(Conteúdos Relacionados)/gi, "\n[CONTEUDOS]");
-  txt = txt.replace(/(Exemplos de Práticas Pedagógicas|Práticas Pedagógicas)/gi, "\n[PRATICAS]");
-  txt = txt.replace(/(Evidência de Consolidação de Aprendizagem|Evidências de Consolidação|Evidências)/gi, "\n[EVIDENCIAS]");
-  txt = txt.replace(/(Gêneros Textuais|Gênero Textual)/gi, "\n[GENERO]");
+  // Remove lixos de rodapé/página inteira
+  txt = txt.replace(/[A-Za-zãéíóúç]+\s*-\s*\dº\s*Trimestre/gi, "");
 
-  // 2. LEITURA INTELIGENTE
+  // 2. INJEÇÃO DE ÂNCORAS
+  // Usamos \s+ para capturar cabeçalhos mesmo que o PDF tenha quebrado eles no meio da palavra
+  txt = txt.replace(/Unidades?\s+Tem[áa]ticas?|Eixo\s+Tem[áa]tico|Pr[áa]ticas\s+de\s+Linguagem/gi, "\n[UNIDADE]\n");
+  txt = txt.replace(/Habilidades?\s+do\s+CRMG|Habilidades?\s+Priorizadas?/gi, "\n[HAB_PRIORIZADA]\n");
+  txt = txt.replace(/Habilidades?\s+de\s+Recomposi[çc][ãa]o/gi, "\n[HAB_RECOMPOSICAO]\n");
+  txt = txt.replace(/Habilidades?\s+de\s+Suporte/gi, "\n[HAB_SUPORTE]\n");
+  txt = txt.replace(/Objetos?\s+do\s+conhecimento/gi, "\n[OBJETO]\n");
+  txt = txt.replace(/Conte[úu]dos?\s+Relacionados?/gi, "\n[CONTEUDOS]\n");
+  txt = txt.replace(/(?:Exemplos\s+de\s+)?Pr[áa]ticas\s+Pedag[óo]gicas/gi, "\n[PRATICAS]\n");
+  txt = txt.replace(/Evid[êe]ncias?(?:\s+de\s+Consolida[çc][ãa]o(?:\s+de\s+Aprendizagem)?)?/gi, "\n[EVIDENCIAS]\n");
+  txt = txt.replace(/G[êe]neros?\s+Textuais?|G[êe]nero\s+Textual/gi, "\n[GENERO]\n");
+
+  // 3. MÁQUINA DE ESTADOS (Varredura inteligente)
   let linhas = txt.split('\n');
   let blocos = [];
   let blocoAtual = null;
@@ -299,70 +301,73 @@ function gerarPreviaMatriz() {
   for (let i = 0; i < linhas.length; i++) {
     let l = linhas[i].trim();
     if (!l) continue;
-    if (/^\d{1,3}$/.test(l)) continue; // Ignora números de página soltos
+    if (/^\d{1,3}$/.test(l)) continue; // Elimina números soltos (ex: número da página)
 
-    if (l.startsWith("[UNIDADE]")) {
-      unidadeGlobal = l.replace("[UNIDADE]", "").trim();
-      if (blocoAtual && blocoAtual.unidade === "Não especificada") blocoAtual.unidade = unidadeGlobal;
+    if (l === "[UNIDADE]") {
       contextoAtual = "unidade";
-    }
-    else if (l.startsWith("[GENERO]")) {
-      generoGlobal = l.replace("[GENERO]", "").trim();
-      if (blocoAtual) blocoAtual.genero = generoGlobal;
+      unidadeGlobal = ""; 
+    } else if (l === "[GENERO]") {
       contextoAtual = "genero";
-    }
-    else if (l.startsWith("[HAB_PRIORIZADA]")) {
+      generoGlobal = ""; 
+    } else if (l === "[HAB_PRIORIZADA]") {
       if (blocoAtual) blocos.push(blocoAtual);
       blocoAtual = {
         disciplina: disciplina, ano: ano, trimestre: trimestre,
-        unidade: unidadeGlobal, genero: generoGlobal,
-        habPriorizada: l.replace("[HAB_PRIORIZADA]", "").trim(),
-        habRecomposicao: "-", habSuporte: "-", objetoConhecimento: "-",
-        conteudosRelacionados: "-", praticas: "-", evidencias: "-"
+        unidade: unidadeGlobal || "Não especificada", genero: generoGlobal,
+        habPriorizada: "", habRecomposicao: "", habSuporte: "", 
+        objetoConhecimento: "", conteudosRelacionados: "", 
+        praticas: "", evidencias: ""
       };
       contextoAtual = "habPriorizada";
-    }
-    else if (l.startsWith("[HAB_RECOMPOSICAO]")) {
-      if (blocoAtual) blocoAtual.habRecomposicao = l.replace("[HAB_RECOMPOSICAO]", "").trim();
+    } else if (l === "[HAB_RECOMPOSICAO]") {
       contextoAtual = "habRecomposicao";
-    }
-    else if (l.startsWith("[HAB_SUPORTE]")) {
-      if (blocoAtual) blocoAtual.habSuporte = l.replace("[HAB_SUPORTE]", "").trim();
+    } else if (l === "[HAB_SUPORTE]") {
       contextoAtual = "habSuporte";
-    }
-    else if (l.startsWith("[OBJETO]")) {
-      if (blocoAtual) blocoAtual.objetoConhecimento = l.replace("[OBJETO]", "").trim();
+    } else if (l === "[OBJETO]") {
       contextoAtual = "objetoConhecimento";
-    }
-    else if (l.startsWith("[CONTEUDOS]")) {
-      if (blocoAtual) blocoAtual.conteudosRelacionados = l.replace("[CONTEUDOS]", "").trim();
+    } else if (l === "[CONTEUDOS]") {
       contextoAtual = "conteudosRelacionados";
-    }
-    else if (l.startsWith("[PRATICAS]")) {
-      if (blocoAtual) blocoAtual.praticas = l.replace("[PRATICAS]", "").trim();
+    } else if (l === "[PRATICAS]") {
       contextoAtual = "praticas";
-    }
-    else if (l.startsWith("[EVIDENCIAS]")) {
-      if (blocoAtual) blocoAtual.evidencias = l.replace("[EVIDENCIAS]", "").trim();
+    } else if (l === "[EVIDENCIAS]") {
       contextoAtual = "evidencias";
-    }
-    else {
-      // Continuação de linha sem quebra
-      if (blocoAtual && contextoAtual) {
-         blocoAtual[contextoAtual] += " " + l;
-      } else if (contextoAtual === "unidade") {
-         unidadeGlobal += " " + l;
+    } else {
+      // Fallback: Se apareceu um código de habilidade (EF...) solto sem cabeçalho
+      if (!blocoAtual && l.match(/\bEF[0-9]{2}[A-Z]{2}[0-9]{2}\b/i)) {
+         blocoAtual = {
+          disciplina: disciplina, ano: ano, trimestre: trimestre,
+          unidade: unidadeGlobal || "Não especificada", genero: generoGlobal,
+          habPriorizada: "", habRecomposicao: "", habSuporte: "", 
+          objetoConhecimento: "", conteudosRelacionados: "", 
+          praticas: "", evidencias: ""
+        };
+        contextoAtual = "habPriorizada";
+      }
+
+      // Adiciona o texto respeitando os tópicos (bullets) com quebras de linha reais (\n)
+      if (contextoAtual === "unidade") {
+        unidadeGlobal = (unidadeGlobal + " " + l).trim();
+        if (blocoAtual) blocoAtual.unidade = unidadeGlobal;
+      } else if (contextoAtual === "genero") {
+        generoGlobal = (generoGlobal + " " + l).trim();
+        if (blocoAtual) blocoAtual.genero = generoGlobal;
+      } else if (blocoAtual && contextoAtual) {
+        blocoAtual[contextoAtual] = blocoAtual[contextoAtual] ? blocoAtual[contextoAtual] + "\n" + l : l;
       }
     }
   }
   if (blocoAtual) blocos.push(blocoAtual);
 
-  // 3. AUDITORIA E REGRAS DE NEGÓCIO
+  // 4. AUDITORIA FINAL DE REGRAS DE NEGÓCIO
   let isLinguaOuMat = (disciplina === "Língua Portuguesa" || disciplina === "Matemática");
   
   blocos.forEach(b => {
-    let matchCod = b.habPriorizada.match(/(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?)/i);
-    if (!matchCod && b.habPriorizada.length < 15) return; 
+    if (!b.habPriorizada) return;
+
+    b.objetoConhecimento = b.objetoConhecimento || "-";
+    b.conteudosRelacionados = b.conteudosRelacionados || "-";
+    b.praticas = b.praticas || "-";
+    b.evidencias = b.evidencias || "Avaliação formativa contínua observando participação";
 
     if (isLinguaOuMat) {
        b.conteudosRelacionados = "-";
@@ -373,9 +378,6 @@ function gerarPreviaMatriz() {
        b.habSuporte = "-";
     }
 
-    b.evidencias = b.evidencias.replace(/\.\d{1,3}$/, ".");
-    b.evidencias = b.evidencias === "-" ? "Avaliação formativa contínua" : b.evidencias;
-
     loteMatrizPronto.push(b);
   });
 
@@ -385,35 +387,43 @@ function gerarPreviaMatriz() {
     return;
   }
 
-  // 4. RENDERIZAÇÃO DA TABELA (COM TODAS AS COLUNAS EXPANDIDAS E ROLAGEM HORIZONTAL)
-  let htmlTabela = `<div style="overflow-x: auto;">
-                      <table style="font-size:0.82rem; width:100%; min-width:1100px; border-collapse: collapse;">
-                        <tr>
-                          <th style="width:3%; text-align:left; padding:8px;">#</th>
-                          <th style="width:10%; text-align:left; padding:8px;">Ano/Trim/Unid</th>
-                          <th style="width:18%; text-align:left; padding:8px;">Habilidade Priorizada</th>
-                          <th style="width:14%; text-align:left; padding:8px;">Objeto do Conhec.</th>
-                          <th style="width:15%; text-align:left; padding:8px;">Conteúdos Relacionados</th>
-                          <th style="width:20%; text-align:left; padding:8px;">Práticas Pedagógicas</th>
-                          <th style="width:20%; text-align:left; padding:8px;">Evidências</th>
+  // 5. RENDERIZAÇÃO DA TABELA (COM BARRA DE ROLAGEM E RESPEITO AOS TÓPICOS)
+  let htmlTabela = `<div style="overflow-x: auto; padding-bottom: 10px;">
+                      <table style="font-size:0.85rem; width:100%; min-width:1300px; border-collapse: collapse; border: 1px solid #cbd5e1;">
+                        <tr style="background-color:#1e3a8a; color:white;">
+                          <th style="padding:10px; text-align:left; width:3%;">#</th>
+                          <th style="padding:10px; text-align:left; width:10%;">Ano/Trim/Unid</th>
+                          <th style="padding:10px; text-align:left; width:17%;">Habilidade Priorizada</th>
+                          <th style="padding:10px; text-align:left; width:15%;">Objeto do Conhec.</th>
+                          <th style="padding:10px; text-align:left; width:15%;">Conteúdos Relacionados</th>
+                          <th style="padding:10px; text-align:left; width:20%;">Práticas Pedagógicas</th>
+                          <th style="padding:10px; text-align:left; width:20%;">Evidências</th>
                         </tr>`;
   
   loteMatrizPronto.forEach((item, index) => {
-    htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0;">
-                    <td style="vertical-align:top; padding:8px;">${index + 1}</td>
-                    <td style="vertical-align:top; padding:8px;">${item.ano}<br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
-                    <td style="vertical-align:top; padding:8px;"><strong>${item.habPriorizada}</strong></td>
-                    <td style="vertical-align:top; padding:8px;">${item.objetoConhecimento}</td>
-                    <td style="vertical-align:top; padding:8px; color:#0369a1;">${item.conteudosRelacionados}</td>
-                    <td style="vertical-align:top; padding:8px; color:#15803d;">${item.praticas}</td>
-                    <td style="vertical-align:top; padding:8px; color:#9a3412; font-style:italic;">${item.evidencias}</td>
+    let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+    
+    // Converte os "\n" armazenados na matriz em "<br>" para a tabela ficar bonita em tópicos
+    let renderObj = item.objetoConhecimento.replace(/\n/g, '<br>');
+    let renderCont = item.conteudosRelacionados.replace(/\n/g, '<br>');
+    let renderPrat = item.praticas.replace(/\n/g, '<br><br>'); // Espaço extra nas práticas para leitura
+    let renderEvid = item.evidencias.replace(/\n/g, '<br>');
+
+    htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
+                    <td style="vertical-align:top; padding:10px;">${index + 1}</td>
+                    <td style="vertical-align:top; padding:10px;"><strong>${item.ano}</strong><br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
+                    <td style="vertical-align:top; padding:10px;"><strong>${item.habPriorizada}</strong></td>
+                    <td style="vertical-align:top; padding:10px;">${renderObj}</td>
+                    <td style="vertical-align:top; padding:10px; color:#0369a1;">${renderCont}</td>
+                    <td style="vertical-align:top; padding:10px; color:#15803d;">${renderPrat}</td>
+                    <td style="vertical-align:top; padding:10px; color:#b45309; font-style:italic;">${renderEvid}</td>
                    </tr>`;
   });
   htmlTabela += `</table></div>`;
 
   conteudoPrevia.innerHTML = htmlTabela;
   containerPrevia.style.display = "block";
-  msg.innerText = `✅ Análise Concluída: ${loteMatrizPronto.length} habilidades e suas respectivas colunas mapeadas.`;
+  msg.innerText = `✅ Análise Concluída: ${loteMatrizPronto.length} habilidades e suas respectivas colunas mapeadas perfeitamente.`;
 }
 
 async function enviarLoteConfirmado() {
