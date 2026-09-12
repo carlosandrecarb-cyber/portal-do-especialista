@@ -385,32 +385,35 @@ function gerarPreviaMatriz() {
     return;
   }
 
-  // 4. RENDERIZAÇÃO DA TABELA (SEM CORTES)
-  let htmlTabela = `<table style="font-size:0.82rem; width:100%;">
-                      <tr>
-                        <th style="width:3%;">#</th>
-                        <th style="width:10%;">Ano/Trim</th>
-                        <th style="width:30%;">Habilidade Priorizada</th>
-                        <th style="width:25%;">Objetos do Conhecimento</th>
-                        <th style="width:32%;">Conteúdos / Práticas</th>
-                      </tr>`;
+  // 4. RENDERIZAÇÃO DA TABELA (COM TODAS AS COLUNAS EXPANDIDAS E ROLAGEM HORIZONTAL)
+  let htmlTabela = `<div style="overflow-x: auto;">
+                      <table style="font-size:0.82rem; width:100%; min-width:1100px; border-collapse: collapse;">
+                        <tr>
+                          <th style="width:3%; text-align:left; padding:8px;">#</th>
+                          <th style="width:10%; text-align:left; padding:8px;">Ano/Trim/Unid</th>
+                          <th style="width:18%; text-align:left; padding:8px;">Habilidade Priorizada</th>
+                          <th style="width:14%; text-align:left; padding:8px;">Objeto do Conhec.</th>
+                          <th style="width:15%; text-align:left; padding:8px;">Conteúdos Relacionados</th>
+                          <th style="width:20%; text-align:left; padding:8px;">Práticas Pedagógicas</th>
+                          <th style="width:20%; text-align:left; padding:8px;">Evidências</th>
+                        </tr>`;
   
   loteMatrizPronto.forEach((item, index) => {
-    let exibirContPrat = isLinguaOuMat ? "-" : `<span style="color:#0369a1;font-weight:600;">Cont:</span> ${item.conteudosRelacionados}<br><br><span style="color:#15803d;font-weight:600;">Prat:</span> ${item.praticas}`;
-    
-    htmlTabela += `<tr>
-                    <td style="vertical-align:top;">${index + 1}</td>
-                    <td style="vertical-align:top;">${item.ano}<br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
-                    <td style="vertical-align:top;"><strong>${item.habPriorizada}</strong></td>
-                    <td style="vertical-align:top;">${item.objetoConhecimento}</td>
-                    <td style="vertical-align:top;">${exibirContPrat}</td>
+    htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0;">
+                    <td style="vertical-align:top; padding:8px;">${index + 1}</td>
+                    <td style="vertical-align:top; padding:8px;">${item.ano}<br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
+                    <td style="vertical-align:top; padding:8px;"><strong>${item.habPriorizada}</strong></td>
+                    <td style="vertical-align:top; padding:8px;">${item.objetoConhecimento}</td>
+                    <td style="vertical-align:top; padding:8px; color:#0369a1;">${item.conteudosRelacionados}</td>
+                    <td style="vertical-align:top; padding:8px; color:#15803d;">${item.praticas}</td>
+                    <td style="vertical-align:top; padding:8px; color:#9a3412; font-style:italic;">${item.evidencias}</td>
                    </tr>`;
   });
-  htmlTabela += `</table>`;
+  htmlTabela += `</table></div>`;
 
   conteudoPrevia.innerHTML = htmlTabela;
   containerPrevia.style.display = "block";
-  msg.innerText = `✅ Análise Concluída: ${loteMatrizPronto.length} habilidades perfeitamente mapeadas.`;
+  msg.innerText = `✅ Análise Concluída: ${loteMatrizPronto.length} habilidades e suas respectivas colunas mapeadas.`;
 }
 
 async function enviarLoteConfirmado() {
