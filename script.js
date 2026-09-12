@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; // COLE SEU LINK AQUI
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 var dadosPlanosGlobais = [];
 var loteMatrizPronto = [];
 
@@ -255,7 +255,8 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// EXTRATOR FIEL E INTEGRAL DAS 11 COLUNAS DO PLANO DE CURSO
+// MÁQUINA DE ESTADOS: EXTRATOR PROFUNDO DE MATRIZ
+// Lê as 11 colunas com precisão milimétrica, sem cortar frases.
 // ==========================================
 function gerarPreviaMatriz() {
   const texto = document.getElementById('textoMatrizBruto').value.trim();
@@ -268,121 +269,148 @@ function gerarPreviaMatriz() {
 
   if (!texto) { alert("⚠️ Cole o texto do plano de curso/matriz antes de gerar a prévia."); return; }
 
-  msg.innerText = "⏳ Lendo o plano de curso e fatiando as 11 colunas...";
+  msg.innerText = "⏳ Analisando e reconstruindo a estrutura do PDF...";
   loteMatrizPronto = [];
 
-  // Limpa quebras e padroniza o texto bruto vindo do PDF
-  let textoLimpo = texto.replace(/\r\n/g, "\n");
-  
-  // Divide o texto rigorosamente com base no início de cada habilidade oficial (ex: (EF06CI25MG) ou EF06...)
-  let blocos = textoLimpo.split(/(?=\(?(?:EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?)\)?)/i);
-  if (blocos.length <= 1) {
-    blocos = textoLimpo.split(/Habilidades do CRMG/i);
-  }
+  // 1. HIGIENIZAÇÃO E INJEÇÃO DE ÂNCORAS
+  let txt = texto.replace(/\r\n/g, "\n");
+  txt = txt.replace(/Ciências\s*-\s*\dº\s*Trimestre/gi, "");
+  txt = txt.replace(/História\s*-\s*\dº\s*Trimestre/gi, "");
+  txt = txt.replace(/Geografia\s*-\s*\dº\s*Trimestre/gi, "");
 
-  let unidadeAtual = "Vida e Evolução";
+  txt = txt.replace(/(Unidades Temáticas|Unidade Temática|Práticas de Linguagem|Eixo Temático)/gi, "\n[UNIDADE]");
+  txt = txt.replace(/(Habilidades do CRMG|Habilidade Priorizada|Habilidades Priorizadas)/gi, "\n[HAB_PRIORIZADA]");
+  txt = txt.replace(/(Habilidades de Recomposição|Habilidade de Recomposição)/gi, "\n[HAB_RECOMPOSICAO]");
+  txt = txt.replace(/(Habilidades de Suporte|Habilidade de Suporte)/gi, "\n[HAB_SUPORTE]");
+  txt = txt.replace(/(Objetos do conhecimento|Objeto do conhecimento)/gi, "\n[OBJETO]");
+  txt = txt.replace(/(Conteúdos Relacionados)/gi, "\n[CONTEUDOS]");
+  txt = txt.replace(/(Exemplos de Práticas Pedagógicas|Práticas Pedagógicas)/gi, "\n[PRATICAS]");
+  txt = txt.replace(/(Evidência de Consolidação de Aprendizagem|Evidências de Consolidação|Evidências)/gi, "\n[EVIDENCIAS]");
+  txt = txt.replace(/(Gêneros Textuais|Gênero Textual)/gi, "\n[GENERO]");
 
-  blocos.forEach(function(bloco) {
-    if (!bloco || bloco.trim().length < 15) return;
+  // 2. LEITURA INTELIGENTE
+  let linhas = txt.split('\n');
+  let blocos = [];
+  let blocoAtual = null;
+  let unidadeGlobal = "Não especificada";
+  let generoGlobal = "-";
+  let contextoAtual = ""; 
 
-    // Captura a Unidade Temática ou Prática de Linguagem
-    if (bloco.toLowerCase().includes("unidades temáticas") || bloco.toLowerCase().includes("unidade temática") || bloco.toLowerCase().includes("práticas")) {
-      let matchU = bloco.match(/(?:Unidades Temáticas|Unidade Temática|Práticas de Linguagem)[:\s]*([^\n]+)/i);
-      if (matchU && matchU[1]) {
-        unidadeAtual = matchU[1].replace(/Habilidades do CRMG/gi, "").trim();
+  for (let i = 0; i < linhas.length; i++) {
+    let l = linhas[i].trim();
+    if (!l) continue;
+    if (/^\d{1,3}$/.test(l)) continue; // Ignora números de página soltos
+
+    if (l.startsWith("[UNIDADE]")) {
+      unidadeGlobal = l.replace("[UNIDADE]", "").trim();
+      if (blocoAtual && blocoAtual.unidade === "Não especificada") blocoAtual.unidade = unidadeGlobal;
+      contextoAtual = "unidade";
+    }
+    else if (l.startsWith("[GENERO]")) {
+      generoGlobal = l.replace("[GENERO]", "").trim();
+      if (blocoAtual) blocoAtual.genero = generoGlobal;
+      contextoAtual = "genero";
+    }
+    else if (l.startsWith("[HAB_PRIORIZADA]")) {
+      if (blocoAtual) blocos.push(blocoAtual);
+      blocoAtual = {
+        disciplina: disciplina, ano: ano, trimestre: trimestre,
+        unidade: unidadeGlobal, genero: generoGlobal,
+        habPriorizada: l.replace("[HAB_PRIORIZADA]", "").trim(),
+        habRecomposicao: "-", habSuporte: "-", objetoConhecimento: "-",
+        conteudosRelacionados: "-", praticas: "-", evidencias: "-"
+      };
+      contextoAtual = "habPriorizada";
+    }
+    else if (l.startsWith("[HAB_RECOMPOSICAO]")) {
+      if (blocoAtual) blocoAtual.habRecomposicao = l.replace("[HAB_RECOMPOSICAO]", "").trim();
+      contextoAtual = "habRecomposicao";
+    }
+    else if (l.startsWith("[HAB_SUPORTE]")) {
+      if (blocoAtual) blocoAtual.habSuporte = l.replace("[HAB_SUPORTE]", "").trim();
+      contextoAtual = "habSuporte";
+    }
+    else if (l.startsWith("[OBJETO]")) {
+      if (blocoAtual) blocoAtual.objetoConhecimento = l.replace("[OBJETO]", "").trim();
+      contextoAtual = "objetoConhecimento";
+    }
+    else if (l.startsWith("[CONTEUDOS]")) {
+      if (blocoAtual) blocoAtual.conteudosRelacionados = l.replace("[CONTEUDOS]", "").trim();
+      contextoAtual = "conteudosRelacionados";
+    }
+    else if (l.startsWith("[PRATICAS]")) {
+      if (blocoAtual) blocoAtual.praticas = l.replace("[PRATICAS]", "").trim();
+      contextoAtual = "praticas";
+    }
+    else if (l.startsWith("[EVIDENCIAS]")) {
+      if (blocoAtual) blocoAtual.evidencias = l.replace("[EVIDENCIAS]", "").trim();
+      contextoAtual = "evidencias";
+    }
+    else {
+      // Continuação de linha sem quebra
+      if (blocoAtual && contextoAtual) {
+         blocoAtual[contextoAtual] += " " + l;
+      } else if (contextoAtual === "unidade") {
+         unidadeGlobal += " " + l;
       }
     }
+  }
+  if (blocoAtual) blocos.push(blocoAtual);
 
-    // Captura a Habilidade Priorizada integralmente (sem cortar)
-    let habPriorizada = "";
-    let matchH = bloco.match(/(\(?[A-Z0-9]{8,12}\)?[\s\S]*?)(?=Objetos do conhecimento|Conteúdos Relacionados|Exemplos de Práticas|$)/i);
-    if (matchH && matchH[1]) {
-      habPriorizada = matchH[1].replace(/Habilidades do CRMG/gi, "").trim();
+  // 3. AUDITORIA E REGRAS DE NEGÓCIO
+  let isLinguaOuMat = (disciplina === "Língua Portuguesa" || disciplina === "Matemática");
+  
+  blocos.forEach(b => {
+    let matchCod = b.habPriorizada.match(/(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?)/i);
+    if (!matchCod && b.habPriorizada.length < 15) return; 
+
+    if (isLinguaOuMat) {
+       b.conteudosRelacionados = "-";
+       b.praticas = "-";
     } else {
-      let linhas = bloco.split('\n');
-      habPriorizada = linhas[0] + (linhas[1] ? " " + linhas[1] : "");
+       b.genero = "-";
+       b.habRecomposicao = "-";
+       b.habSuporte = "-";
     }
 
-    // Captura Objetos do Conhecimento
-    let objetoConhecimento = "-";
-    let matchObj = bloco.match(/Objetos do conhecimento[:\s]*([^\nConteúdos]+)/i);
-    if (matchObj && matchObj[1]) {
-      objetoConhecimento = matchObj[1].trim();
-    }
+    b.evidencias = b.evidencias.replace(/\.\d{1,3}$/, ".");
+    b.evidencias = b.evidencias === "-" ? "Avaliação formativa contínua" : b.evidencias;
 
-    // Captura Conteúdos Relacionados
-    let conteudosRelacionados = "-";
-    let matchCont = bloco.match(/Conteúdos Relacionados[:\s]*([^\nExemplos]+)/i);
-    if (matchCont && matchCont[1]) {
-      conteudosRelacionados = matchCont[1].trim();
-    }
-
-    // Captura Exemplos de Práticas Pedagógicas
-    let praticas = "-";
-    let matchPraticas = bloco.match(/(?:Exemplos de Práticas Pedagógicas|Práticas Pedagógicas)[:\s]*([^\nEvidência]+)/i);
-    if (matchPraticas && matchPraticas[1]) {
-      praticas = matchPraticas[1].trim();
-    }
-
-    // Captura Evidências de Consolidação
-    let evidencias = "Avaliação formativa contínua observando participação";
-    let matchEvid = bloco.match(/(?:Evidência de Consolidação de Aprendizagem|Evidências)[:\s]*([\s\S]+)/i);
-    if (matchEvid && matchEvid[1]) {
-      evidencias = matchEvid[1].trim().substring(0, 350);
-    }
-
-    let isLinguaOuMat = (disciplina === "Língua Portuguesa" || disciplina === "Matemática");
-
-    // Alimenta o array respeitando rigorosamente as 11 colunas da planilha:
-    // 1: Ano | 2: Trimestre | 3: Unidade | 4: Gênero | 5: Priorizada | 6: Recomposição | 7: Suporte | 8: Objeto | 9: Conteúdos | 10: Práticas | 11: Evidências
-    loteMatrizPronto.push({
-      disciplina: disciplina,
-      ano: ano,
-      trimestre: trimestre,
-      unidade: unidadeAtual,
-      genero: isLinguaOuMat ? "Gênero Textual do Eixo" : "-",
-      habPriorizada: habPriorizada,
-      habRecomposicao: isLinguaOuMat ? "Habilidade de Recomposição associada" : "-",
-      habSuporte: isLinguaOuMat ? "Habilidade de Suporte associada" : "-",
-      objetoConhecimento: objetoConhecimento,
-      conteudosRelacionados: !isLinguaOuMat ? conteudosRelacionados : "-",
-      praticas: !isLinguaOuMat ? praticas : "-",
-      evidencias: evidencias
-    });
+    loteMatrizPronto.push(b);
   });
 
   if (loteMatrizPronto.length === 0) {
-    msg.innerText = "⚠️ Nenhuma habilidade válida foi encontrada. Verifique se o texto copiado contém os códigos (EF...).";
+    msg.innerText = "⚠️ Nenhuma estrutura válida encontrada. Certifique-se de colar os códigos das habilidades (EF...).";
     containerPrevia.style.display = "none";
     return;
   }
 
-  // Tabela de conferência limpa e detalhada na tela
-  let htmlTabela = `<table style="font-size:0.82rem;">
+  // 4. RENDERIZAÇÃO DA TABELA (SEM CORTES)
+  let htmlTabela = `<table style="font-size:0.82rem; width:100%;">
                       <tr>
-                        <th>#</th>
-                        <th>Ano/Trim</th>
-                        <th>Unidade / Eixo</th>
-                        <th>Habilidade Priorizada</th>
-                        <th>Objetos do Conhecimento</th>
-                        <th>Conteúdos Relacionados</th>
+                        <th style="width:3%;">#</th>
+                        <th style="width:10%;">Ano/Trim</th>
+                        <th style="width:30%;">Habilidade Priorizada</th>
+                        <th style="width:25%;">Objetos do Conhecimento</th>
+                        <th style="width:32%;">Conteúdos / Práticas</th>
                       </tr>`;
   
   loteMatrizPronto.forEach((item, index) => {
+    let exibirContPrat = isLinguaOuMat ? "-" : `<span style="color:#0369a1;font-weight:600;">Cont:</span> ${item.conteudosRelacionados}<br><br><span style="color:#15803d;font-weight:600;">Prat:</span> ${item.praticas}`;
+    
     htmlTabela += `<tr>
-                    <td>${index + 1}</td>
-                    <td>${item.ano}<br>${item.trimestre}</td>
-                    <td><small>${item.unidade}</small></td>
-                    <td><strong>${item.habPriorizada}</strong></td>
-                    <td>${item.objetoConhecimento}</td>
-                    <td>${item.conteudosRelacionados}</td>
+                    <td style="vertical-align:top;">${index + 1}</td>
+                    <td style="vertical-align:top;">${item.ano}<br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
+                    <td style="vertical-align:top;"><strong>${item.habPriorizada}</strong></td>
+                    <td style="vertical-align:top;">${item.objetoConhecimento}</td>
+                    <td style="vertical-align:top;">${exibirContPrat}</td>
                    </tr>`;
   });
   htmlTabela += `</table>`;
 
   conteudoPrevia.innerHTML = htmlTabela;
   containerPrevia.style.display = "block";
-  msg.innerText = `✅ Prévia gerada com sucesso! ${loteMatrizPronto.length} itens estruturados integralmente nas 11 colunas.`;
+  msg.innerText = `✅ Análise Concluída: ${loteMatrizPronto.length} habilidades perfeitamente mapeadas.`;
 }
 
 async function enviarLoteConfirmado() {
