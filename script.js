@@ -255,7 +255,7 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// A MÁGICA VISUAL DA IA: UPLOAD DIRETO DE PDF VIA GEMINI
+// VISÃO COMPUTACIONAL: UPLOAD DE PDF E EXTRAÇÃO
 // ==========================================
 async function gerarPreviaMatriz() {
   const inputArquivo = document.getElementById('arquivoPdfMatriz');
@@ -335,7 +335,7 @@ async function gerarPreviaMatriz() {
         containerPrevia.style.display = "block";
         msg.innerText = `✅ IA Concluiu: ${loteMatrizPronto.length} habilidades perfeitamente estruturadas. Prontas para enviar!`;
       } else {
-        msg.innerText = "⚠️ A IA não conseguiu encontrar a estrutura de código de habilidade do Estado neste PDF.";
+        msg.innerText = "⚠️ A IA não conseguiu encontrar a estrutura de código de habilidade do Estado neste PDF. Tente com outro documento.";
       }
     } catch (e) {
       msg.innerText = "⚠️ Falha de comunicação com os servidores do Google Gemini.";
