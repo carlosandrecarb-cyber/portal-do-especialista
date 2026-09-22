@@ -219,7 +219,7 @@ async function gerarRaioX() {
                             <h5 style="color:#065f46; margin:0 0 10px 0; font-size:0.95rem;">✅ Habilidades Dadas</h5>
                             <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#064e3b;">`;
         r.trabalhadas.forEach(h => htmlGeral += `<li style="margin-bottom:8px; line-height:1.4;">${h.habilidade.replace(`[${c}]`, '')} <br><small style="color:#047857; font-weight:600;">(Prof. ${h.professor})</small></li>`);
-        if(r.trabalhadas.length === 0) htmlGeral += "<li style='color:#065f46;'>Nenhuma habilidade registrada.</li>";
+        if(r.trabalhadas.length === 0) htmlGeral += "<li style='color:#065f46;'>Nenhuma habilidade registada.</li>";
         htmlGeral += `</ul></div>
                           
                           <div style="background:#fef3c7; padding:15px; border-radius:10px; border:1px solid #fde68a; max-height:220px; overflow-y:auto;">
@@ -267,17 +267,17 @@ async function gerarPreviaMatriz() {
   const conteudoPrevia = document.getElementById('tabelaPreviaConteudo');
 
   if (!inputArquivo.files || inputArquivo.files.length === 0) { 
-    alert("⚠️ Por favor, selecione o arquivo PDF do plano de curso."); 
+    alert("⚠️ Por favor, selecione o ficheiro PDF do plano de curso."); 
     return; 
   }
 
   const arquivo = inputArquivo.files[0];
   if (arquivo.type !== "application/pdf") {
-    alert("⚠️ Formato inválido. O arquivo DEVE ser um PDF.");
+    alert("⚠️ Formato inválido. O ficheiro DEVE ser um PDF.");
     return;
   }
 
-  msg.innerText = "🧠 Visão Computacional Ativada! A Inteligência Artificial está lendo as tabelas do documento... (pode levar 10~20 segundos)";
+  msg.innerText = "🧠 Visão Computacional Ativada! A Inteligência Artificial está a ler as tabelas do documento... (pode levar 10~20 segundos)";
   loteMatrizPronto = [];
   containerPrevia.style.display = "none";
 
@@ -335,7 +335,9 @@ async function gerarPreviaMatriz() {
         containerPrevia.style.display = "block";
         msg.innerText = `✅ IA Concluiu: ${loteMatrizPronto.length} habilidades perfeitamente estruturadas. Prontas para enviar!`;
       } else {
-        msg.innerText = "⚠️ A IA não conseguiu encontrar a estrutura de código de habilidade do Estado neste PDF. Tente com outro documento.";
+        // Se falhar e a IA devolver vazio, exibe também a resposta original no console
+        console.log("Resposta bruta do Servidor:", r);
+        msg.innerText = "⚠️ A IA não conseguiu encontrar a estrutura de código de habilidade do Estado neste PDF. Tente com outro documento, ou a folha não tem os códigos corretos.";
       }
     } catch (e) {
       msg.innerText = "⚠️ Falha de comunicação com os servidores do Google Gemini.";
@@ -343,7 +345,7 @@ async function gerarPreviaMatriz() {
   };
 
   reader.onerror = function() {
-    alert("⚠️ Erro ao processar o arquivo PDF.");
+    alert("⚠️ Erro ao processar o ficheiro PDF.");
   };
 }
 
@@ -352,7 +354,7 @@ async function enviarLoteConfirmado() {
   
   const btnEnvio = document.getElementById('btnEnviarOficial');
   const msg = document.getElementById('msgImportacao');
-  btnEnvio.innerText = "⏳ Gravando nas 11 colunas da Planilha Oficial...";
+  btnEnvio.innerText = "⏳ A Gravar nas 11 colunas da Planilha Oficial...";
   btnEnvio.disabled = true;
 
   try {
@@ -378,7 +380,7 @@ async function gerarRelatorio() {
   const btn = document.getElementById('btnGerarRelatorio');
   const areaLink = document.getElementById('areaLinkRelatorio');
   const periodo = document.getElementById('tipoRelatorio').value;
-  btn.innerText = "⏳ Auditando Matrizes e Gerando Documento...";
+  btn.innerText = "⏳ A Auditar Matrizes e Gerar Documento...";
   btn.disabled = true;
   areaLink.style.display = "none";
 
