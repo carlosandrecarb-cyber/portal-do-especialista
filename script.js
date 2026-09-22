@@ -42,7 +42,7 @@ function sairDoSistema() {
 
 async function carregarListaUsuarios() {
   const container = document.getElementById('tabelaUsuariosContainer');
-  container.innerHTML = "<p style='text-align:center;'>⏳ Carregando usuários...</p>";
+  container.innerHTML = "<p style='text-align:center;'>⏳ A Carregar utilizadores...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
     const r = await res.json();
@@ -54,7 +54,7 @@ async function carregarListaUsuarios() {
       });
       container.innerHTML = html + `</table>`;
     }
-  } catch(e) { container.innerHTML = "<p>Erro ao listar usuários.</p>"; }
+  } catch(e) { container.innerHTML = "<p>Erro ao listar utilizadores.</p>"; }
 }
 
 async function salvarUsuario() {
@@ -62,7 +62,7 @@ async function salvarUsuario() {
   if(!dados.nome || !dados.senha) { alert("Nome e Senha são obrigatórios."); return; }
   try {
     await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) });
-    alert("✅ Usuário salvo!"); limparFormUsuario(); carregarListaUsuarios();
+    alert("✅ Utilizador salvo!"); limparFormUsuario(); carregarListaUsuarios();
   } catch(e) { alert("⚠️ Erro ao salvar."); }
 }
 
@@ -76,7 +76,7 @@ function limparFormUsuario() { document.querySelectorAll('#abaUsuarios input').f
 
 async function carregarPlanosSupervisao() {
   const container = document.getElementById('tabelaPlanosContainer');
-  container.innerHTML = "<p style='text-align:center;'>⏳ Buscando planos...</p>";
+  container.innerHTML = "<p style='text-align:center;'>⏳ A Pesquisar planos...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
     const r = await res.json();
@@ -180,7 +180,7 @@ async function gerarRaioX() {
   const prof = document.getElementById('rxFiltroProf').value;
   const trim = document.getElementById('rxFiltroTrimestre').value;
   
-  painel.innerHTML = "<p style='text-align:center;'>⏳ Analisando componentes curriculares e matrizes...</p>";
+  painel.innerHTML = "<p style='text-align:center;'>⏳ A Analisar componentes curriculares e matrizes...</p>";
   
   try {
     const listaComponentes = compSelecionado ? [compSelecionado] : [
@@ -277,7 +277,7 @@ async function gerarPreviaMatriz() {
     return;
   }
 
-  msg.innerText = "🧠 Visão Computacional Ativada! A Inteligência Artificial está a ler as tabelas do documento... (pode levar 10~20 segundos)";
+  msg.innerText = "🧠 Visão Computacional Ativada! A Inteligência Artificial está a ler os blocos de texto do documento... (pode levar 10~20 segundos)";
   loteMatrizPronto = [];
   containerPrevia.style.display = "none";
 
@@ -333,11 +333,9 @@ async function gerarPreviaMatriz() {
 
         conteudoPrevia.innerHTML = htmlTabela;
         containerPrevia.style.display = "block";
-        msg.innerText = `✅ IA Concluiu: ${loteMatrizPronto.length} habilidades perfeitamente estruturadas. Prontas para enviar!`;
+        msg.innerText = `✅ IA Concluiu: ${loteMatrizPronto.length} habilidades extraídas corretamente do PDF. Prontas para enviar!`;
       } else {
-        // Se falhar e a IA devolver vazio, exibe também a resposta original no console
-        console.log("Resposta bruta do Servidor:", r);
-        msg.innerText = "⚠️ A IA não conseguiu encontrar a estrutura de código de habilidade do Estado neste PDF. Tente com outro documento, ou a folha não tem os códigos corretos.";
+        msg.innerText = "⚠️ A IA não conseguiu encontrar os títulos principais (Unidade Temática, Habilidades, Objetos, etc.) neste ficheiro PDF.";
       }
     } catch (e) {
       msg.innerText = "⚠️ Falha de comunicação com os servidores do Google Gemini.";
