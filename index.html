@@ -35,7 +35,7 @@
     
     h3 { font-size: 1.3rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--cor-principal); margin-top: 20px; display: flex; align-items: center; gap: 8px; }
     
-    input[type="text"], input[type="password"], input[type="email"], select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-family: inherit; font-size: 0.95rem; transition: 0.2s; background: #fdfdfd; cursor: pointer; color: #334155; }
+    input[type="text"], input[type="password"], input[type="email"], select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-family: inherit; font-size: 0.95rem; transition: 0.2s; background: #fdfdfd; color: #334155; }
     input:focus, select:focus, textarea:focus { border-color: var(--cor-secundaria); outline: none; background: white; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
     
     .btn-primario { background: var(--cor-secundaria); color: white; padding: 12px 24px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
@@ -82,7 +82,7 @@
       <button class="tab-btn active" onclick="mudarAba('abaUsuarios', this)">👥 Usuários</button>
       <button class="tab-btn" onclick="mudarAba('abaSupervisao', this)">📋 Planos</button>
       <button class="tab-btn" onclick="mudarAba('abaRaioX', this)">📈 Raio-X Curricular</button>
-      <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📥 Importar Matriz</button>
+      <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📥 Extração por IA (PDF)</button>
       <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatórios</button>
     </div>
 
@@ -143,11 +143,11 @@
       <div id="painelRaioX"></div>
     </div>
 
-    <!-- 4. IMPORTAR MATRIZ (COM MÁQUINA DE ESTADOS) -->
+    <!-- 4. IMPORTAR MATRIZ VIA IA E PDF -->
     <div id="abaMatriz" class="tab-content">
-      <h3>📥 Importação da Matriz Curricular (Extração Profunda)</h3>
+      <h3>🤖 Extração Curricular via Visão Computacional (PDF)</h3>
       <div style="background: #ffffff; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: var(--sombra-card);">
-        <p style="color:#64748b; margin-top:0;">O extrator analisará o texto do PDF com precisão para encontrar e preencher as 11 colunas corretamente.</p>
+        <p style="color:#64748b; margin-top:0;">Faça o upload do Plano de Curso em PDF. A Inteligência Artificial (Gemini) fará a leitura visual das tabelas, unirá colunas quebradas e enviará os dados limpos direto para o banco de dados.</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div><label class="label-filtro">Disciplina / Componente</label>
@@ -171,20 +171,25 @@
           </div>
         </div>
 
-        <div class="bloco-campo" style="margin-bottom:15px;">
-          <label class="label-filtro">Texto Copiado do PDF / Plano de Curso</label>
-          <textarea id="textoMatrizBruto" rows="8" placeholder="Cole aqui o conteúdo copiado do PDF..."></textarea>
+        <div class="bloco-campo" style="margin-bottom: 20px;">
+          <label style="font-weight: bold; color: #1e3a8a;">📄 Selecione o PDF da Matriz:</label>
+          <div style="border: 2px dashed #94a3b8; padding: 20px; text-align: center; border-radius: 12px; background: #f8fafc; transition: 0.3s; cursor: pointer;">
+            <input type="file" id="arquivoPdfMatriz" accept="application/pdf" style="width: 100%; cursor: pointer;">
+            <p style="font-size: 0.85rem; color: #64748b; margin-top: 10px;">
+              <strong>DICA DE OURO:</strong> Anexe o PDF contendo apenas as páginas da disciplina desejada para que a Inteligência Artificial processe mais rápido e sem erros.
+            </p>
+          </div>
         </div>
 
-        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7;">🔍 1. Extrair e Gerar Prévia</button>
+        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7; width: 100%;">🧠 Extrair Tabelas do PDF com Inteligência Artificial</button>
         
         <div id="containerPrevia" style="margin-top: 25px; display: none;">
           <h4 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📋 Tabela de Conferência (Prévia)</h4>
           <div id="tabelaPreviaConteudo" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px;"></div>
-          <button onclick="enviarLoteConfirmado()" class="btn-primario" id="btnEnviarOficial" style="background: #10b981; font-size: 1.1rem; width: 100%;">🚀 2. Confirmar e Enviar para a Planilha Oficial</button>
+          <button onclick="enviarLoteConfirmado()" class="btn-primario" id="btnEnviarOficial" style="background: #10b981; font-size: 1.1rem; width: 100%;">🚀 Aprovar Extração e Enviar para a Planilha</button>
         </div>
 
-        <p id="msgImportacao" style="margin-top: 15px; font-weight:bold; color:#059669;"></p>
+        <p id="msgImportacao" style="margin-top: 15px; font-weight:bold; color:#059669; text-align:center;"></p>
       </div>
     </div>
 
