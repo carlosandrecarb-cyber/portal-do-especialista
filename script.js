@@ -255,12 +255,10 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// EXTRATOR DEFINITIVO: RETORNO DA LÓGICA DE TEXTO CONTÍNUO (ACHATADO / FLATTENED)
-// Remove quebras de linha nas células, converte bullets em textos fluidos 
-// e ignora completamente cabeçalhos, rodapés e páginas fantasmas do CRMG.
+// A MÁGICA VISUAL DA IA: UPLOAD DIRETO DE PDF VIA GEMINI
 // ==========================================
-function gerarPreviaMatriz() {
-  const texto = document.getElementById('textoMatrizBruto').value.trim();
+async function gerarPreviaMatriz() {
+  const inputArquivo = document.getElementById('arquivoPdfMatriz');
   const disciplina = document.getElementById('impDisciplina').value;
   const ano = document.getElementById('impAno').value;
   const trimestre = document.getElementById('impTrimestre').value;
@@ -268,169 +266,85 @@ function gerarPreviaMatriz() {
   const containerPrevia = document.getElementById('containerPrevia');
   const conteudoPrevia = document.getElementById('tabelaPreviaConteudo');
 
-  if (!texto) { alert("⚠️ Cole o texto do plano de curso/matriz antes de gerar a prévia."); return; }
-
-  msg.innerText = "⏳ Extraindo e achatando o texto perfeitamente...";
-  loteMatrizPronto = [];
-
-  // 1. HIGIENIZAÇÃO AGRESSIVA DE LIXOS DO PDF
-  let txt = texto.replace(/\r\n/g, "\n");
-  
-  // Apaga completamente números de página soltos (ex: 18, 19, 20)
-  txt = txt.replace(/^[0-9]+$/gm, ""); 
-  
-  // Apaga cabeçalhos e rodapés do documento de Governo
-  txt = txt.replace(/.*PLANO DE CURSO.*CRMG.*/gi, "");
-  txt = txt.replace(/Área de Conhecimento:.*Componente Curricular:.*/gi, "");
-  txt = txt.replace(/Ano de Escolaridade:.*Etapa de Ensino:.*/gi, "");
-  txt = txt.replace(/[A-Za-zãéíóúç]+\s*-\s*\dº\s*Trimestre/gi, "");
-
-  // 2. INJEÇÃO SEGURA DE MARCADORES
-  txt = txt.replace(/(Unidades Temáticas|Unidade Temática|Práticas de Linguagem|Eixo Temático)/gi, "\n[UNIDADE]\n");
-  txt = txt.replace(/(Habilidades do CRMG|Habilidade Priorizada|Habilidades Priorizadas)/gi, "\n[HAB_PRIORIZADA]\n");
-  txt = txt.replace(/(Habilidades de Recomposição|Habilidade de Recomposição)/gi, "\n[HAB_RECOMPOSICAO]\n");
-  txt = txt.replace(/(Habilidades de Suporte|Habilidade de Suporte)/gi, "\n[HAB_SUPORTE]\n");
-  txt = txt.replace(/(Objetos do conhecimento|Objeto do conhecimento)/gi, "\n[OBJETO]\n");
-  txt = txt.replace(/(Conteúdos Relacionados)/gi, "\n[CONTEUDOS]\n");
-  txt = txt.replace(/(Exemplos de Práticas Pedagógicas|Práticas Pedagógicas)/gi, "\n[PRATICAS]\n");
-  txt = txt.replace(/(Evidência de Consolidação de Aprendizagem|Evidências de Consolidação|Evidências)/gi, "\n[EVIDENCIAS]\n");
-  txt = txt.replace(/(Gêneros Textuais|Gênero Textual)/gi, "\n[GENERO]\n");
-
-  let linhas = txt.split('\n');
-  let blocoAtual = null;
-  let blocos = [];
-  let unidadeGlobal = "Não especificada";
-  let generoGlobal = "-";
-  let estadoAtual = "";
-
-  for (let i = 0; i < linhas.length; i++) {
-    let l = linhas[i].trim();
-    if (!l) continue;
-    
-    // Converte bullets do PDF em strings contínuas
-    l = l.replace(/^[•\-\*]\s*/, "");
-
-    if (l === "[UNIDADE]") { estadoAtual = "unidade"; unidadeGlobal = ""; continue; }
-    if (l === "[GENERO]") { estadoAtual = "genero"; generoGlobal = ""; continue; }
-    
-    if (l === "[HAB_PRIORIZADA]") {
-      if (blocoAtual) blocos.push(blocoAtual);
-      blocoAtual = {
-        disciplina: disciplina, ano: ano, trimestre: trimestre,
-        unidade: unidadeGlobal, genero: generoGlobal,
-        habPriorizada: "", habRecomposicao: "-", habSuporte: "-",
-        objetoConhecimento: "", conteudosRelacionados: "",
-        praticas: "", evidencias: ""
-      };
-      estadoAtual = "habPriorizada";
-      continue;
-    }
-    
-    if (l === "[HAB_RECOMPOSICAO]") { estadoAtual = "habRecomposicao"; continue; }
-    if (l === "[HAB_SUPORTE]") { estadoAtual = "habSuporte"; continue; }
-    if (l === "[OBJETO]") { estadoAtual = "objetoConhecimento"; continue; }
-    if (l === "[CONTEUDOS]") { estadoAtual = "conteudosRelacionados"; continue; }
-    if (l === "[PRATICAS]") { estadoAtual = "praticas"; continue; }
-    if (l === "[EVIDENCIAS]") { estadoAtual = "evidencias"; continue; }
-
-    // Fallback: se houver um código EF solto que escapou do cabeçalho
-    if (!blocoAtual && l.match(/^\(EF[0-9]{2}[A-Z]{2}[0-9]{2}[A-Z]?\)/i)) {
-      blocoAtual = {
-        disciplina: disciplina, ano: ano, trimestre: trimestre,
-        unidade: unidadeGlobal, genero: generoGlobal,
-        habPriorizada: "", habRecomposicao: "-", habSuporte: "-",
-        objetoConhecimento: "", conteudosRelacionados: "",
-        praticas: "", evidencias: ""
-      };
-      estadoAtual = "habPriorizada";
-    }
-
-    // 3. O SEGREDO DO SUCESSO: Achatamento da linha (Flatten)
-    // Ao invés de usar quebras (\n), juntamos os textos com espaços ou ponto e vírgula
-    if (estadoAtual === "unidade") {
-      unidadeGlobal = (unidadeGlobal + " " + l).trim();
-      if (blocoAtual) blocoAtual.unidade = unidadeGlobal;
-    } else if (estadoAtual === "genero") {
-      generoGlobal = (generoGlobal + " " + l).trim();
-      if (blocoAtual) blocoAtual.genero = generoGlobal;
-    } else if (blocoAtual && estadoAtual) {
-      let textoCorrente = blocoAtual[estadoAtual];
-      if (textoCorrente === "" || textoCorrente === "-") {
-        blocoAtual[estadoAtual] = l;
-      } else {
-        // Se for Objeto ou Conteúdo, separa os bullets originais com ponto e vírgula
-        if ((estadoAtual === "conteudosRelacionados" || estadoAtual === "objetoConhecimento" || estadoAtual === "praticas") && !textoCorrente.endsWith(";") && !textoCorrente.endsWith(".")) {
-          blocoAtual[estadoAtual] += "; " + l;
-        } else {
-          blocoAtual[estadoAtual] += " " + l;
-        }
-      }
-    }
+  if (!inputArquivo.files || inputArquivo.files.length === 0) { 
+    alert("⚠️ Por favor, selecione o arquivo PDF do plano de curso."); 
+    return; 
   }
-  
-  if (blocoAtual) blocos.push(blocoAtual);
 
-  // 4. APLICAÇÃO DAS 11 COLUNAS (Língua/Matemática vs Outros)
-  let isLinguaOuMat = (disciplina === "Língua Portuguesa" || disciplina === "Matemática");
-  
-  blocos.forEach(b => {
-    // Filtro rigoroso: descarta o que não for habilidade
-    if (!b.habPriorizada || (!b.habPriorizada.includes("EF") && b.habPriorizada.length < 15)) return;
-
-    b.unidade = b.unidade || "Não especificada";
-    b.objetoConhecimento = b.objetoConhecimento || "-";
-    b.conteudosRelacionados = b.conteudosRelacionados || "-";
-    b.praticas = b.praticas || "-";
-    b.evidencias = b.evidencias || "Avaliação formativa contínua";
-
-    if (isLinguaOuMat) {
-        b.conteudosRelacionados = "-";
-        b.praticas = "-";
-    } else {
-        b.genero = "-";
-        b.habRecomposicao = "-";
-        b.habSuporte = "-";
-    }
-
-    loteMatrizPronto.push(b);
-  });
-
-  if (loteMatrizPronto.length === 0) {
-    msg.innerText = "⚠️ Nenhuma estrutura válida encontrada. Certifique-se de colar os códigos das habilidades (EF...).";
-    containerPrevia.style.display = "none";
+  const arquivo = inputArquivo.files[0];
+  if (arquivo.type !== "application/pdf") {
+    alert("⚠️ Formato inválido. O arquivo DEVE ser um PDF.");
     return;
   }
 
-  // 5. RENDERIZAÇÃO DA TABELA (Exatamente como vai para a planilha: Texto corrido!)
-  let htmlTabela = `<div style="overflow-x: auto; padding-bottom: 10px;">
-                      <table style="font-size:0.85rem; width:100%; min-width:1300px; border-collapse: collapse; border: 1px solid #cbd5e1;">
-                        <tr style="background-color:#1e3a8a; color:white;">
-                          <th style="padding:10px; text-align:left; width:3%;">#</th>
-                          <th style="padding:10px; text-align:left; width:10%;">Ano/Trim/Unid</th>
-                          <th style="padding:10px; text-align:left; width:17%;">Habilidade Priorizada</th>
-                          <th style="padding:10px; text-align:left; width:15%;">Objeto do Conhec.</th>
-                          <th style="padding:10px; text-align:left; width:15%;">Conteúdos Relacionados</th>
-                          <th style="padding:10px; text-align:left; width:20%;">Práticas Pedagógicas</th>
-                          <th style="padding:10px; text-align:left; width:20%;">Evidências</th>
-                        </tr>`;
-  
-  loteMatrizPronto.forEach((item, index) => {
-    let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-    htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
-                    <td style="vertical-align:top; padding:10px;">${index + 1}</td>
-                    <td style="vertical-align:top; padding:10px;"><strong>${item.ano}</strong><br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
-                    <td style="vertical-align:top; padding:10px;"><strong>${item.habPriorizada}</strong></td>
-                    <td style="vertical-align:top; padding:10px;">${item.objetoConhecimento}</td>
-                    <td style="vertical-align:top; padding:10px; color:#0369a1;">${item.conteudosRelacionados}</td>
-                    <td style="vertical-align:top; padding:10px; color:#15803d;">${item.praticas}</td>
-                    <td style="vertical-align:top; padding:10px; color:#b45309; font-style:italic;">${item.evidencias}</td>
-                   </tr>`;
-  });
-  htmlTabela += `</table></div>`;
+  msg.innerText = "🧠 Visão Computacional Ativada! A Inteligência Artificial está lendo as tabelas do documento... (pode levar 10~20 segundos)";
+  loteMatrizPronto = [];
+  containerPrevia.style.display = "none";
 
-  conteudoPrevia.innerHTML = htmlTabela;
-  containerPrevia.style.display = "block";
-  msg.innerText = `✅ Análise Concluída: ${loteMatrizPronto.length} habilidades mapeadas e texto compactado para a planilha.`;
+  const reader = new FileReader();
+  reader.readAsDataURL(arquivo);
+  
+  reader.onload = async function(event) {
+    const base64Completo = event.target.result;
+    const base64Puro = base64Completo.split(',')[1]; 
+
+    try {
+      const res = await fetch(URL_API, { 
+        method: 'POST', 
+        body: JSON.stringify({ 
+          acao: "extrairPdfComIA", 
+          arquivoBase64: base64Puro, 
+          disciplina: disciplina, 
+          ano: ano, 
+          trimestre: trimestre 
+        }) 
+      });
+      
+      const r = await res.json();
+      
+      if (r.status === "sucesso" && r.dados && r.dados.length > 0) {
+        loteMatrizPronto = r.dados;
+        
+        let htmlTabela = `<div style="overflow-x: auto; padding-bottom: 10px;">
+          <table style="font-size:0.85rem; width:100%; min-width:1300px; border-collapse: collapse; border: 1px solid #cbd5e1;">
+            <tr style="background-color:#1e3a8a; color:white;">
+              <th style="padding:10px; text-align:left; width:3%;">#</th>
+              <th style="padding:10px; text-align:left; width:10%;">Ano/Trim/Unid</th>
+              <th style="padding:10px; text-align:left; width:17%;">Habilidade Priorizada</th>
+              <th style="padding:10px; text-align:left; width:15%;">Objeto do Conhec.</th>
+              <th style="padding:10px; text-align:left; width:15%;">Conteúdos Relacionados</th>
+              <th style="padding:10px; text-align:left; width:20%;">Práticas Pedagógicas</th>
+              <th style="padding:10px; text-align:left; width:20%;">Evidências</th>
+            </tr>`;
+        
+        loteMatrizPronto.forEach((item, index) => {
+          let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+          htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
+                          <td style="vertical-align:top; padding:10px;">${index + 1}</td>
+                          <td style="vertical-align:top; padding:10px;"><strong>${item.ano}</strong><br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
+                          <td style="vertical-align:top; padding:10px;"><strong>${item.habPriorizada}</strong></td>
+                          <td style="vertical-align:top; padding:10px;">${item.objetoConhecimento}</td>
+                          <td style="vertical-align:top; padding:10px; color:#0369a1;">${item.conteudosRelacionados}</td>
+                          <td style="vertical-align:top; padding:10px; color:#15803d;">${item.praticas}</td>
+                          <td style="vertical-align:top; padding:10px; color:#b45309; font-style:italic;">${item.evidencias}</td>
+                         </tr>`;
+        });
+        htmlTabela += `</table></div>`;
+
+        conteudoPrevia.innerHTML = htmlTabela;
+        containerPrevia.style.display = "block";
+        msg.innerText = `✅ IA Concluiu: ${loteMatrizPronto.length} habilidades perfeitamente estruturadas. Prontas para enviar!`;
+      } else {
+        msg.innerText = "⚠️ A IA não conseguiu encontrar a estrutura de código de habilidade do Estado neste PDF.";
+      }
+    } catch (e) {
+      msg.innerText = "⚠️ Falha de comunicação com os servidores do Google Gemini.";
+    }
+  };
+
+  reader.onerror = function() {
+    alert("⚠️ Erro ao processar o arquivo PDF.");
+  };
 }
 
 async function enviarLoteConfirmado() {
@@ -446,7 +360,7 @@ async function enviarLoteConfirmado() {
     const r = await res.json();
     if (r.status === "sucesso") {
       msg.innerText = "✅ " + r.mensagem;
-      document.getElementById('textoMatrizBruto').value = "";
+      document.getElementById('arquivoPdfMatriz').value = "";
       document.getElementById('containerPrevia').style.display = "none";
       loteMatrizPronto = [];
     } else {
@@ -455,7 +369,7 @@ async function enviarLoteConfirmado() {
   } catch (e) {
     msg.innerText = "⚠️ Erro de comunicação com o servidor.";
   } finally {
-    btnEnvio.innerText = "🚀 2. Confirmar e Enviar para a Planilha Oficial";
+    btnEnvio.innerText = "🚀 Aprovar Extração e Enviar para a Planilha";
     btnEnvio.disabled = false;
   }
 }
