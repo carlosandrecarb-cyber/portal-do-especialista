@@ -16,21 +16,41 @@ async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
-  if (!usuario || !senha) { msg.innerText = "Preencha usuário e senha."; return; }
+  
+  if (!usuario || !senha) { 
+    msg.innerText = "⚠️ Preencha o utilizador e a senha."; 
+    return; 
+  }
 
-  msg.innerText = "⏳ Autenticando Especialista...";
+  msg.innerText = "⏳ Autenticando Especialista... (Aguarde)";
+  
   try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "login", usuario, senha }) });
+    const res = await fetch(URL_API, { 
+      method: 'POST',
+      redirect: 'follow',
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ acao: "login", usuario, senha }) 
+    });
+    
+    if (!res.ok) throw new Error(`Erro do Servidor: ${res.status}`);
+
     const r = await res.json();
-    if (r.status === "sucesso" && r.perfil.toLowerCase() === "especialista") {
-      document.getElementById('telaLogin').style.display = 'none';
-      document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
-      document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Gestor Logado: ${r.nome}`;
-      carregarListaUsuarios();
+    
+    if (r.status === "sucesso") {
+      if (r.perfil && r.perfil.toLowerCase() === "especialista") {
+        document.getElementById('telaLogin').style.display = 'none';
+        document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
+        document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Gestor Logado: ${r.nome}`;
+        carregarListaUsuarios();
+      } else {
+        msg.innerText = "⛔ Acesso Negado: A sua conta não tem perfil de Especialista.";
+      }
     } else {
-      msg.innerText = "Acesso Negado: Sem perfil de Especialista.";
+      msg.innerText = `⚠️ ${r.mensagem || "Utilizador ou senha incorretos."}`;
     }
-  } catch (e) { msg.innerText = "⚠️ Erro de conexão."; }
+  } catch (e) { 
+    msg.innerText = `❌ Falha de comunicação: ${e.message}`; 
+  }
 }
 
 function sairDoSistema() {
@@ -209,11 +229,9 @@ async function gerarRaioX() {
                           <span>📚 ${c}</span>
                           <span style="font-size: 0.9rem; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 600;">${perc}% Concluído (${dadas}/${total})</span>
                         </h4>
-                        
                         <div style="width:100%; background:#e2e8f0; height:8px; border-radius:4px; margin-bottom:15px; overflow:hidden;">
                           <div style="width:${perc}%; background:#10b981; height:100%;"></div>
                         </div>
-
                         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
                           <div style="background:#d1fae5; padding:15px; border-radius:10px; border:1px solid #a7f3d0; max-height:220px; overflow-y:auto;">
                             <h5 style="color:#065f46; margin:0 0 10px 0; font-size:0.95rem;">✅ Habilidades Dadas</h5>
@@ -221,7 +239,6 @@ async function gerarRaioX() {
         r.trabalhadas.forEach(h => htmlGeral += `<li style="margin-bottom:8px; line-height:1.4;">${h.habilidade.replace(`[${c}]`, '')} <br><small style="color:#047857; font-weight:600;">(Prof. ${h.professor})</small></li>`);
         if(r.trabalhadas.length === 0) htmlGeral += "<li style='color:#065f46;'>Nenhuma habilidade registrada.</li>";
         htmlGeral += `</ul></div>
-                          
                           <div style="background:#fef3c7; padding:15px; border-radius:10px; border:1px solid #fde68a; max-height:220px; overflow-y:auto;">
                             <h5 style="color:#92400e; margin:0 0 10px 0; font-size:0.95rem;">⚠️ Faltam Ensinar</h5>
                             <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#78350f;">`;
@@ -255,10 +272,10 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// VISÃO COMPUTACIONAL: UPLOAD DE MÚLTIPLAS IMAGENS
+// VISÃO IA: ORGANIZAÇÃO DE TEXTO BRUTO
 // ==========================================
 async function gerarPreviaMatriz() {
-  const inputArquivo = document.getElementById('arquivosImagemMatriz');
+  const textoBruto = document.getElementById('textoMatrizBruto').value.trim();
   const disciplina = document.getElementById('impDisciplina').value;
   const ano = document.getElementById('impAno').value;
   const trimestre = document.getElementById('impTrimestre').value;
@@ -266,46 +283,30 @@ async function gerarPreviaMatriz() {
   const containerPrevia = document.getElementById('containerPrevia');
   const conteudoPrevia = document.getElementById('tabelaPreviaConteudo');
 
-  if (!inputArquivo.files || inputArquivo.files.length === 0) { 
-    alert("⚠️ Por favor, selecione pelo menos uma imagem (print/foto) da matriz."); 
+  if (!textoBruto) { 
+    alert("⚠️ Por favor, cole o texto copiado do PDF na caixa antes de continuar."); 
     return; 
   }
 
-  msg.innerText = `🧠 Visão Computacional Ativada! Lendo ${inputArquivo.files.length} imagem(ns)... (pode levar 10~30 segundos)`;
+  msg.innerText = `🧠 Inteligência Artificial ativada! A ler, corrigir e organizar o texto... (Aguarde uns segundos)`;
   loteMatrizPronto = [];
   containerPrevia.style.display = "none";
 
-  const lerImagemBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const base64Completo = event.target.result;
-        const tipo = file.type; 
-        const base64Puro = base64Completo.split(',')[1];
-        resolve({ mimeType: tipo, data: base64Puro });
-      };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
-
   try {
-    const imagensParaEnviar = [];
-    for (let i = 0; i < inputArquivo.files.length; i++) {
-      imagensParaEnviar.push(await lerImagemBase64(inputArquivo.files[i]));
-    }
-
     const res = await fetch(URL_API, { 
       method: 'POST', 
+      redirect: 'follow',
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ 
-        acao: "extrairImagemComIA", 
-        imagens: imagensParaEnviar, 
+        acao: "organizarTextoComIA", 
+        texto: textoBruto, 
         disciplina: disciplina, 
         ano: ano, 
         trimestre: trimestre 
       }) 
     });
     
+    if (!res.ok) throw new Error("Erro de resposta do servidor");
     const r = await res.json();
     
     if (r.status === "sucesso" && r.dados && r.dados.length > 0) {
@@ -339,13 +340,13 @@ async function gerarPreviaMatriz() {
 
       conteudoPrevia.innerHTML = htmlTabela;
       containerPrevia.style.display = "block";
-      msg.innerText = `✅ IA Concluiu: ${loteMatrizPronto.length} habilidades mapeadas a partir das imagens! Prontas para enviar.`;
+      msg.innerText = `✅ Incrível! A IA organizou ${loteMatrizPronto.length} habilidades perfeitamente. Confira a tabela e clique em Enviar!`;
     } else {
-      console.log("Resposta da IA:", r);
-      msg.innerText = "⚠️ A IA não conseguiu encontrar os tópicos nas imagens fornecidas. Certifique-se de que o print está nítido.";
+      msg.innerText = "⚠️ A IA leu o texto, mas não conseguiu identificar a estrutura das habilidades. Verifique se copiou a tabela completa.";
     }
   } catch (e) {
-    msg.innerText = "⚠️ Falha de comunicação com os servidores do Google Gemini.";
+    msg.innerText = "⚠️ Falha de comunicação com os servidores. Tente novamente.";
+    console.error(e);
   }
 }
 
@@ -362,7 +363,7 @@ async function enviarLoteConfirmado() {
     const r = await res.json();
     if (r.status === "sucesso") {
       msg.innerText = "✅ " + r.mensagem;
-      document.getElementById('arquivosImagemMatriz').value = "";
+      document.getElementById('textoMatrizBruto').value = "";
       document.getElementById('containerPrevia').style.display = "none";
       loteMatrizPronto = [];
     } else {
@@ -371,7 +372,7 @@ async function enviarLoteConfirmado() {
   } catch (e) {
     msg.innerText = "⚠️ Erro de comunicação com o servidor.";
   } finally {
-    btnEnvio.innerText = "🚀 Aprovar Extração e Enviar para a Planilha";
+    btnEnvio.innerText = "🚀 Tudo certo! Enviar para a Planilha Oficial";
     btnEnvio.disabled = false;
   }
 }
