@@ -57,6 +57,7 @@
 </head>
 <body>
 
+  <!-- TELA DE LOGIN DO ESPECIALISTA -->
   <div id="telaLogin" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0f172a, #1e293b); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
     <div style="background: rgba(255,255,255,0.08); padding: 40px; border-radius: 24px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.15); text-align: center; max-width: 400px; width: 90%;">
       <img src="https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5" class="logo-escola" style="margin-bottom: 20px;">
@@ -82,7 +83,7 @@
       <button class="tab-btn active" onclick="mudarAba('abaUsuarios', this)">👥 Usuários</button>
       <button class="tab-btn" onclick="mudarAba('abaSupervisao', this)">📋 Planos</button>
       <button class="tab-btn" onclick="mudarAba('abaRaioX', this)">📈 Raio-X Curricular</button>
-      <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📸 Extração por IA (Imagens)</button>
+      <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📝 Extração Curricular (IA)</button>
       <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatórios</button>
     </div>
 
@@ -143,11 +144,11 @@
       <div id="painelRaioX"></div>
     </div>
 
-    <!-- 4. IMPORTAR MATRIZ VIA IA E IMAGENS -->
+    <!-- 4. IMPORTAR MATRIZ VIA IA (TEXTO COPIADO DO PDF) -->
     <div id="abaMatriz" class="tab-content">
-      <h3>📸 Extração Curricular via Visão Computacional (Imagens)</h3>
+      <h3>📋 Extração Curricular via IA (Texto Bruto)</h3>
       <div style="background: #ffffff; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: var(--sombra-card);">
-        <p style="color:#64748b; margin-top:0;">Tire prints (capturas de tela) das páginas do Plano de Curso e faça o upload. A IA lerá a imagem como um ser humano e extrairá os dados limpos direto para o banco de dados.</p>
+        <p style="color:#64748b; margin-top:0;">Copie o texto das tabelas do PDF e cole abaixo. Não se preocupe com a formatação desconfigurada ou quebras de linha! A IA vai ler, interpretar e organizar tudo perfeitamente nas 11 colunas.</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div><label class="label-filtro">Disciplina / Componente</label>
@@ -172,21 +173,16 @@
         </div>
 
         <div class="bloco-campo" style="margin-bottom: 20px;">
-          <label style="font-weight: bold; color: #1e3a8a;">📸 Selecione as Imagens da Matriz (Pode escolher várias!):</label>
-          <div style="border: 2px dashed #94a3b8; padding: 20px; text-align: center; border-radius: 12px; background: #f8fafc; transition: 0.3s; cursor: pointer;">
-            <input type="file" id="arquivosImagemMatriz" accept="image/png, image/jpeg, image/webp" multiple style="width: 100%; cursor: pointer;">
-            <p style="font-size: 0.85rem; color: #64748b; margin-top: 10px;">
-              <strong>DICA DE OURO:</strong> Tire prints (capturas de tela) da sua tela mostrando os blocos do plano de curso. Pode selecionar 2, 3 ou mais prints de uma vez só!
-            </p>
-          </div>
+          <label style="font-weight: bold; color: #1e3a8a;">📝 Cole aqui o texto do Plano de Curso (pode colar várias páginas de uma vez):</label>
+          <textarea id="textoMatrizBruto" style="width: 100%; height: 250px; padding: 15px; border-radius: 12px; border: 2px dashed #94a3b8; background: #f8fafc; font-family: monospace; font-size: 0.9rem;" placeholder="Exemplo:&#10;UNIDADES TEMÁTICAS&#10;Geometria&#10;HABILIDADES DO CRMG&#10;(EF06MA17)..."></textarea>
         </div>
 
-        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7; width: 100%;">🧠 Extrair Tabelas das Imagens com Inteligência Artificial</button>
+        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7; width: 100%; padding: 14px; font-size: 1.05rem;">🧠 Organizar Texto com Inteligência Artificial</button>
         
         <div id="containerPrevia" style="margin-top: 25px; display: none;">
           <h4 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📋 Tabela de Conferência (Prévia)</h4>
           <div id="tabelaPreviaConteudo" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px;"></div>
-          <button onclick="enviarLoteConfirmado()" class="btn-primario" id="btnEnviarOficial" style="background: #10b981; font-size: 1.1rem; width: 100%;">🚀 Aprovar Extração e Enviar para a Planilha</button>
+          <button onclick="enviarLoteConfirmado()" class="btn-primario" id="btnEnviarOficial" style="background: #10b981; font-size: 1.1rem; width: 100%; padding: 14px;">🚀 Tudo certo! Enviar para a Planilha Oficial</button>
         </div>
 
         <p id="msgImportacao" style="margin-top: 15px; font-weight:bold; color:#059669; text-align:center;"></p>
