@@ -82,7 +82,7 @@
       <button class="tab-btn active" onclick="mudarAba('abaUsuarios', this)">👥 Usuários</button>
       <button class="tab-btn" onclick="mudarAba('abaSupervisao', this)">📋 Planos</button>
       <button class="tab-btn" onclick="mudarAba('abaRaioX', this)">📈 Raio-X Curricular</button>
-      <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📥 Extração por IA (PDF)</button>
+      <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📸 Extração por IA (Imagens)</button>
       <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatórios</button>
     </div>
 
@@ -143,11 +143,11 @@
       <div id="painelRaioX"></div>
     </div>
 
-    <!-- 4. IMPORTAR MATRIZ VIA IA E PDF -->
+    <!-- 4. IMPORTAR MATRIZ VIA IA E IMAGENS -->
     <div id="abaMatriz" class="tab-content">
-      <h3>🤖 Extração Curricular via Visão Computacional (PDF)</h3>
+      <h3>📸 Extração Curricular via Visão Computacional (Imagens)</h3>
       <div style="background: #ffffff; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: var(--sombra-card);">
-        <p style="color:#64748b; margin-top:0;">Faça o upload do Plano de Curso em PDF. A Inteligência Artificial (Gemini) fará a leitura visual das tabelas, unirá colunas quebradas e enviará os dados limpos direto para o banco de dados.</p>
+        <p style="color:#64748b; margin-top:0;">Tire prints (capturas de tela) das páginas do Plano de Curso e faça o upload. A IA lerá a imagem como um ser humano e extrairá os dados limpos direto para o banco de dados.</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div><label class="label-filtro">Disciplina / Componente</label>
@@ -172,16 +172,16 @@
         </div>
 
         <div class="bloco-campo" style="margin-bottom: 20px;">
-          <label style="font-weight: bold; color: #1e3a8a;">📄 Selecione o PDF da Matriz:</label>
+          <label style="font-weight: bold; color: #1e3a8a;">📸 Selecione as Imagens da Matriz (Pode escolher várias!):</label>
           <div style="border: 2px dashed #94a3b8; padding: 20px; text-align: center; border-radius: 12px; background: #f8fafc; transition: 0.3s; cursor: pointer;">
-            <input type="file" id="arquivoPdfMatriz" accept="application/pdf" style="width: 100%; cursor: pointer;">
+            <input type="file" id="arquivosImagemMatriz" accept="image/png, image/jpeg, image/webp" multiple style="width: 100%; cursor: pointer;">
             <p style="font-size: 0.85rem; color: #64748b; margin-top: 10px;">
-              <strong>DICA DE OURO:</strong> Anexe o PDF contendo apenas as páginas da disciplina desejada para que a Inteligência Artificial processe mais rápido e sem erros.
+              <strong>DICA DE OURO:</strong> Tire prints (capturas de tela) da sua tela mostrando os blocos do plano de curso. Pode selecionar 2, 3 ou mais prints de uma vez só!
             </p>
           </div>
         </div>
 
-        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7; width: 100%;">🧠 Extrair Tabelas do PDF com Inteligência Artificial</button>
+        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7; width: 100%;">🧠 Extrair Tabelas das Imagens com Inteligência Artificial</button>
         
         <div id="containerPrevia" style="margin-top: 25px; display: none;">
           <h4 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📋 Tabela de Conferência (Prévia)</h4>
