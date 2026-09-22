@@ -42,7 +42,7 @@ function sairDoSistema() {
 
 async function carregarListaUsuarios() {
   const container = document.getElementById('tabelaUsuariosContainer');
-  container.innerHTML = "<p style='text-align:center;'>⏳ A Carregar utilizadores...</p>";
+  container.innerHTML = "<p style='text-align:center;'>⏳ Carregando usuários...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
     const r = await res.json();
@@ -54,7 +54,7 @@ async function carregarListaUsuarios() {
       });
       container.innerHTML = html + `</table>`;
     }
-  } catch(e) { container.innerHTML = "<p>Erro ao listar utilizadores.</p>"; }
+  } catch(e) { container.innerHTML = "<p>Erro ao listar usuários.</p>"; }
 }
 
 async function salvarUsuario() {
@@ -62,7 +62,7 @@ async function salvarUsuario() {
   if(!dados.nome || !dados.senha) { alert("Nome e Senha são obrigatórios."); return; }
   try {
     await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) });
-    alert("✅ Utilizador salvo!"); limparFormUsuario(); carregarListaUsuarios();
+    alert("✅ Usuário salvo!"); limparFormUsuario(); carregarListaUsuarios();
   } catch(e) { alert("⚠️ Erro ao salvar."); }
 }
 
@@ -76,7 +76,7 @@ function limparFormUsuario() { document.querySelectorAll('#abaUsuarios input').f
 
 async function carregarPlanosSupervisao() {
   const container = document.getElementById('tabelaPlanosContainer');
-  container.innerHTML = "<p style='text-align:center;'>⏳ A Pesquisar planos...</p>";
+  container.innerHTML = "<p style='text-align:center;'>⏳ Buscando planos...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
     const r = await res.json();
@@ -180,7 +180,7 @@ async function gerarRaioX() {
   const prof = document.getElementById('rxFiltroProf').value;
   const trim = document.getElementById('rxFiltroTrimestre').value;
   
-  painel.innerHTML = "<p style='text-align:center;'>⏳ A Analisar componentes curriculares e matrizes...</p>";
+  painel.innerHTML = "<p style='text-align:center;'>⏳ Analisando componentes curriculares e matrizes...</p>";
   
   try {
     const listaComponentes = compSelecionado ? [compSelecionado] : [
@@ -219,7 +219,7 @@ async function gerarRaioX() {
                             <h5 style="color:#065f46; margin:0 0 10px 0; font-size:0.95rem;">✅ Habilidades Dadas</h5>
                             <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#064e3b;">`;
         r.trabalhadas.forEach(h => htmlGeral += `<li style="margin-bottom:8px; line-height:1.4;">${h.habilidade.replace(`[${c}]`, '')} <br><small style="color:#047857; font-weight:600;">(Prof. ${h.professor})</small></li>`);
-        if(r.trabalhadas.length === 0) htmlGeral += "<li style='color:#065f46;'>Nenhuma habilidade registada.</li>";
+        if(r.trabalhadas.length === 0) htmlGeral += "<li style='color:#065f46;'>Nenhuma habilidade registrada.</li>";
         htmlGeral += `</ul></div>
                           
                           <div style="background:#fef3c7; padding:15px; border-radius:10px; border:1px solid #fde68a; max-height:220px; overflow-y:auto;">
@@ -255,10 +255,10 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// VISÃO COMPUTACIONAL: UPLOAD DE PDF E EXTRAÇÃO
+// VISÃO COMPUTACIONAL: UPLOAD DE MÚLTIPLAS IMAGENS
 // ==========================================
 async function gerarPreviaMatriz() {
-  const inputArquivo = document.getElementById('arquivoPdfMatriz');
+  const inputArquivo = document.getElementById('arquivosImagemMatriz');
   const disciplina = document.getElementById('impDisciplina').value;
   const ano = document.getElementById('impAno').value;
   const trimestre = document.getElementById('impTrimestre').value;
@@ -267,84 +267,86 @@ async function gerarPreviaMatriz() {
   const conteudoPrevia = document.getElementById('tabelaPreviaConteudo');
 
   if (!inputArquivo.files || inputArquivo.files.length === 0) { 
-    alert("⚠️ Por favor, selecione o ficheiro PDF do plano de curso."); 
+    alert("⚠️ Por favor, selecione pelo menos uma imagem (print/foto) da matriz."); 
     return; 
   }
 
-  const arquivo = inputArquivo.files[0];
-  if (arquivo.type !== "application/pdf") {
-    alert("⚠️ Formato inválido. O ficheiro DEVE ser um PDF.");
-    return;
-  }
-
-  msg.innerText = "🧠 Visão Computacional Ativada! A Inteligência Artificial está a ler os blocos de texto do documento... (pode levar 10~20 segundos)";
+  msg.innerText = `🧠 Visão Computacional Ativada! Lendo ${inputArquivo.files.length} imagem(ns)... (pode levar 10~30 segundos)`;
   loteMatrizPronto = [];
   containerPrevia.style.display = "none";
 
-  const reader = new FileReader();
-  reader.readAsDataURL(arquivo);
-  
-  reader.onload = async function(event) {
-    const base64Completo = event.target.result;
-    const base64Puro = base64Completo.split(',')[1]; 
+  const lerImagemBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const base64Completo = event.target.result;
+        const tipo = file.type; 
+        const base64Puro = base64Completo.split(',')[1];
+        resolve({ mimeType: tipo, data: base64Puro });
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
 
-    try {
-      const res = await fetch(URL_API, { 
-        method: 'POST', 
-        body: JSON.stringify({ 
-          acao: "extrairPdfComIA", 
-          arquivoBase64: base64Puro, 
-          disciplina: disciplina, 
-          ano: ano, 
-          trimestre: trimestre 
-        }) 
-      });
-      
-      const r = await res.json();
-      
-      if (r.status === "sucesso" && r.dados && r.dados.length > 0) {
-        loteMatrizPronto = r.dados;
-        
-        let htmlTabela = `<div style="overflow-x: auto; padding-bottom: 10px;">
-          <table style="font-size:0.85rem; width:100%; min-width:1300px; border-collapse: collapse; border: 1px solid #cbd5e1;">
-            <tr style="background-color:#1e3a8a; color:white;">
-              <th style="padding:10px; text-align:left; width:3%;">#</th>
-              <th style="padding:10px; text-align:left; width:10%;">Ano/Trim/Unid</th>
-              <th style="padding:10px; text-align:left; width:17%;">Habilidade Priorizada</th>
-              <th style="padding:10px; text-align:left; width:15%;">Objeto do Conhec.</th>
-              <th style="padding:10px; text-align:left; width:15%;">Conteúdos Relacionados</th>
-              <th style="padding:10px; text-align:left; width:20%;">Práticas Pedagógicas</th>
-              <th style="padding:10px; text-align:left; width:20%;">Evidências</th>
-            </tr>`;
-        
-        loteMatrizPronto.forEach((item, index) => {
-          let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-          htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
-                          <td style="vertical-align:top; padding:10px;">${index + 1}</td>
-                          <td style="vertical-align:top; padding:10px;"><strong>${item.ano}</strong><br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
-                          <td style="vertical-align:top; padding:10px;"><strong>${item.habPriorizada}</strong></td>
-                          <td style="vertical-align:top; padding:10px;">${item.objetoConhecimento}</td>
-                          <td style="vertical-align:top; padding:10px; color:#0369a1;">${item.conteudosRelacionados}</td>
-                          <td style="vertical-align:top; padding:10px; color:#15803d;">${item.praticas}</td>
-                          <td style="vertical-align:top; padding:10px; color:#b45309; font-style:italic;">${item.evidencias}</td>
-                         </tr>`;
-        });
-        htmlTabela += `</table></div>`;
-
-        conteudoPrevia.innerHTML = htmlTabela;
-        containerPrevia.style.display = "block";
-        msg.innerText = `✅ IA Concluiu: ${loteMatrizPronto.length} habilidades extraídas corretamente do PDF. Prontas para enviar!`;
-      } else {
-        msg.innerText = "⚠️ A IA não conseguiu encontrar os títulos principais (Unidade Temática, Habilidades, Objetos, etc.) neste ficheiro PDF.";
-      }
-    } catch (e) {
-      msg.innerText = "⚠️ Falha de comunicação com os servidores do Google Gemini.";
+  try {
+    const imagensParaEnviar = [];
+    for (let i = 0; i < inputArquivo.files.length; i++) {
+      imagensParaEnviar.push(await lerImagemBase64(inputArquivo.files[i]));
     }
-  };
 
-  reader.onerror = function() {
-    alert("⚠️ Erro ao processar o ficheiro PDF.");
-  };
+    const res = await fetch(URL_API, { 
+      method: 'POST', 
+      body: JSON.stringify({ 
+        acao: "extrairImagemComIA", 
+        imagens: imagensParaEnviar, 
+        disciplina: disciplina, 
+        ano: ano, 
+        trimestre: trimestre 
+      }) 
+    });
+    
+    const r = await res.json();
+    
+    if (r.status === "sucesso" && r.dados && r.dados.length > 0) {
+      loteMatrizPronto = r.dados;
+      
+      let htmlTabela = `<div style="overflow-x: auto; padding-bottom: 10px;">
+        <table style="font-size:0.85rem; width:100%; min-width:1300px; border-collapse: collapse; border: 1px solid #cbd5e1;">
+          <tr style="background-color:#1e3a8a; color:white;">
+            <th style="padding:10px; text-align:left; width:3%;">#</th>
+            <th style="padding:10px; text-align:left; width:10%;">Ano/Trim/Unid</th>
+            <th style="padding:10px; text-align:left; width:17%;">Habilidade Priorizada</th>
+            <th style="padding:10px; text-align:left; width:15%;">Objeto do Conhec.</th>
+            <th style="padding:10px; text-align:left; width:15%;">Conteúdos Relacionados</th>
+            <th style="padding:10px; text-align:left; width:20%;">Práticas Pedagógicas</th>
+            <th style="padding:10px; text-align:left; width:20%;">Evidências</th>
+          </tr>`;
+      
+      loteMatrizPronto.forEach((item, index) => {
+        let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+        htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
+                        <td style="vertical-align:top; padding:10px;">${index + 1}</td>
+                        <td style="vertical-align:top; padding:10px;"><strong>${item.ano}</strong><br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
+                        <td style="vertical-align:top; padding:10px;"><strong>${item.habPriorizada}</strong></td>
+                        <td style="vertical-align:top; padding:10px;">${item.objetoConhecimento}</td>
+                        <td style="vertical-align:top; padding:10px; color:#0369a1;">${item.conteudosRelacionados}</td>
+                        <td style="vertical-align:top; padding:10px; color:#15803d;">${item.praticas}</td>
+                        <td style="vertical-align:top; padding:10px; color:#b45309; font-style:italic;">${item.evidencias}</td>
+                       </tr>`;
+      });
+      htmlTabela += `</table></div>`;
+
+      conteudoPrevia.innerHTML = htmlTabela;
+      containerPrevia.style.display = "block";
+      msg.innerText = `✅ IA Concluiu: ${loteMatrizPronto.length} habilidades mapeadas a partir das imagens! Prontas para enviar.`;
+    } else {
+      console.log("Resposta da IA:", r);
+      msg.innerText = "⚠️ A IA não conseguiu encontrar os tópicos nas imagens fornecidas. Certifique-se de que o print está nítido.";
+    }
+  } catch (e) {
+    msg.innerText = "⚠️ Falha de comunicação com os servidores do Google Gemini.";
+  }
 }
 
 async function enviarLoteConfirmado() {
@@ -352,7 +354,7 @@ async function enviarLoteConfirmado() {
   
   const btnEnvio = document.getElementById('btnEnviarOficial');
   const msg = document.getElementById('msgImportacao');
-  btnEnvio.innerText = "⏳ A Gravar nas 11 colunas da Planilha Oficial...";
+  btnEnvio.innerText = "⏳ Gravando nas 11 colunas da Planilha Oficial...";
   btnEnvio.disabled = true;
 
   try {
@@ -360,7 +362,7 @@ async function enviarLoteConfirmado() {
     const r = await res.json();
     if (r.status === "sucesso") {
       msg.innerText = "✅ " + r.mensagem;
-      document.getElementById('arquivoPdfMatriz').value = "";
+      document.getElementById('arquivosImagemMatriz').value = "";
       document.getElementById('containerPrevia').style.display = "none";
       loteMatrizPronto = [];
     } else {
@@ -378,7 +380,7 @@ async function gerarRelatorio() {
   const btn = document.getElementById('btnGerarRelatorio');
   const areaLink = document.getElementById('areaLinkRelatorio');
   const periodo = document.getElementById('tipoRelatorio').value;
-  btn.innerText = "⏳ A Auditar Matrizes e Gerar Documento...";
+  btn.innerText = "⏳ Auditando Matrizes e Gerando Documento...";
   btn.disabled = true;
   areaLink.style.display = "none";
 
