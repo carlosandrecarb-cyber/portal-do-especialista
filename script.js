@@ -1,4 +1,4 @@
-const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
+const URL_API = "COLOQUE_AQUI_O_SEU_LINK_DO_APPS_SCRIPT";
 var dadosPlanosGlobais = [];
 var loteMatrizPronto = [];
 
@@ -22,12 +22,12 @@ async function fazerLogin() {
     return; 
   }
 
-  msg.innerText = "⏳ Autenticando Especialista... (Aguarde)";
+  msg.innerText = "⏳ A Autenticar Especialista... (Aguarde)";
   
   try {
     const res = await fetch(URL_API, { 
       method: 'POST',
-      redirect: 'follow',
+      redirect: 'follow', // Essencial para contornar bloqueios do Google
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ acao: "login", usuario, senha }) 
     });
@@ -62,7 +62,7 @@ function sairDoSistema() {
 
 async function carregarListaUsuarios() {
   const container = document.getElementById('tabelaUsuariosContainer');
-  container.innerHTML = "<p style='text-align:center;'>⏳ Carregando usuários...</p>";
+  container.innerHTML = "<p style='text-align:center;'>⏳ A carregar utilizadores...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
     const r = await res.json();
@@ -74,7 +74,7 @@ async function carregarListaUsuarios() {
       });
       container.innerHTML = html + `</table>`;
     }
-  } catch(e) { container.innerHTML = "<p>Erro ao listar usuários.</p>"; }
+  } catch(e) { container.innerHTML = "<p>Erro ao listar utilizadores.</p>"; }
 }
 
 async function salvarUsuario() {
@@ -82,8 +82,8 @@ async function salvarUsuario() {
   if(!dados.nome || !dados.senha) { alert("Nome e Senha são obrigatórios."); return; }
   try {
     await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) });
-    alert("✅ Usuário salvo!"); limparFormUsuario(); carregarListaUsuarios();
-  } catch(e) { alert("⚠️ Erro ao salvar."); }
+    alert("✅ Utilizador guardado com sucesso!"); limparFormUsuario(); carregarListaUsuarios();
+  } catch(e) { alert("⚠️ Erro ao guardar."); }
 }
 
 function editarUsuario(linha, nome, email, senha, perfil, comp, turma) {
@@ -96,7 +96,7 @@ function limparFormUsuario() { document.querySelectorAll('#abaUsuarios input').f
 
 async function carregarPlanosSupervisao() {
   const container = document.getElementById('tabelaPlanosContainer');
-  container.innerHTML = "<p style='text-align:center;'>⏳ Buscando planos...</p>";
+  container.innerHTML = "<p style='text-align:center;'>⏳ A procurar planos...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
     const r = await res.json();
@@ -105,7 +105,7 @@ async function carregarPlanosSupervisao() {
       popularDropdownsFiltro(dadosPlanosGlobais);
       renderizarTabelaPlanos(dadosPlanosGlobais);
     }
-  } catch (e) { container.innerHTML = "<p>Erro ao conectar.</p>"; }
+  } catch (e) { container.innerHTML = "<p>Erro ao ligar ao servidor.</p>"; }
 }
 
 function popularDropdownsFiltro(planos) {
@@ -190,7 +190,7 @@ async function alterarStatusPlano(linha, novoStatus) {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus, feedback: feedback }) });
     const r = await res.json();
     if(r.status === "sucesso") carregarPlanosSupervisao(); 
-  } catch(e) { alert("Falha na conexão ao atualizar status."); }
+  } catch(e) { alert("Falha na ligação ao atualizar status."); }
 }
 
 async function gerarRaioX() {
@@ -200,7 +200,7 @@ async function gerarRaioX() {
   const prof = document.getElementById('rxFiltroProf').value;
   const trim = document.getElementById('rxFiltroTrimestre').value;
   
-  painel.innerHTML = "<p style='text-align:center;'>⏳ Analisando componentes curriculares e matrizes...</p>";
+  painel.innerHTML = "<p style='text-align:center;'>⏳ A analisar componentes curriculares e matrizes...</p>";
   
   try {
     const listaComponentes = compSelecionado ? [compSelecionado] : [
@@ -237,7 +237,7 @@ async function gerarRaioX() {
                             <h5 style="color:#065f46; margin:0 0 10px 0; font-size:0.95rem;">✅ Habilidades Dadas</h5>
                             <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#064e3b;">`;
         r.trabalhadas.forEach(h => htmlGeral += `<li style="margin-bottom:8px; line-height:1.4;">${h.habilidade.replace(`[${c}]`, '')} <br><small style="color:#047857; font-weight:600;">(Prof. ${h.professor})</small></li>`);
-        if(r.trabalhadas.length === 0) htmlGeral += "<li style='color:#065f46;'>Nenhuma habilidade registrada.</li>";
+        if(r.trabalhadas.length === 0) htmlGeral += "<li style='color:#065f46;'>Nenhuma habilidade registada.</li>";
         htmlGeral += `</ul></div>
                           <div style="background:#fef3c7; padding:15px; border-radius:10px; border:1px solid #fde68a; max-height:220px; overflow-y:auto;">
                             <h5 style="color:#92400e; margin:0 0 10px 0; font-size:0.95rem;">⚠️ Faltam Ensinar</h5>
@@ -272,7 +272,7 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// VISÃO IA: ORGANIZAÇÃO DE TEXTO BRUTO
+// VISÃO IA: ORGANIZAÇÃO DE TEXTO BRUTO (BLINDADO)
 // ==========================================
 async function gerarPreviaMatriz() {
   const textoBruto = document.getElementById('textoMatrizBruto').value.trim();
@@ -288,14 +288,14 @@ async function gerarPreviaMatriz() {
     return; 
   }
 
-  msg.innerText = `🧠 Inteligência Artificial ativada! A ler, corrigir e organizar o texto... (Aguarde uns segundos)`;
+  msg.innerText = `🧠 Inteligência Artificial ativada! A ler e a reconstruir as quebras de linha do PDF... (Aguarde uns segundos)`;
   loteMatrizPronto = [];
   containerPrevia.style.display = "none";
 
   try {
     const res = await fetch(URL_API, { 
       method: 'POST', 
-      redirect: 'follow',
+      redirect: 'follow', // IMPEDE BLOQUEIOS DE CORS
       headers: { "Content-Type": "text/plain;charset=utf-8" },
       body: JSON.stringify({ 
         acao: "organizarTextoComIA", 
@@ -306,7 +306,7 @@ async function gerarPreviaMatriz() {
       }) 
     });
     
-    if (!res.ok) throw new Error("Erro de resposta do servidor");
+    if (!res.ok) throw new Error(`Erro de resposta do servidor: ${res.status}`);
     const r = await res.json();
     
     if (r.status === "sucesso" && r.dados && r.dados.length > 0) {
@@ -340,9 +340,10 @@ async function gerarPreviaMatriz() {
 
       conteudoPrevia.innerHTML = htmlTabela;
       containerPrevia.style.display = "block";
-      msg.innerText = `✅ Incrível! A IA organizou ${loteMatrizPronto.length} habilidades perfeitamente. Confira a tabela e clique em Enviar!`;
+      msg.innerText = `✅ Incrível! A IA organizou ${loteMatrizPronto.length} blocos perfeitamente. Confira a tabela e clique em Enviar!`;
     } else {
-      msg.innerText = "⚠️ A IA leu o texto, mas não conseguiu identificar a estrutura das habilidades. Verifique se copiou a tabela completa.";
+      // MOSTRA EXATAMENTE O ERRO DO GOOGLE APPS SCRIPT
+      msg.innerText = "⚠️ " + (r.mensagem || "Erro desconhecido ao processar o texto.");
     }
   } catch (e) {
     msg.innerText = "⚠️ Falha de comunicação com os servidores. Tente novamente.";
@@ -355,7 +356,7 @@ async function enviarLoteConfirmado() {
   
   const btnEnvio = document.getElementById('btnEnviarOficial');
   const msg = document.getElementById('msgImportacao');
-  btnEnvio.innerText = "⏳ Gravando nas 11 colunas da Planilha Oficial...";
+  btnEnvio.innerText = "⏳ A gravar nas 11 colunas da Planilha Oficial...";
   btnEnvio.disabled = true;
 
   try {
@@ -367,7 +368,7 @@ async function enviarLoteConfirmado() {
       document.getElementById('containerPrevia').style.display = "none";
       loteMatrizPronto = [];
     } else {
-      msg.innerText = "⚠️ Erro ao salvar: " + r.mensagem;
+      msg.innerText = "⚠️ Erro ao guardar: " + r.mensagem;
     }
   } catch (e) {
     msg.innerText = "⚠️ Erro de comunicação com o servidor.";
@@ -381,7 +382,7 @@ async function gerarRelatorio() {
   const btn = document.getElementById('btnGerarRelatorio');
   const areaLink = document.getElementById('areaLinkRelatorio');
   const periodo = document.getElementById('tipoRelatorio').value;
-  btn.innerText = "⏳ Auditando Matrizes e Gerando Documento...";
+  btn.innerText = "⏳ Auditando Matrizes e a Gerar Documento...";
   btn.disabled = true;
   areaLink.style.display = "none";
 
@@ -401,7 +402,7 @@ async function gerarRelatorio() {
 }
 
 async function forcarBackup() {
-  const btn = document.getElementById('btnBackup'); btn.innerText = "⏳ Extraindo dados..."; btn.disabled = true;
+  const btn = document.getElementById('btnBackup'); btn.innerText = "⏳ A extrair dados..."; btn.disabled = true;
   try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) }); const r = await res.json(); alert("✅ " + r.mensagem); } 
   catch(e) { alert("Erro."); } finally { btn.innerText = "📦 Enviar para E-mail"; btn.disabled = false; }
 }
