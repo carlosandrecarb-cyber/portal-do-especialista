@@ -238,7 +238,17 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// EXTRATOR LÓGICO DE MATRIZ (INSTANTÂNEO NO NAVEGADOR)
+// FUNÇÃO PARA ATUALIZAR O LOTE APÓS EDIÇÃO MANUAL
+// ==========================================
+function atualizarLote(index, campo, valorHtml) {
+  if (loteMatrizPronto[index]) {
+    let textoLimpo = valorHtml.replace(/<[^>]*>?/gm, '').trim();
+    loteMatrizPronto[index][campo] = textoLimpo || "-";
+  }
+}
+
+// ==========================================
+// EXTRATOR LÓGICO DE MATRIZ (AGORA BLINDADO PARA SINGULAR/PLURAL)
 // ==========================================
 function gerarPreviaMatriz() {
   let texto = document.getElementById('textoMatrizBruto').value;
@@ -251,20 +261,22 @@ function gerarPreviaMatriz() {
 
   if (!texto.trim()) { alert("⚠️ Por favor, cole o texto do PDF na caixa antes de continuar."); return; }
 
-  msg.innerText = "⚡ A processar dados instantaneamente...";
+  msg.innerText = "⚡ A fatiar, limpar e organizar os dados...";
   loteMatrizPronto = [];
   containerPrevia.style.display = "none";
 
-  // Normalização de títulos
-  texto = texto.replace(/(UNIDADES TEMÁTICAS|PRÁTICAS DE LINGUAGEM)/gi, "___UNIDADE___");
-  texto = texto.replace(/(GÊNEROS TEXTUAIS|GÊNERO TEXTUAL)/gi, "___GENERO___");
-  texto = texto.replace(/(HABILIDADES DO CRMG|HABILIDADES PRIORIZADAS(?: DO ANO ESCOLAR)?)/gi, "___HAB_PRIORIZADAS___");
-  texto = texto.replace(/(HABILIDADES DE RECOMPOSIÇÃO(?: DAS APRENDIZAGENS)?|HABILIDADES SOCIOEMOCIONAIS)/gi, "___HAB_RECOMPOSICAO___");
-  texto = texto.replace(/(HABILIDADES DE SUPORTE)/gi, "___HAB_SUPORTE___");
-  texto = texto.replace(/(OBJETOS DO CONHECIMENTO(?: DA HABILIDADE PRIORIZADA)?)/gi, "___OBJETOS___");
-  texto = texto.replace(/(CONTEÚDOS RELACIONADOS)/gi, "___CONTEUDOS___");
-  texto = texto.replace(/(EXEMPLOS DE PRÁTICAS\s*PEDAGÓGICAS)/gi, "___PRATICAS___");
-  texto = texto.replace(/(EVIDÊNCIAS DE CONSOLIDAÇÃO\s*DA APRENDIZAGEM)/gi, "___EVIDENCIAS___");
+  // Normalização BLINDADA: Aceita singular, plural e variações de palavras
+  texto = texto.replace(/(UNIDADES?\s+TEMÁTICAS?|PRÁTICAS?\s+DE\s+LINGUAGEM)/gi, "___UNIDADE___");
+  texto = texto.replace(/(GÊNEROS?\s+TEXTUAIS?|GÊNERO\s+TEXTUAL)/gi, "___GENERO___");
+  texto = texto.replace(/(HABILIDADES?\s+DO\s+CRMG|HABILIDADES?\s+PRIORIZADAS?(?:\s+DO\s+ANO\s+ESCOLAR)?)/gi, "___HAB_PRIORIZADAS___");
+  texto = texto.replace(/(HABILIDADES?\s+DE\s+RECOMPOSIÇÃO(?:\s+DAS\s+APRENDIZAGENS)?|HABILIDADES?\s+SOCIOEMOCIONAIS?)/gi, "___HAB_RECOMPOSICAO___");
+  texto = texto.replace(/(HABILIDADES?\s+DE\s+SUPORTE)/gi, "___HAB_SUPORTE___");
+  texto = texto.replace(/(OBJETOS?\s+DO\s+CONHECIMENTO(?:\s+DA\s+HABILIDADE\s+PRIORIZADA)?)/gi, "___OBJETOS___");
+  texto = texto.replace(/(CONTEÚDOS?\s+RELACIONADOS?)/gi, "___CONTEUDOS___");
+  texto = texto.replace(/(EXEMPLOS?\s+DE\s+PRÁTICAS?\s*PEDAGÓGICAS?|PRÁTICAS?\s*PEDAGÓGICAS?)/gi, "___PRATICAS___");
+  
+  // Aqui está o ajuste principal: Aceita "Evidência" ou "Evidências", "da Aprendizagem", "de Aprendizagem", etc.
+  texto = texto.replace(/(EVIDÊNCIAS?\s+DE\s+CONSOLIDAÇÃO(?:\s*(?:DA|DE)\s*APRENDIZAGEM)?)/gi, "___EVIDENCIAS___");
 
   const blocos = texto.split("___UNIDADE___");
   
@@ -276,8 +288,13 @@ function gerarPreviaMatriz() {
       const match = bloco.match(regex);
       if (!match) return "-";
       let extraido = match[1].trim().replace(/\n/g, " ");
+
+      // FILTRO ANTI-LIXO (CABEÇALHOS E RODAPÉS)
+      extraido = extraido.replace(/\d*\.?\s*PLANO DE CURSO 202[0-9][\s\S]*?Etapa de Ensino:\s*(?:Ensino Fundamental|Ensino Médio)/gi, "");
+      extraido = extraido.replace(/Área de Conhecimento:[\s\S]*?Componente Curricular:[\s\S]*?(?:Ano de Escolaridade:|Etapa de Ensino:)/gi, "");
       extraido = extraido.replace(new RegExp(disciplina + "\\s*-\\s*\\dº\\s*Trimestre", "gi"), "");
-      extraido = extraido.replace(/^\d+$/gm, ""); // Remove números soltos de página
+      extraido = extraido.replace(/\s+\d+\s*$/, ""); 
+
       return extraido.trim() || "-";
     };
 
@@ -307,7 +324,17 @@ function gerarPreviaMatriz() {
     return;
   }
 
-  let htmlTabela = `<div style="overflow-x: auto; padding-bottom: 10px;">
+  let htmlTabela = `
+    <style>
+      .cel-edit { border: 1px dashed transparent; padding: 6px; border-radius: 6px; cursor: text; transition: 0.2s; min-height: 20px; }
+      .cel-edit:hover { border-color: #94a3b8; background-color: #f8fafc; }
+      .cel-edit:focus { border-color: #3b82f6; background-color: #eff6ff; outline: none; }
+      .instrucao-edit { background: #fef3c7; color: #92400e; padding: 10px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold; border: 1px solid #fde68a;}
+    </style>
+    
+    <div class="instrucao-edit">💡 Dica: Se quiser ajustar algum texto antes de enviar, basta clicar dentro da caixa na tabela abaixo e apagar ou escrever!</div>
+    
+    <div style="overflow-x: auto; padding-bottom: 10px;">
     <table style="font-size:0.85rem; width:100%; min-width:1300px; border-collapse: collapse; border: 1px solid #cbd5e1;">
       <tr style="background-color:#1e3a8a; color:white;">
         <th style="padding:10px; text-align:left; width:3%;">#</th>
@@ -323,19 +350,38 @@ function gerarPreviaMatriz() {
     let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
     htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
                     <td style="vertical-align:top; padding:10px;">${index + 1}</td>
-                    <td style="vertical-align:top; padding:10px;"><strong>${item.ano}</strong><br>${item.trimestre}<br><small style="color:#64748b;">${item.unidade}</small></td>
-                    <td style="vertical-align:top; padding:10px;"><strong>${item.habPriorizada}</strong></td>
-                    <td style="vertical-align:top; padding:10px;">${item.objetoConhecimento}</td>
-                    <td style="vertical-align:top; padding:10px; color:#0369a1;">${item.conteudosRelacionados}</td>
-                    <td style="vertical-align:top; padding:10px; color:#15803d;">${item.praticas}</td>
-                    <td style="vertical-align:top; padding:10px; color:#b45309; font-style:italic;">${item.evidencias}</td>
+                    
+                    <td style="vertical-align:top; padding:10px;">
+                      <strong>${item.ano}</strong><br>${item.trimestre}<br>
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'unidade', this.innerHTML)" class="cel-edit" style="color:#64748b; font-size:0.8rem; margin-top:5px;">${item.unidade}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:10px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habPriorizada', this.innerHTML)" class="cel-edit"><strong>${item.habPriorizada}</strong></div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:10px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'objetoConhecimento', this.innerHTML)" class="cel-edit">${item.objetoConhecimento}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:10px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'conteudosRelacionados', this.innerHTML)" class="cel-edit" style="color:#0369a1;">${item.conteudosRelacionados}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:10px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'praticas', this.innerHTML)" class="cel-edit" style="color:#15803d;">${item.praticas}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:10px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'evidencias', this.innerHTML)" class="cel-edit" style="color:#b45309; font-style:italic;">${item.evidencias}</div>
+                    </td>
                    </tr>`;
   });
   htmlTabela += `</table></div>`;
 
   conteudoPrevia.innerHTML = htmlTabela;
   containerPrevia.style.display = "block";
-  msg.innerText = `✅ Extração Concluída: ${loteMatrizPronto.length} blocos organizados! Verifique a tabela abaixo e clique em Enviar.`;
+  msg.innerText = `✅ Extração Concluída e Limpa: ${loteMatrizPronto.length} blocos organizados!`;
 }
 
 async function enviarLoteConfirmado() {
