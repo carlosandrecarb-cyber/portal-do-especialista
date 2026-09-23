@@ -63,7 +63,7 @@
       <img src="https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5" class="logo-escola" style="margin-bottom: 20px;">
       <h2 style="margin: 0 0 5px 0;">Área de Gestão</h2>
       <p style="margin-bottom: 25px; color: #94a3b8;">Portal do Especialista</p>
-      <input type="text" id="loginUsuario" placeholder="👤 Usuário (Especialista)" style="margin-bottom: 12px;">
+      <input type="text" id="loginUsuario" placeholder="👤 Utilizador (Especialista)" style="margin-bottom: 12px;">
       <input type="password" id="loginSenha" placeholder="🔒 Senha" style="margin-bottom: 20px;">
       <button onclick="fazerLogin()" class="btn-primario" style="width: 100%; padding: 16px; font-size: 1.1rem;">Acessar Painel 🚀</button>
       <p id="msgLogin" style="color: #fca5a5; margin-top: 15px; font-weight: 600;"></p>
@@ -73,21 +73,21 @@
   <header>
     <img src="https://lh3.googleusercontent.com/d/1A2c_3Me99qofg25uyoor4roLHybutll5" class="logo-escola">
     <h2>⚙️ Gestão Pedagógica</h2>
-    <p>Acompanhamento de Planos, Relatórios e Usuários</p>
+    <p>Acompanhamento de Planos, Relatórios e Utilizadores</p>
     <div id="infoUsuarioBoasVindas" style="margin-top: 10px; background: rgba(255,255,255,0.15); padding: 6px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: bold; color: #fef08a; display: none;"></div>
     <button class="btn-sair" onclick="sairDoSistema()">Sair 🚪</button>
   </header>
 
   <div class="container">
     <div class="tabs">
-      <button class="tab-btn active" onclick="mudarAba('abaUsuarios', this)">👥 Usuários</button>
+      <button class="tab-btn active" onclick="mudarAba('abaUsuarios', this)">👥 Utilizadores</button>
       <button class="tab-btn" onclick="mudarAba('abaSupervisao', this)">📋 Planos</button>
       <button class="tab-btn" onclick="mudarAba('abaRaioX', this)">📈 Raio-X Curricular</button>
       <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📝 Extração Curricular (IA)</button>
       <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatórios</button>
     </div>
 
-    <!-- 1. GESTÃO DE USUÁRIOS -->
+    <!-- 1. GESTÃO DE UTILIZADORES -->
     <div id="abaUsuarios" class="tab-content active">
       <h3>👥 Gestão de Professores e Acessos</h3>
       <div style="background: #ffffff; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 25px; box-shadow: var(--sombra-card);">
@@ -110,7 +110,7 @@
 
     <!-- 2. PLANOS DE AULA GERADOS -->
     <div id="abaSupervisao" class="tab-content">
-      <h3>📋 Controle e Aprovação de Planos</h3>
+      <h3>📋 Controlo e Aprovação de Planos</h3>
       <div class="barra-filtros" style="grid-template-columns: repeat(5, 1fr);">
         <div><label class="label-filtro">Professor</label><select id="filtroProf" onchange="filtrarPlanos()"><option value="">👩‍🏫 Todos</option></select></div>
         <div><label class="label-filtro">Componente</label><select id="filtroComp" onchange="filtrarPlanos()"><option value="">📚 Todos</option></select></div>
@@ -127,7 +127,7 @@
       </div>
       <button class="btn-primario" onclick="carregarPlanosSupervisao()" style="margin-bottom: 15px;">🔄 Atualizar Base de Dados</button>
       <div id="tabelaPlanosContainer" style="overflow-x: auto; background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px;">
-        <p style="color:#64748b; text-align:center; padding: 20px;">Carregando...</p>
+        <p style="color:#64748b; text-align:center; padding: 20px;">A carregar...</p>
       </div>
     </div>
 
