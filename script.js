@@ -1,4 +1,4 @@
-const URL_API = "COLOQUE_AQUI_O_SEU_LINK_DO_APPS_SCRIPT";
+const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
 var dadosPlanosGlobais = [];
 var loteMatrizPronto = [];
 
