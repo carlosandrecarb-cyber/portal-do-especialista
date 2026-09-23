@@ -12,45 +12,33 @@
       --sombra-suave: 0 8px 30px rgba(0,0,0,0.08); 
       --sombra-card: 0 4px 12px rgba(0, 0, 0, 0.05);
     }
-    
     body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background-color: var(--cor-fundo); margin: 0; padding: 0; color: #1e293b; }
-    
     header { background: linear-gradient(135deg, var(--cor-principal), #0f172a); color: white; padding: 25px 20px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15); border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; position: relative; }
     header h2 { margin: 10px 0 5px 0; font-size: 1.6rem; font-weight: 700; }
     header p { margin: 0; font-size: 0.95rem; color: #cbd5e1; }
     .logo-escola { max-width: 90%; height: auto; max-height: 90px; object-fit: contain; border-radius: 12px; background: white; padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-    
     .btn-sair { position: absolute; top: 20px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
     .btn-sair:hover { background: #c0392b; }
-    
     .container { max-width: 1100px; margin: 30px auto; background: white; padding: 35px; border-radius: 18px; box-shadow: var(--sombra-suave); border: 1px solid #e2e8f0; }
-    
     .tabs { display: flex; gap: 8px; margin-bottom: 25px; background: #f1f5f9; padding: 6px; border-radius: 14px; overflow-x: auto; border: 1px solid #e2e8f0;}
     .tab-btn { flex: 1; padding: 14px; min-width: 130px; border: none; background: transparent; font-weight: 600; font-size: 0.9rem; color: #475569; cursor: pointer; transition: all 0.3s ease; border-radius: 10px; text-align: center; white-space: nowrap; }
     .tab-btn.active { background: white; color: var(--cor-principal); box-shadow: var(--sombra-card); transform: translateY(-1px); }
-    
     .tab-content { display: none; }
     .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-    
     h3 { font-size: 1.3rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--cor-principal); margin-top: 20px; display: flex; align-items: center; gap: 8px; }
-    
     input[type="text"], input[type="password"], input[type="email"], select, textarea { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; box-sizing: border-box; font-family: inherit; font-size: 0.95rem; transition: 0.2s; background: #fdfdfd; color: #334155; }
     input:focus, select:focus, textarea:focus { border-color: var(--cor-secundaria); outline: none; background: white; box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
-    
     .btn-primario { background: var(--cor-secundaria); color: white; padding: 12px 24px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
     .btn-primario:hover { background: #1d4ed8; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3); transform: translateY(-1px); }
-    
     table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; }
     th { background: var(--cor-principal); color: white; padding: 12px; text-align: left; }
     td { padding: 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
     tr:hover { background: #f8fafc; }
-    
     .barra-filtros { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; background: #ffffff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: var(--sombra-card); }
     @media(max-width: 900px) { .barra-filtros { grid-template-columns: 1fr 1fr; } }
     @media(max-width: 500px) { .barra-filtros { grid-template-columns: 1fr; } }
     .label-filtro { font-size: 0.85rem; font-weight: 700; color: #475569; display: block; margin-bottom: 6px; }
-
     .card-componente { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 14px; padding: 25px; margin-bottom: 25px; box-shadow: var(--sombra-card); }
     .card-componente h4 { margin-top: 0; color: var(--cor-principal); font-size: 1.25rem; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
   </style>
@@ -83,7 +71,7 @@
       <button class="tab-btn active" onclick="mudarAba('abaUsuarios', this)">👥 Utilizadores</button>
       <button class="tab-btn" onclick="mudarAba('abaSupervisao', this)">📋 Planos</button>
       <button class="tab-btn" onclick="mudarAba('abaRaioX', this)">📈 Raio-X Curricular</button>
-      <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📝 Extração Curricular (IA)</button>
+      <button class="tab-btn" onclick="mudarAba('abaMatriz', this)">📝 Extração Curricular</button>
       <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatórios</button>
     </div>
 
@@ -144,11 +132,11 @@
       <div id="painelRaioX"></div>
     </div>
 
-    <!-- 4. IMPORTAR MATRIZ VIA IA (TEXTO COPIADO DO PDF) -->
+    <!-- 4. EXTRAÇÃO LÓGICA DE TEXTO BRUTO -->
     <div id="abaMatriz" class="tab-content">
-      <h3>📋 Extração Curricular via IA (Texto Bruto)</h3>
+      <h3>⚡ Extração Curricular Instantânea (Lógica de Padrões)</h3>
       <div style="background: #ffffff; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 20px; box-shadow: var(--sombra-card);">
-        <p style="color:#64748b; margin-top:0;">Copie o texto das tabelas do PDF e cole abaixo. Não se preocupe com a formatação desconfigurada ou quebras de linha! A IA vai ler, interpretar e organizar tudo perfeitamente nas 11 colunas.</p>
+        <p style="color:#64748b; margin-top:0;">Copie o texto desformatado do PDF e cole abaixo. O nosso algoritmo lógico recorta a informação instantaneamente, sem precisar de internet ou IA.</p>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div><label class="label-filtro">Disciplina / Componente</label>
@@ -177,15 +165,15 @@
           <textarea id="textoMatrizBruto" style="width: 100%; height: 250px; padding: 15px; border-radius: 12px; border: 2px dashed #94a3b8; background: #f8fafc; font-family: monospace; font-size: 0.9rem;" placeholder="Exemplo:&#10;UNIDADES TEMÁTICAS&#10;Geometria&#10;HABILIDADES DO CRMG&#10;(EF06MA17)..."></textarea>
         </div>
 
-        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #0284c7; width: 100%; padding: 14px; font-size: 1.05rem;">🧠 Organizar Texto com Inteligência Artificial</button>
+        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background: #059669; width: 100%; padding: 14px; font-size: 1.05rem;">⚙️ Fatiar e Organizar Dados</button>
         
         <div id="containerPrevia" style="margin-top: 25px; display: none;">
           <h4 style="color: #1e3a8a; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px;">📋 Tabela de Conferência (Prévia)</h4>
           <div id="tabelaPreviaConteudo" style="max-height: 400px; overflow-y: auto; margin-bottom: 15px;"></div>
-          <button onclick="enviarLoteConfirmado()" class="btn-primario" id="btnEnviarOficial" style="background: #10b981; font-size: 1.1rem; width: 100%; padding: 14px;">🚀 Tudo certo! Enviar para a Planilha Oficial</button>
+          <button onclick="enviarLoteConfirmado()" class="btn-primario" id="btnEnviarOficial" style="background: #2563eb; font-size: 1.1rem; width: 100%; padding: 14px;">🚀 Tudo certo! Enviar para a Planilha Oficial</button>
         </div>
 
-        <p id="msgImportacao" style="margin-top: 15px; font-weight:bold; color:#059669; text-align:center;"></p>
+        <p id="msgImportacao" style="margin-top: 15px; font-weight:bold; color:#1e3a8a; text-align:center;"></p>
       </div>
     </div>
 
