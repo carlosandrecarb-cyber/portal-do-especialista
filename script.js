@@ -2,6 +2,9 @@ const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4Z
 var dadosPlanosGlobais = [];
 var loteMatrizPronto = [];
 
+// ==========================================
+// NAVEGAÇÃO E AUTENTICAÇÃO
+// ==========================================
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
@@ -52,6 +55,9 @@ function sairDoSistema() {
   mudarAba('abaUsuarios', document.querySelector('.tabs button')); 
 }
 
+// ==========================================
+// GESTÃO DE USUÁRIOS
+// ==========================================
 async function carregarListaUsuarios() {
   const container = document.getElementById('tabelaUsuariosContainer');
   container.innerHTML = "<p style='text-align:center;'>⏳ A carregar utilizadores...</p>";
@@ -84,8 +90,12 @@ function editarUsuario(linha, nome, email, senha, perfil, comp, turma) {
   document.getElementById('cadPerfil').value = perfil; document.getElementById('cadComponentes').value = comp !== "undefined" ? comp : "";
   document.getElementById('cadTurmas').value = turma !== "undefined" ? turma : ""; window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+
 function limparFormUsuario() { document.querySelectorAll('#abaUsuarios input').forEach(i => i.value = ""); }
 
+// ==========================================
+// CONTROLE DE PLANOS (SUPERVISÃO)
+// ==========================================
 async function carregarPlanosSupervisao() {
   const container = document.getElementById('tabelaPlanosContainer');
   container.innerHTML = "<p style='text-align:center;'>⏳ A procurar planos...</p>";
@@ -175,6 +185,9 @@ async function alterarStatusPlano(linha, novoStatus) {
   } catch(e) { alert("Falha na ligação ao atualizar status."); }
 }
 
+// ==========================================
+// RAIO-X CURRICULAR
+// ==========================================
 async function gerarRaioX() {
   const painel = document.getElementById('painelRaioX');
   const compSelecionado = document.getElementById('rxFiltroComp').value;
@@ -238,7 +251,7 @@ async function gerarRaioX() {
 }
 
 // ==========================================
-// FUNÇÃO PARA ATUALIZAR O LOTE APÓS EDIÇÃO MANUAL
+// FUNÇÃO PARA ATUALIZAR O LOTE APÓS EDIÇÃO MANUAL DA TABELA
 // ==========================================
 function atualizarLote(index, campo, valorHtml) {
   if (loteMatrizPronto[index]) {
@@ -248,7 +261,7 @@ function atualizarLote(index, campo, valorHtml) {
 }
 
 // ==========================================
-// EXTRATOR LÓGICO DE MATRIZ (AGORA BLINDADO PARA SINGULAR/PLURAL)
+// EXTRATOR LÓGICO DE MATRIZ (BLINDAGEM MÁXIMA PARA CRMG 2026)
 // ==========================================
 function gerarPreviaMatriz() {
   let texto = document.getElementById('textoMatrizBruto').value;
@@ -261,22 +274,26 @@ function gerarPreviaMatriz() {
 
   if (!texto.trim()) { alert("⚠️ Por favor, cole o texto do PDF na caixa antes de continuar."); return; }
 
-  msg.innerText = "⚡ A fatiar, limpar e organizar os dados...";
+  msg.innerText = "⚡ A fatiar e processar variações curriculares...";
   loteMatrizPronto = [];
   containerPrevia.style.display = "none";
 
-  // Normalização BLINDADA: Aceita singular, plural e variações de palavras
-  texto = texto.replace(/(UNIDADES?\s+TEMÁTICAS?|PRÁTICAS?\s+DE\s+LINGUAGEM)/gi, "___UNIDADE___");
-  texto = texto.replace(/(GÊNEROS?\s+TEXTUAIS?|GÊNERO\s+TEXTUAL)/gi, "___GENERO___");
-  texto = texto.replace(/(HABILIDADES?\s+DO\s+CRMG|HABILIDADES?\s+PRIORIZADAS?(?:\s+DO\s+ANO\s+ESCOLAR)?)/gi, "___HAB_PRIORIZADAS___");
-  texto = texto.replace(/(HABILIDADES?\s+DE\s+RECOMPOSIÇÃO(?:\s+DAS\s+APRENDIZAGENS)?|HABILIDADES?\s+SOCIOEMOCIONAIS?)/gi, "___HAB_RECOMPOSICAO___");
-  texto = texto.replace(/(HABILIDADES?\s+DE\s+SUPORTE)/gi, "___HAB_SUPORTE___");
-  texto = texto.replace(/(OBJETOS?\s+DO\s+CONHECIMENTO(?:\s+DA\s+HABILIDADE\s+PRIORIZADA)?)/gi, "___OBJETOS___");
-  texto = texto.replace(/(CONTEÚDOS?\s+RELACIONADOS?)/gi, "___CONTEUDOS___");
-  texto = texto.replace(/(EXEMPLOS?\s+DE\s+PRÁTICAS?\s*PEDAGÓGICAS?|PRÁTICAS?\s*PEDAGÓGICAS?)/gi, "___PRATICAS___");
+  // 1. NORMALIZAÇÃO BLINDADA: Cobrindo todas as variações dos PDFs do CRMG
+  texto = texto.replace(/(?:UNIDADES?\s+TEMÁTICAS?|PRÁTICAS?\s+DE\s+LINGUAGEM)/gi, "___UNIDADE___");
+  texto = texto.replace(/(?:GÊNEROS?\s+TEXTUAIS?|GÊNERO\s+TEXTUAL)/gi, "___GENERO___");
+  texto = texto.replace(/(?:HABILIDADES?\s+DO\s+CRMG|HABILIDADES?\s+PRIORIZADAS?(?:\s+DO\s+ANO\s+ESCOLAR)?)/gi, "___HAB_PRIORIZADAS___");
   
-  // Aqui está o ajuste principal: Aceita "Evidência" ou "Evidências", "da Aprendizagem", "de Aprendizagem", etc.
-  texto = texto.replace(/(EVIDÊNCIAS?\s+DE\s+CONSOLIDAÇÃO(?:\s*(?:DA|DE)\s*APRENDIZAGEM)?)/gi, "___EVIDENCIAS___");
+  // Trata Recomposição (Port/Mat) E Socioemocional (Ensino Religioso) na mesma coluna
+  texto = texto.replace(/(?:HABILIDADES?\s+DE\s+RECOMPOSIÇÃO(?:\s+DAS\s+APRENDIZAGENS)?|HABILIDADE\s+SOCIOEMOCIONAL\s*:\s*PROJETO\s+DE\s+VIDA|HABILIDADES?\s+SOCIOEMOCIONA(?:IS|L))/gi, "___HAB_RECOMPOSICAO___");
+  texto = texto.replace(/(?:HABILIDADES?\s+DE\s+SUPORTE)/gi, "___HAB_SUPORTE___");
+  
+  // Trata "Objetos do Conhecimento" e também "Objetos do Conhecimento DA HABILIDADE PRIORIZADA" (Matemática)
+  texto = texto.replace(/(?:OBJETOS?\s+DO\s+CONHECIMENTO(?:\s+DA\s+HABILIDADE\s+PRIORIZADA)?)/gi, "___OBJETOS___");
+  texto = texto.replace(/(?:CONTEÚDOS?\s+RELACIONADOS?)/gi, "___CONTEUDOS___");
+  texto = texto.replace(/(?:EXEMPLOS?\s+DE\s+PRÁTICAS?\s*PEDAGÓGICAS?|PRÁTICAS?\s*PEDAGÓGICAS?)/gi, "___PRATICAS___");
+  
+  // Trata singular, plural, "DA" e "DE" aprendizagem
+  texto = texto.replace(/(?:EVIDÊNCIAS?\s+DE\s+CONSOLIDAÇÃO(?:\s*(?:DA|DE)\s*APRENDIZAGEM)?)/gi, "___EVIDENCIAS___");
 
   const blocos = texto.split("___UNIDADE___");
   
@@ -287,12 +304,20 @@ function gerarPreviaMatriz() {
       const regex = new RegExp(marcador + "([\\s\\S]*?)(?=___|$)", "i");
       const match = bloco.match(regex);
       if (!match) return "-";
+      
       let extraido = match[1].trim().replace(/\n/g, " ");
 
-      // FILTRO ANTI-LIXO (CABEÇALHOS E RODAPÉS)
-      extraido = extraido.replace(/\d*\.?\s*PLANO DE CURSO 202[0-9][\s\S]*?Etapa de Ensino:\s*(?:Ensino Fundamental|Ensino Médio)/gi, "");
-      extraido = extraido.replace(/Área de Conhecimento:[\s\S]*?Componente Curricular:[\s\S]*?(?:Ano de Escolaridade:|Etapa de Ensino:)/gi, "");
+      // 2. FILTRO ANTI-LIXO (DESTRUIDOR DE CABEÇALHOS E RODAPÉS)
+      // Captura e apaga o rodapé desde "PLANO(S) DE CURSO..." até à palavra "Ensino Fundamental" ou "Ensino Médio"
+      extraido = extraido.replace(/\d*\.?\s*PLANOS?\s+DE\s+CURSO\s+202[0-9][\s\S]*?(?:Etapa\s+de\s+Ensino:\s*Ensino\s+Fundamental|Ensino\s+Fundamental|Ensino\s+Médio)/gi, "");
+      
+      // Captura e apaga lixos flutuantes do cabeçalho
+      extraido = extraido.replace(/Área\s+de\s+Conhecimento:[\s\S]*?Componente\s+Curricular:[\s\S]*?(?:Ano\s+de\s+Escolaridade:|Etapa\s+de\s+Ensino:)/gi, "");
+      
+      // Apaga nomes de disciplinas com o trimestre perdidos no meio do texto
       extraido = extraido.replace(new RegExp(disciplina + "\\s*-\\s*\\dº\\s*Trimestre", "gi"), "");
+      
+      // Apaga numerações soltas de página no final da frase (ex: " ...reflexos e as ações voluntárias. 18")
       extraido = extraido.replace(/\s+\d+\s*$/, ""); 
 
       return extraido.trim() || "-";
@@ -310,69 +335,92 @@ function gerarPreviaMatriz() {
 
     if (unidade !== "-" || habPri !== "-") {
       loteMatrizPronto.push({
-        disciplina: disciplina, ano: ano, trimestre: trimestre,
-        unidade: unidade, genero: genero, habPriorizada: habPri,
-        habRecomposicao: habRec, habSuporte: habSup,
-        objetoConhecimento: objetos, conteudosRelacionados: conteudos,
-        praticas: praticas, evidencias: evidencias
+        disciplina: disciplina, 
+        ano: ano, 
+        trimestre: trimestre,
+        unidade: unidade, 
+        genero: genero, 
+        habPriorizada: habPri,
+        habRecomposicao: habRec, 
+        habSuporte: habSup,
+        objetoConhecimento: objetos, 
+        conteudosRelacionados: conteudos,
+        praticas: praticas, 
+        evidencias: evidencias
       });
     }
   }
 
   if (loteMatrizPronto.length === 0) {
-    msg.innerText = "⚠️ O sistema não reconheceu os títulos (ex: UNIDADES TEMÁTICAS, HABILIDADES). Confirme se colou o texto corretamente.";
+    msg.innerText = "⚠️ O sistema não reconheceu os títulos. Confirme se colou o texto corretamente.";
     return;
   }
 
+  // 3. TABELA DE PRÉVIA COMPLETA (Permite edição das 11 colunas cruciais)
   let htmlTabela = `
     <style>
-      .cel-edit { border: 1px dashed transparent; padding: 6px; border-radius: 6px; cursor: text; transition: 0.2s; min-height: 20px; }
+      .cel-edit { border: 1px dashed transparent; padding: 4px; border-radius: 4px; cursor: text; transition: 0.2s; min-height: 20px; font-size:0.8rem; }
       .cel-edit:hover { border-color: #94a3b8; background-color: #f8fafc; }
       .cel-edit:focus { border-color: #3b82f6; background-color: #eff6ff; outline: none; }
       .instrucao-edit { background: #fef3c7; color: #92400e; padding: 10px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold; border: 1px solid #fde68a;}
+      .col-header { padding:8px; text-align:left; font-size:0.8rem; }
     </style>
     
-    <div class="instrucao-edit">💡 Dica: Se quiser ajustar algum texto antes de enviar, basta clicar dentro da caixa na tabela abaixo e apagar ou escrever!</div>
+    <div class="instrucao-edit">💡 Verifique os dados abaixo. Se algum erro passou, clique no texto, corrija diretamente na tabela e depois envie!</div>
     
-    <div style="overflow-x: auto; padding-bottom: 10px;">
-    <table style="font-size:0.85rem; width:100%; min-width:1300px; border-collapse: collapse; border: 1px solid #cbd5e1;">
-      <tr style="background-color:#1e3a8a; color:white;">
-        <th style="padding:10px; text-align:left; width:3%;">#</th>
-        <th style="padding:10px; text-align:left; width:10%;">Ano/Trim/Unid</th>
-        <th style="padding:10px; text-align:left; width:17%;">Habilidade Priorizada</th>
-        <th style="padding:10px; text-align:left; width:15%;">Objeto do Conhec.</th>
-        <th style="padding:10px; text-align:left; width:15%;">Conteúdos Relacionados</th>
-        <th style="padding:10px; text-align:left; width:20%;">Práticas Pedagógicas</th>
-        <th style="padding:10px; text-align:left; width:20%;">Evidências</th>
+    <div style="overflow-x: auto; padding-bottom: 10px; max-height: 500px;">
+    <table style="width:100%; min-width:2000px; border-collapse: collapse; border: 1px solid #cbd5e1;">
+      <tr style="background-color:#1e3a8a; color:white; position: sticky; top: 0;">
+        <th class="col-header" style="width:2%;">#</th>
+        <th class="col-header" style="width:6%;">Ano/Trim.</th>
+        <th class="col-header" style="width:10%;">Unidade Temática</th>
+        <th class="col-header" style="width:15%;">Habilidade Priorizada</th>
+        <th class="col-header" style="width:10%;">Hab. Recomposição</th>
+        <th class="col-header" style="width:10%;">Hab. Suporte</th>
+        <th class="col-header" style="width:12%;">Objetos do Conhec.</th>
+        <th class="col-header" style="width:12%;">Conteúdos Relacionados</th>
+        <th class="col-header" style="width:12%;">Práticas Pedagógicas</th>
+        <th class="col-header" style="width:11%;">Evidências</th>
       </tr>`;
   
   loteMatrizPronto.forEach((item, index) => {
     let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
     htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
-                    <td style="vertical-align:top; padding:10px;">${index + 1}</td>
+                    <td style="vertical-align:top; padding:8px; font-size:0.8rem;">${index + 1}</td>
                     
-                    <td style="vertical-align:top; padding:10px;">
-                      <strong>${item.ano}</strong><br>${item.trimestre}<br>
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'unidade', this.innerHTML)" class="cel-edit" style="color:#64748b; font-size:0.8rem; margin-top:5px;">${item.unidade}</div>
+                    <td style="vertical-align:top; padding:8px; font-size:0.8rem; color:#475569;">
+                      <strong>${item.ano}</strong><br>${item.trimestre}
                     </td>
                     
-                    <td style="vertical-align:top; padding:10px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habPriorizada', this.innerHTML)" class="cel-edit"><strong>${item.habPriorizada}</strong></div>
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'unidade', this.innerHTML)" class="cel-edit" style="font-weight:bold; color:#1e293b;">${item.unidade}</div>
                     </td>
                     
-                    <td style="vertical-align:top; padding:10px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'objetoConhecimento', this.innerHTML)" class="cel-edit">${item.objetoConhecimento}</div>
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habPriorizada', this.innerHTML)" class="cel-edit" style="color:#2563eb; font-weight:bold;">${item.habPriorizada}</div>
                     </td>
                     
-                    <td style="vertical-align:top; padding:10px;">
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habRecomposicao', this.innerHTML)" class="cel-edit">${item.habRecomposicao}</div>
+                    </td>
+
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habSuporte', this.innerHTML)" class="cel-edit">${item.habSuporte}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'objetoConhecimento', this.innerHTML)" class="cel-edit" style="color:#0f766e;">${item.objetoConhecimento}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:8px;">
                       <div contenteditable="true" onblur="atualizarLote(${index}, 'conteudosRelacionados', this.innerHTML)" class="cel-edit" style="color:#0369a1;">${item.conteudosRelacionados}</div>
                     </td>
                     
-                    <td style="vertical-align:top; padding:10px;">
+                    <td style="vertical-align:top; padding:8px;">
                       <div contenteditable="true" onblur="atualizarLote(${index}, 'praticas', this.innerHTML)" class="cel-edit" style="color:#15803d;">${item.praticas}</div>
                     </td>
                     
-                    <td style="vertical-align:top; padding:10px;">
+                    <td style="vertical-align:top; padding:8px;">
                       <div contenteditable="true" onblur="atualizarLote(${index}, 'evidencias', this.innerHTML)" class="cel-edit" style="color:#b45309; font-style:italic;">${item.evidencias}</div>
                     </td>
                    </tr>`;
@@ -381,9 +429,12 @@ function gerarPreviaMatriz() {
 
   conteudoPrevia.innerHTML = htmlTabela;
   containerPrevia.style.display = "block";
-  msg.innerText = `✅ Extração Concluída e Limpa: ${loteMatrizPronto.length} blocos organizados!`;
+  msg.innerText = `✅ Extração Refinada: ${loteMatrizPronto.length} blocos organizados! Verifique a tabela e envie.`;
 }
 
+// ==========================================
+// ENVIO DA MATRIZ E RELATÓRIOS GERAIS
+// ==========================================
 async function enviarLoteConfirmado() {
   if (loteMatrizPronto.length === 0) { alert("⚠️ Nenhuma habilidade na prévia para enviar."); return; }
   
