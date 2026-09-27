@@ -1,9 +1,7 @@
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec";
-var dadosPlanosGlobais = [];
-var loteMatrizPronto = [];
 
 // ==========================================
-// NAVEGAÇÃO E AUTENTICAÇÃO
+// CONTROLE DE ABAS E LOGIN
 // ==========================================
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -13,475 +11,302 @@ function mudarAba(abaId, btn) {
 
   if (abaId === 'abaUsuarios') carregarListaUsuarios();
   if (abaId === 'abaSupervisao') carregarPlanosSupervisao();
+  if (abaId === 'abaExtracao') carregarMatrizesSalvas();
 }
 
 async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
-  
-  if (!usuario || !senha) { msg.innerText = "⚠️ Preencha o utilizador e a senha."; return; }
 
-  msg.innerText = "⏳ A Autenticar Especialista... (Aguarde)";
-  
+  if (!usuario || !senha) { msg.innerText = "Preencha usuário e senha."; return; }
+
+  msg.innerText = "⏳ Autenticando Especialista...";
   try {
-    const res = await fetch(URL_API, { 
-      method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify({ acao: "login", usuario, senha }) 
-    });
-    
-    if (!res.ok) throw new Error(`Erro do Servidor: ${res.status}`);
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "login", usuario, senha }) });
     const r = await res.json();
-    
+
     if (r.status === "sucesso") {
-      if (r.perfil && r.perfil.toLowerCase() === "especialista") {
-        document.getElementById('telaLogin').style.display = 'none';
-        document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
-        document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Gestor Logado: ${r.nome}`;
-        carregarListaUsuarios();
-      } else {
-        msg.innerText = "⛔ Acesso Negado: A sua conta não tem perfil de Especialista.";
+      if (r.perfil !== "Especialista") {
+        msg.innerText = "Acesso Negado: Área restrita à equipe de Gestão.";
+        return;
       }
+      document.getElementById('telaLogin').style.display = 'none';
+      
+      const headerBoasVindas = document.getElementById('infoUsuarioBoasVindas');
+      headerBoasVindas.style.display = 'inline-block';
+      headerBoasVindas.innerText = `👋 Gestor Logado: ${r.nome}`;
+
+      carregarPlanosSupervisao();
     } else {
-      msg.innerText = `⚠️ ${r.mensagem || "Utilizador ou senha incorretos."}`;
+      msg.innerText = r.mensagem || "Usuário ou senha incorretos.";
     }
-  } catch (e) { msg.innerText = `❌ Falha de comunicação: ${e.message}`; }
+  } catch (e) {
+    msg.innerText = "⚠️ Erro de conexão com o servidor.";
+  }
 }
 
 function sairDoSistema() {
   document.getElementById('loginSenha').value = ""; 
   document.getElementById('telaLogin').style.display = 'flex';
   document.getElementById('infoUsuarioBoasVindas').style.display = 'none';
-  mudarAba('abaUsuarios', document.querySelector('.tabs button')); 
+  mudarAba('abaSupervisao', document.querySelector('.tabs button')); 
 }
 
 // ==========================================
-// GESTÃO DE USUÁRIOS
+// ABA 1: SUPERVISÃO DE PLANOS
+// ==========================================
+async function carregarPlanosSupervisao() {
+  const container = document.getElementById('tabelaPlanosContainer');
+  container.innerHTML = "<p>⏳ Buscando planos de aula recentes...</p>";
+  
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
+    const r = await res.json();
+    
+    if (r.status === "sucesso" && r.registros && r.registros.length > 0) {
+      let html = `<table><tr><th>Data / Professor</th><th>Turma & Componente</th><th>Links (Acesso Restrito)</th><th>Status Pedagógico</th></tr>`;
+      
+      r.registros.reverse().forEach(p => {
+        let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
+        
+        html += `<tr>
+                  <td><strong>${p.data}</strong><br><span style="color:#475569; font-size:0.9rem;">${p.professor}</span></td>
+                  <td><strong>${p.componente}</strong><br><span style="color:#64748b; font-size:0.85rem;">${p.turma} (${p.trimestre || '-'})</span></td>
+                  <td>
+                    <a href="${p.docUrl}" target="_blank" style="text-decoration:none; color:#2563eb; font-weight:bold; display:block; margin-bottom:5px;">📄 Abrir Plano (Doc)</a>
+                    <a href="${p.pastaUrl}" target="_blank" style="text-decoration:none; color:#d97706; font-weight:bold; font-size:0.85rem;">📁 Pasta Evidências</a>
+                  </td>
+                  <td>
+                    <select onchange="alterarStatusPlano(${p.linha}, this.value)" style="padding:6px; font-weight:bold; border:2px solid ${corStatus}; color:${corStatus}; border-radius:8px; width:100%;">
+                      <option value="🟡 Pendente" ${p.status.includes('Pendente') ? 'selected' : ''}>🟡 Pendente</option>
+                      <option value="✅ Aprovado" ${p.status.includes('Aprovado') ? 'selected' : ''}>✅ Aprovado</option>
+                      <option value="🔴 Devolvido p/ Ajuste" ${p.status.includes('Devolvido') ? 'selected' : ''}>🔴 Devolvido p/ Ajuste</option>
+                    </select>
+                  </td>
+                 </tr>`;
+      });
+      html += `</table>`;
+      container.innerHTML = html;
+    } else {
+      container.innerHTML = "<p>Nenhum plano foi enviado para a supervisão ainda.</p>";
+    }
+  } catch (e) {
+    container.innerHTML = "<p>Erro ao conectar com a base de dados.</p>";
+  }
+}
+
+async function alterarStatusPlano(linha, novoStatus) {
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus }) });
+    const r = await res.json();
+    if(r.status !== "sucesso") alert("Erro ao atualizar o status.");
+  } catch(e) { alert("Falha na conexão ao atualizar status."); }
+}
+
+// ==========================================
+// ABA 2: GESTÃO DE USUÁRIOS
 // ==========================================
 async function carregarListaUsuarios() {
   const container = document.getElementById('tabelaUsuariosContainer');
-  container.innerHTML = "<p style='text-align:center;'>⏳ A carregar utilizadores...</p>";
+  container.innerHTML = "<p>⏳ Carregando banco de usuários...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
     const r = await res.json();
     if (r.status === "sucesso") {
-      let html = `<table><tr><th>Nome / E-mail</th><th>Perfil</th><th>Senha</th><th>Ação</th></tr>`;
+      let html = `<table><tr><th>Nome / E-mail</th><th>Perfil</th><th>Acesso (Senha)</th><th>Ação</th></tr>`;
       r.usuarios.forEach(u => {
-        let emailD = (u.email && u.email !== "undefined") ? u.email : "Sem e-mail";
-        html += `<tr><td><strong>${u.nome}</strong><br><span style="font-size:0.8rem; color:#64748b;">${emailD}</span></td><td>${u.perfil}</td><td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-family:monospace;">${u.senha}</span></td><td><button onclick="editarUsuario(${u.linha}, '${u.nome}', '${u.email}', '${u.senha}', '${u.perfil}', '${u.componentes}', '${u.turmas}')" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">Editar</button></td></tr>`;
+        let emailDisplay = (u.email && u.email !== "undefined") ? u.email : "Sem e-mail (Link Público)";
+        html += `<tr>
+                  <td><strong>${u.nome}</strong><br><span style="font-size:0.8rem; color:#64748b;">${emailDisplay}</span></td>
+                  <td>${u.perfil}</td>
+                  <td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-family:monospace;">${u.senha}</span></td>
+                  <td><button onclick="editarUsuario(${u.linha}, '${u.nome}', '${u.email}', '${u.senha}', '${u.perfil}', '${u.componentes}', '${u.turmas}')" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">Editar</button></td>
+                 </tr>`;
       });
-      container.innerHTML = html + `</table>`;
+      html += `</table>`;
+      container.innerHTML = html;
     }
-  } catch(e) { container.innerHTML = "<p>Erro ao listar utilizadores.</p>"; }
+  } catch(e) { container.innerHTML = "<p>Erro ao carregar lista de usuários.</p>"; }
 }
 
 async function salvarUsuario() {
-  const dados = { linha: document.getElementById('usuarioLinha').value, nome: document.getElementById('cadNome').value.trim(), email: document.getElementById('cadEmail').value.trim(), senha: document.getElementById('cadSenha').value.trim(), perfil: document.getElementById('cadPerfil').value, componentes: document.getElementById('cadComponentes').value.trim(), turmas: document.getElementById('cadTurmas').value.trim() };
-  if(!dados.nome || !dados.senha) { alert("Nome e Senha são obrigatórios."); return; }
+  const dados = {
+    linha: document.getElementById('usuarioLinha').value,
+    nome: document.getElementById('cadNome').value,
+    email: document.getElementById('cadEmail').value,
+    senha: document.getElementById('cadSenha').value,
+    perfil: document.getElementById('cadPerfil').value,
+    componentes: document.getElementById('cadComponentes').value,
+    turmas: document.getElementById('cadTurmas').value
+  };
+
+  if(!dados.nome || !dados.senha) { alert("⚠️ Nome e Senha são obrigatórios."); return; }
+
+  const btn = document.querySelector('button[onclick="salvarUsuario()"]');
+  btn.innerText = "⏳ Salvando..."; btn.disabled = true;
+
   try {
-    await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) });
-    alert("✅ Utilizador guardado com sucesso!"); limparFormUsuario(); carregarListaUsuarios();
-  } catch(e) { alert("⚠️ Erro ao guardar."); }
-}
-
-function editarUsuario(linha, nome, email, senha, perfil, comp, turma) {
-  document.getElementById('usuarioLinha').value = linha; document.getElementById('cadNome').value = nome;
-  document.getElementById('cadEmail').value = email !== "undefined" ? email : ""; document.getElementById('cadSenha').value = senha;
-  document.getElementById('cadPerfil').value = perfil; document.getElementById('cadComponentes').value = comp !== "undefined" ? comp : "";
-  document.getElementById('cadTurmas').value = turma !== "undefined" ? turma : ""; window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function limparFormUsuario() { document.querySelectorAll('#abaUsuarios input').forEach(i => i.value = ""); }
-
-// ==========================================
-// CONTROLE DE PLANOS (SUPERVISÃO)
-// ==========================================
-async function carregarPlanosSupervisao() {
-  const container = document.getElementById('tabelaPlanosContainer');
-  container.innerHTML = "<p style='text-align:center;'>⏳ A procurar planos...</p>";
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) });
     const r = await res.json();
-    if (r.status === "sucesso") {
-      dadosPlanosGlobais = r.registros.reverse();
-      popularDropdownsFiltro(dadosPlanosGlobais);
-      renderizarTabelaPlanos(dadosPlanosGlobais);
-    }
-  } catch (e) { container.innerHTML = "<p>Erro ao ligar ao servidor.</p>"; }
-}
-
-function popularDropdownsFiltro(planos) {
-  const profs = [...new Set(planos.map(p => p.professor))].filter(Boolean).sort();
-  const comps = [...new Set(planos.map(p => p.componente))].filter(Boolean).sort();
-  const turmas = [...new Set(planos.map(p => p.turma))].filter(Boolean).sort();
-  const trimestres = [...new Set(planos.map(p => p.trimestre))].filter(Boolean).sort();
-
-  preencherSelect('filtroProf', profs, '👩‍🏫 Todos'); preencherSelect('filtroComp', comps, '📚 Todos');
-  preencherSelect('filtroTurma', turmas, '🏷️ Todas'); preencherSelect('filtroTrimestre', trimestres, '⏳ Todos');
-  preencherSelect('rxFiltroProf', profs, '👩‍🏫 Todos os Professores'); preencherSelect('rxFiltroComp', comps, '📚 Todos os Componentes');
-  preencherSelect('rxFiltroTurma', turmas, '🏷️ Todas as Turmas'); preencherSelect('rxFiltroTrimestre', trimestres, '⏳ Todos os Trimestres');
-}
-
-function preencherSelect(id, lista, padrao) {
-  const sel = document.getElementById(id);
-  if(!sel) return;
-  const valorAtual = sel.value;
-  sel.innerHTML = `<option value="">${padrao}</option>` + lista.map(i => `<option value="${i}">${i}</option>`).join('');
-  sel.value = valorAtual; 
-}
-
-function filtrarPlanos() {
-  const tProf = document.getElementById('filtroProf').value; const tComp = document.getElementById('filtroComp').value;
-  const tTurma = document.getElementById('filtroTurma').value; const tTrimestre = document.getElementById('filtroTrimestre').value;
-  const tStatus = document.getElementById('filtroStatus').value;
-  
-  const filtrados = dadosPlanosGlobais.filter(p => {
-    return (tProf === "" || p.professor === tProf) && (tComp === "" || p.componente === tComp) && 
-           (tTurma === "" || p.turma === tTurma) && (tTrimestre === "" || p.trimestre === tTrimestre) &&
-           (tStatus === "" || p.status.includes(tStatus));
-  });
-  renderizarTabelaPlanos(filtrados);
-}
-
-function renderizarTabelaPlanos(planos) {
-  const container = document.getElementById('tabelaPlanosContainer');
-  if(planos.length === 0) { container.innerHTML = "<p style='text-align:center;'>Nenhum plano encontrado com estes filtros.</p>"; return; }
-  
-  let html = `<table><tr><th>Data / Professor</th><th>Turma & Componente</th><th>Links (Docs e Evidências)</th><th>Status & Feedback</th></tr>`;
-  planos.forEach(p => {
-    let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
-    let feedbackView = p.feedback ? `<div style="margin-top:8px; padding:6px; background:#fee2e2; border-radius:6px; font-size:0.8rem; color:#991b1b;">💬 <strong>Motivo:</strong> ${p.feedback}</div>` : '';
-    
-    html += `<tr>
-              <td><strong>${p.data}</strong><br><span style="color:#475569; font-size:0.9rem;">${p.professor}</span></td>
-              <td><strong>${p.componente}</strong><br><span style="color:#64748b; font-size:0.85rem;">${p.turma} (${p.trimestre})</span></td>
-              <td>
-                <a href="${p.docUrl}" target="_blank" style="text-decoration:none; color:#2563eb; font-weight:bold; display:block; margin-bottom:5px;">📄 Abrir Plano (Doc)</a>
-                <a href="${p.pastaUrl}" target="_blank" style="text-decoration:none; color:#d97706; font-weight:bold; font-size:0.85rem;">📁 Pasta Evidências</a>
-              </td>
-              <td>
-                <select onchange="alterarStatusPlano(${p.linha}, this.value)" style="padding:6px; font-weight:bold; border:2px solid ${corStatus}; color:${corStatus}; border-radius:8px; width:100%; cursor:pointer;">
-                  <option value="🟡 Pendente" ${p.status.includes('Pendente') ? 'selected' : ''}>🟡 Pendente</option>
-                  <option value="✅ Aprovado" ${p.status.includes('Aprovado') ? 'selected' : ''}>✅ Aprovado</option>
-                  <option value="🔴 Devolvido p/ Ajuste" ${p.status.includes('Devolvido') ? 'selected' : ''}>🔴 Devolvido p/ Ajuste</option>
-                </select>
-                ${feedbackView}
-              </td>
-             </tr>`;
-  });
-  html += `</table>`;
-  container.innerHTML = html;
-}
-
-async function alterarStatusPlano(linha, novoStatus) {
-  let feedback = "";
-  if(novoStatus.includes('Devolvido')) {
-    feedback = prompt("Qual o motivo da devolução? (O professor verá esta mensagem)");
-    if(feedback === null) { carregarPlanosSupervisao(); return; } 
-  }
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus, feedback: feedback }) });
-    const r = await res.json(); if(r.status === "sucesso") carregarPlanosSupervisao(); 
-  } catch(e) { alert("Falha na ligação ao atualizar status."); }
-}
-
-// ==========================================
-// RAIO-X CURRICULAR
-// ==========================================
-async function gerarRaioX() {
-  const painel = document.getElementById('painelRaioX');
-  const compSelecionado = document.getElementById('rxFiltroComp').value;
-  const turma = document.getElementById('rxFiltroTurma').value;
-  const prof = document.getElementById('rxFiltroProf').value;
-  const trim = document.getElementById('rxFiltroTrimestre').value;
-  
-  painel.innerHTML = "<p style='text-align:center;'>⏳ A analisar componentes curriculares e matrizes...</p>";
-  
-  try {
-    const listaComponentes = compSelecionado ? [compSelecionado] : [
-      "Língua Portuguesa", "Matemática", "Geografia", "História", 
-      "Ciências", "Educação Física", "Ensino Religioso", "Arte", "Língua Inglesa"
-    ];
-
-    let htmlGeral = ""; let totalGeralMatriz = 0; let totalGeralDadas = 0;
-
-    for (let i = 0; i < listaComponentes.length; i++) {
-      let c = listaComponentes[i];
-      const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "cruzarHabilidades", componente: c, turma: turma, professor: prof, trimestre: trim }) });
-      const r = await res.json();
-      
-      if (r.status === "sucesso" && r.totalMatriz > 0) {
-        const total = r.totalMatriz; const dadas = r.trabalhadas.length;
-        const perc = total > 0 ? Math.round((dadas / total) * 100) : 0;
-        totalGeralMatriz += total; totalGeralDadas += dadas;
-
-        htmlGeral += `<div class="card-componente">
-                        <h4>
-                          <span>📚 ${c}</span>
-                          <span style="font-size: 0.9rem; background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 600;">${perc}% Concluído (${dadas}/${total})</span>
-                        </h4>
-                        <div style="width:100%; background:#e2e8f0; height:8px; border-radius:4px; margin-bottom:15px; overflow:hidden;"><div style="width:${perc}%; background:#10b981; height:100%;"></div></div>
-                        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
-                          <div style="background:#d1fae5; padding:15px; border-radius:10px; border:1px solid #a7f3d0; max-height:220px; overflow-y:auto;">
-                            <h5 style="color:#065f46; margin:0 0 10px 0; font-size:0.95rem;">✅ Habilidades Dadas</h5>
-                            <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#064e3b;">`;
-        r.trabalhadas.forEach(h => htmlGeral += `<li style="margin-bottom:8px; line-height:1.4;">${h.habilidade.replace(`[${c}]`, '')} <br><small style="color:#047857; font-weight:600;">(Prof. ${h.professor})</small></li>`);
-        if(r.trabalhadas.length === 0) htmlGeral += "<li style='color:#065f46;'>Nenhuma habilidade registada.</li>";
-        htmlGeral += `</ul></div>
-                          <div style="background:#fef3c7; padding:15px; border-radius:10px; border:1px solid #fde68a; max-height:220px; overflow-y:auto;">
-                            <h5 style="color:#92400e; margin:0 0 10px 0; font-size:0.95rem;">⚠️ Faltam Ensinar</h5>
-                            <ul style="padding-left:18px; margin:0; font-size:0.85rem; color:#78350f;">`;
-        r.pendentes.forEach(h => htmlGeral += `<li style="margin-bottom:8px; line-height:1.4;">${h.habilidade.replace(`[${c}]`, '')}</li>`);
-        if(r.pendentes.length === 0) htmlGeral += "<li style='color:#92400e; font-weight:600;'>Parabéns! Matriz completa neste componente! 🎉</li>";
-        htmlGeral += `</ul></div></div></div>`;
-      }
-    }
-
-    if(htmlGeral === "") { painel.innerHTML = "<p style='text-align:center; padding:20px; color:#64748b;'>Nenhum dado encontrado para os filtros selecionados.</p>"; return; }
-
-    const percGeral = totalGeralMatriz > 0 ? Math.round((totalGeralDadas / totalGeralMatriz) * 100) : 0;
-    const rotuloFiltro = (turma ? turma : "Geral da Escola") + (compSelecionado ? " | " + compSelecionado : " | Todas as Disciplinas");
-    let painelResumoTopo = `<div style="background:#ffffff; padding:20px; border-radius:14px; border:1px solid #e2e8f0; text-align:center; margin-bottom:25px; box-shadow: var(--sombra-card);">
-                              <h2 style="margin:0; color:var(--cor-principal); font-size:1.8rem;">${percGeral}% Concluído Geral</h2>
-                              <p style="color:#64748b; margin:5px 0 12px 0; font-size:0.95rem; font-weight:600;">${totalGeralDadas} de ${totalGeralMatriz} habilidades trabalhadas (${rotuloFiltro})</p>
-                              <div style="width:100%; background:#e2e8f0; height:10px; border-radius:5px; overflow:hidden;"><div style="width:${percGeral}%; background:#10b981; height:100%;"></div></div>
-                            </div>`;
-    painel.innerHTML = painelResumoTopo + htmlGeral;
-  } catch(e) { painel.innerHTML = "<p style='text-align:center; color:#ef4444;'>Erro ao gerar o Raio-X.</p>"; }
-}
-
-// ==========================================
-// FUNÇÃO PARA ATUALIZAR O LOTE APÓS EDIÇÃO MANUAL DA TABELA
-// ==========================================
-function atualizarLote(index, campo, valorHtml) {
-  if (loteMatrizPronto[index]) {
-    let textoLimpo = valorHtml.replace(/<[^>]*>?/gm, '').trim();
-    loteMatrizPronto[index][campo] = textoLimpo || "-";
+    alert("✅ " + r.mensagem);
+    limparFormUsuario();
+    carregarListaUsuarios();
+  } catch(e) { alert("⚠️ Erro ao salvar usuário."); } finally {
+    btn.innerText = "💾 Salvar / Atualizar Usuário"; btn.disabled = false;
   }
 }
 
-// ==========================================
-// EXTRATOR LÓGICO DE MATRIZ (BLINDAGEM MÁXIMA PARA CRMG 2026)
-// ==========================================
-function gerarPreviaMatriz() {
-  let texto = document.getElementById('textoMatrizBruto').value;
-  const disciplina = document.getElementById('impDisciplina').value.trim();
-  const ano = document.getElementById('impAno').value.trim();
-  const trimestre = document.getElementById('impTrimestre').value.trim();
-  const msg = document.getElementById('msgImportacao');
-  const containerPrevia = document.getElementById('containerPrevia');
-  const conteudoPrevia = document.getElementById('tabelaPreviaConteudo');
+function editarUsuario(linha, nome, email, senha, perfil, componentes, turmas) {
+  document.getElementById('usuarioLinha').value = linha;
+  document.getElementById('cadNome').value = nome;
+  document.getElementById('cadEmail').value = (email !== "undefined" && email !== "null") ? email : "";
+  document.getElementById('cadSenha').value = senha;
+  document.getElementById('cadPerfil').value = perfil;
+  document.getElementById('cadComponentes').value = (componentes !== "undefined" && componentes !== "null") ? componentes : "";
+  document.getElementById('cadTurmas').value = (turmas !== "undefined" && turmas !== "null") ? turmas : "";
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
-  if (!texto.trim()) { alert("⚠️ Por favor, cole o texto do PDF na caixa antes de continuar."); return; }
-
-  msg.innerText = "⚡ A fatiar e processar variações curriculares...";
-  loteMatrizPronto = [];
-  containerPrevia.style.display = "none";
-
-  // 1. NORMALIZAÇÃO BLINDADA: Cobrindo todas as variações dos PDFs do CRMG
-  texto = texto.replace(/(?:UNIDADES?\s+TEMÁTICAS?|PRÁTICAS?\s+DE\s+LINGUAGEM)/gi, "___UNIDADE___");
-  texto = texto.replace(/(?:GÊNEROS?\s+TEXTUAIS?|GÊNERO\s+TEXTUAL)/gi, "___GENERO___");
-  texto = texto.replace(/(?:HABILIDADES?\s+DO\s+CRMG|HABILIDADES?\s+PRIORIZADAS?(?:\s+DO\s+ANO\s+ESCOLAR)?)/gi, "___HAB_PRIORIZADAS___");
-  
-  // Trata Recomposição (Port/Mat) E Socioemocional (Ensino Religioso) na mesma coluna
-  texto = texto.replace(/(?:HABILIDADES?\s+DE\s+RECOMPOSIÇÃO(?:\s+DAS\s+APRENDIZAGENS)?|HABILIDADE\s+SOCIOEMOCIONAL\s*:\s*PROJETO\s+DE\s+VIDA|HABILIDADES?\s+SOCIOEMOCIONA(?:IS|L))/gi, "___HAB_RECOMPOSICAO___");
-  texto = texto.replace(/(?:HABILIDADES?\s+DE\s+SUPORTE)/gi, "___HAB_SUPORTE___");
-  
-  // Trata "Objetos do Conhecimento" e também "Objetos do Conhecimento DA HABILIDADE PRIORIZADA" (Matemática)
-  texto = texto.replace(/(?:OBJETOS?\s+DO\s+CONHECIMENTO(?:\s+DA\s+HABILIDADE\s+PRIORIZADA)?)/gi, "___OBJETOS___");
-  texto = texto.replace(/(?:CONTEÚDOS?\s+RELACIONADOS?)/gi, "___CONTEUDOS___");
-  texto = texto.replace(/(?:EXEMPLOS?\s+DE\s+PRÁTICAS?\s*PEDAGÓGICAS?|PRÁTICAS?\s*PEDAGÓGICAS?)/gi, "___PRATICAS___");
-  
-  // Trata singular, plural, "DA" e "DE" aprendizagem
-  texto = texto.replace(/(?:EVIDÊNCIAS?\s+DE\s+CONSOLIDAÇÃO(?:\s*(?:DA|DE)\s*APRENDIZAGEM)?)/gi, "___EVIDENCIAS___");
-
-  const blocos = texto.split("___UNIDADE___");
-  
-  for (let i = 1; i < blocos.length; i++) {
-    let bloco = "___UNIDADE___" + blocos[i];
-    
-    const capturar = (marcador) => {
-      const regex = new RegExp(marcador + "([\\s\\S]*?)(?=___|$)", "i");
-      const match = bloco.match(regex);
-      if (!match) return "-";
-      
-      let extraido = match[1].trim().replace(/\n/g, " ");
-
-      // 2. FILTRO ANTI-LIXO (DESTRUIDOR DE CABEÇALHOS E RODAPÉS)
-      // Captura e apaga o rodapé desde "PLANO(S) DE CURSO..." até à palavra "Ensino Fundamental" ou "Ensino Médio"
-      extraido = extraido.replace(/\d*\.?\s*PLANOS?\s+DE\s+CURSO\s+202[0-9][\s\S]*?(?:Etapa\s+de\s+Ensino:\s*Ensino\s+Fundamental|Ensino\s+Fundamental|Ensino\s+Médio)/gi, "");
-      
-      // Captura e apaga lixos flutuantes do cabeçalho
-      extraido = extraido.replace(/Área\s+de\s+Conhecimento:[\s\S]*?Componente\s+Curricular:[\s\S]*?(?:Ano\s+de\s+Escolaridade:|Etapa\s+de\s+Ensino:)/gi, "");
-      
-      // Apaga nomes de disciplinas com o trimestre perdidos no meio do texto
-      extraido = extraido.replace(new RegExp(disciplina + "\\s*-\\s*\\dº\\s*Trimestre", "gi"), "");
-      
-      // Apaga numerações soltas de página no final da frase (ex: " ...reflexos e as ações voluntárias. 18")
-      extraido = extraido.replace(/\s+\d+\s*$/, ""); 
-
-      return extraido.trim() || "-";
-    };
-
-    const unidade = capturar("___UNIDADE___");
-    const genero = capturar("___GENERO___");
-    const habPri = capturar("___HAB_PRIORIZADAS___");
-    const habRec = capturar("___HAB_RECOMPOSICAO___");
-    const habSup = capturar("___HAB_SUPORTE___");
-    const objetos = capturar("___OBJETOS___");
-    const conteudos = capturar("___CONTEUDOS___");
-    const praticas = capturar("___PRATICAS___");
-    const evidencias = capturar("___EVIDENCIAS___");
-
-    if (unidade !== "-" || habPri !== "-") {
-      loteMatrizPronto.push({
-        disciplina: disciplina, 
-        ano: ano, 
-        trimestre: trimestre,
-        unidade: unidade, 
-        genero: genero, 
-        habPriorizada: habPri,
-        habRecomposicao: habRec, 
-        habSuporte: habSup,
-        objetoConhecimento: objetos, 
-        conteudosRelacionados: conteudos,
-        praticas: praticas, 
-        evidencias: evidencias
-      });
-    }
-  }
-
-  if (loteMatrizPronto.length === 0) {
-    msg.innerText = "⚠️ O sistema não reconheceu os títulos. Confirme se colou o texto corretamente.";
-    return;
-  }
-
-  // 3. TABELA DE PRÉVIA COMPLETA (Permite edição das 11 colunas cruciais)
-  let htmlTabela = `
-    <style>
-      .cel-edit { border: 1px dashed transparent; padding: 4px; border-radius: 4px; cursor: text; transition: 0.2s; min-height: 20px; font-size:0.8rem; }
-      .cel-edit:hover { border-color: #94a3b8; background-color: #f8fafc; }
-      .cel-edit:focus { border-color: #3b82f6; background-color: #eff6ff; outline: none; }
-      .instrucao-edit { background: #fef3c7; color: #92400e; padding: 10px; border-radius: 8px; font-size: 0.9rem; margin-bottom: 10px; font-weight: bold; border: 1px solid #fde68a;}
-      .col-header { padding:8px; text-align:left; font-size:0.8rem; }
-    </style>
-    
-    <div class="instrucao-edit">💡 Verifique os dados abaixo. Se algum erro passou, clique no texto, corrija diretamente na tabela e depois envie!</div>
-    
-    <div style="overflow-x: auto; padding-bottom: 10px; max-height: 500px;">
-    <table style="width:100%; min-width:2000px; border-collapse: collapse; border: 1px solid #cbd5e1;">
-      <tr style="background-color:#1e3a8a; color:white; position: sticky; top: 0;">
-        <th class="col-header" style="width:2%;">#</th>
-        <th class="col-header" style="width:6%;">Ano/Trim.</th>
-        <th class="col-header" style="width:10%;">Unidade Temática</th>
-        <th class="col-header" style="width:15%;">Habilidade Priorizada</th>
-        <th class="col-header" style="width:10%;">Hab. Recomposição</th>
-        <th class="col-header" style="width:10%;">Hab. Suporte</th>
-        <th class="col-header" style="width:12%;">Objetos do Conhec.</th>
-        <th class="col-header" style="width:12%;">Conteúdos Relacionados</th>
-        <th class="col-header" style="width:12%;">Práticas Pedagógicas</th>
-        <th class="col-header" style="width:11%;">Evidências</th>
-      </tr>`;
-  
-  loteMatrizPronto.forEach((item, index) => {
-    let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-    htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
-                    <td style="vertical-align:top; padding:8px; font-size:0.8rem;">${index + 1}</td>
-                    
-                    <td style="vertical-align:top; padding:8px; font-size:0.8rem; color:#475569;">
-                      <strong>${item.ano}</strong><br>${item.trimestre}
-                    </td>
-                    
-                    <td style="vertical-align:top; padding:8px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'unidade', this.innerHTML)" class="cel-edit" style="font-weight:bold; color:#1e293b;">${item.unidade}</div>
-                    </td>
-                    
-                    <td style="vertical-align:top; padding:8px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habPriorizada', this.innerHTML)" class="cel-edit" style="color:#2563eb; font-weight:bold;">${item.habPriorizada}</div>
-                    </td>
-                    
-                    <td style="vertical-align:top; padding:8px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habRecomposicao', this.innerHTML)" class="cel-edit">${item.habRecomposicao}</div>
-                    </td>
-
-                    <td style="vertical-align:top; padding:8px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habSuporte', this.innerHTML)" class="cel-edit">${item.habSuporte}</div>
-                    </td>
-                    
-                    <td style="vertical-align:top; padding:8px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'objetoConhecimento', this.innerHTML)" class="cel-edit" style="color:#0f766e;">${item.objetoConhecimento}</div>
-                    </td>
-                    
-                    <td style="vertical-align:top; padding:8px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'conteudosRelacionados', this.innerHTML)" class="cel-edit" style="color:#0369a1;">${item.conteudosRelacionados}</div>
-                    </td>
-                    
-                    <td style="vertical-align:top; padding:8px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'praticas', this.innerHTML)" class="cel-edit" style="color:#15803d;">${item.praticas}</div>
-                    </td>
-                    
-                    <td style="vertical-align:top; padding:8px;">
-                      <div contenteditable="true" onblur="atualizarLote(${index}, 'evidencias', this.innerHTML)" class="cel-edit" style="color:#b45309; font-style:italic;">${item.evidencias}</div>
-                    </td>
-                   </tr>`;
-  });
-  htmlTabela += `</table></div>`;
-
-  conteudoPrevia.innerHTML = htmlTabela;
-  containerPrevia.style.display = "block";
-  msg.innerText = `✅ Extração Refinada: ${loteMatrizPronto.length} blocos organizados! Verifique a tabela e envie.`;
+function limparFormUsuario() {
+  document.getElementById('usuarioLinha').value = ""; document.getElementById('cadNome').value = ""; document.getElementById('cadEmail').value = ""; document.getElementById('cadSenha').value = ""; document.getElementById('cadPerfil').value = "Professor"; document.getElementById('cadComponentes').value = ""; document.getElementById('cadTurmas').value = "";
 }
 
 // ==========================================
-// ENVIO DA MATRIZ E RELATÓRIOS GERAIS
+// ABA 3: RELATÓRIOS E BACKUP
 // ==========================================
-async function enviarLoteConfirmado() {
-  if (loteMatrizPronto.length === 0) { alert("⚠️ Nenhuma habilidade na prévia para enviar."); return; }
-  
-  const btnEnvio = document.getElementById('btnEnviarOficial');
-  const msg = document.getElementById('msgImportacao');
-  btnEnvio.innerText = "⏳ A gravar nas 11 colunas da Planilha Oficial...";
-  btnEnvio.disabled = true;
-
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: loteMatrizPronto }) });
-    const r = await res.json();
-    if (r.status === "sucesso") {
-      msg.innerText = "✅ " + r.mensagem;
-      document.getElementById('textoMatrizBruto').value = "";
-      document.getElementById('containerPrevia').style.display = "none";
-      loteMatrizPronto = [];
-    } else {
-      msg.innerText = "⚠️ Erro ao guardar: " + r.mensagem;
-    }
-  } catch (e) {
-    msg.innerText = "⚠️ Erro de comunicação com o servidor Google Apps Script.";
-  } finally {
-    btnEnvio.innerText = "🚀 Tudo certo! Enviar para a Planilha Oficial";
-    btnEnvio.disabled = false;
-  }
-}
-
 async function gerarRelatorio() {
   const btn = document.getElementById('btnGerarRelatorio');
-  const areaLink = document.getElementById('areaLinkRelatorio');
   const periodo = document.getElementById('tipoRelatorio').value;
-  btn.innerText = "⏳ Auditando Matrizes e a Gerar Documento...";
-  btn.disabled = true; areaLink.style.display = "none";
-
+  btn.innerText = "⏳ Auditando e Gerando Relatório..."; btn.disabled = true;
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo }) });
     const r = await res.json();
-    if(r.status === "sucesso") {
-      alert("✅ Relatório Avançado concluído!"); btn.innerText = "📑 Gerar Novo Documento"; btn.disabled = false;
-      areaLink.style.display = "block";
-      areaLink.innerHTML = `<a href="${r.url}" target="_blank" style="display:block; padding:15px; background:#10b981; color:white; text-decoration:none; border-radius:10px; font-weight:bold; font-size:1.1rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);">📄 CLIQUE AQUI PARA ABRIR O RELATÓRIO</a>`;
-    } else { alert("⚠️ Erro: " + r.mensagem); btn.innerText = "📑 Gerar Documento Oficial (Google Docs)"; btn.disabled = false; }
-  } catch(e) { alert("Erro de comunicação."); btn.innerText = "📑 Gerar Documento Oficial (Google Docs)"; btn.disabled = false; }
+    if(r.status === "sucesso") { alert("✅ Relatório gerado!"); window.open(r.url, '_blank'); } else { alert("⚠️ Erro: " + r.mensagem); }
+  } catch(e) { alert("Erro de comunicação ao gerar relatório."); } finally { btn.innerText = "📑 Gerar Documento PDF/Word"; btn.disabled = false; }
 }
 
 async function forcarBackup() {
-  const btn = document.getElementById('btnBackup'); btn.innerText = "⏳ A extrair dados..."; btn.disabled = true;
-  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) }); const r = await res.json(); alert("✅ " + r.mensagem); } 
-  catch(e) { alert("Erro."); } finally { btn.innerText = "📦 Enviar para E-mail"; btn.disabled = false; }
+  const btn = document.getElementById('btnBackup');
+  btn.innerText = "⏳ Extraindo dados (Aguarde)..."; btn.disabled = true;
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) });
+    const r = await res.json(); alert("✅ " + r.mensagem);
+  } catch(e) { alert("Erro ao solicitar o backup."); } finally { btn.innerText = "📦 Enviar Backup para meu E-mail"; btn.disabled = false; }
+}
+
+// ==========================================
+// ABA 4: EXTRAÇÃO CURRICULAR (ESPELHO VISUAL DA PLANILHA)
+// ==========================================
+let dadosEspelhoGlobal = {};
+
+async function carregarMatrizesSalvas() {
+  const divAbas = document.getElementById('abasPlanilhaVirtual');
+  const divConteudo = document.getElementById('conteudoPlanilhaVirtual');
+  
+  divAbas.innerHTML = "<span style='color:#64748b; font-size:0.9rem;'>⏳ Lendo banco de dados...</span>";
+  divConteudo.innerHTML = "";
+  
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarMatrizesExtraidas" }) });
+    const r = await res.json();
+    
+    if (r.status === "sucesso") {
+      dadosEspelhoGlobal = {};
+      
+      // Agrupa os dados
+      r.registros.forEach(item => {
+        if(!dadosEspelhoGlobal[item.componente]) dadosEspelhoGlobal[item.componente] = {};
+        if(!dadosEspelhoGlobal[item.componente][item.ano]) dadosEspelhoGlobal[item.componente][item.ano] = [];
+        if(!dadosEspelhoGlobal[item.componente][item.ano].includes(item.trimestre)) {
+          dadosEspelhoGlobal[item.componente][item.ano].push(item.trimestre);
+        }
+      });
+
+      // Cria os botões (Abas)
+      const componentes = Object.keys(dadosEspelhoGlobal).sort();
+      if(componentes.length === 0) {
+        divAbas.innerHTML = "<span style='color:#ef4444; font-size:0.9rem;'>O banco de dados está vazio. Nenhuma matriz encontrada.</span>";
+        return;
+      }
+
+      let htmlAbas = "";
+      componentes.forEach((comp, index) => {
+        htmlAbas += `<button onclick="mostrarConteudoEspelho('${comp}', this)" class="btn-espelho-aba" style="padding: 10px 20px; border: 1px solid #cbd5e1; background: ${index === 0 ? '#1e3a8a' : 'white'}; color: ${index === 0 ? 'white' : '#475569'}; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.2s;">${comp}</button>`;
+      });
+      divAbas.innerHTML = htmlAbas;
+
+      // Mostra o conteúdo da primeira aba por padrão
+      mostrarConteudoEspelho(componentes[0], divAbas.firstChild);
+      
+    } else {
+      divAbas.innerHTML = "<span style='color:#ef4444;'>Erro ao ler a planilha.</span>";
+    }
+  } catch(e) {
+    divAbas.innerHTML = "<span style='color:#ef4444;'>Falha de conexão com o servidor.</span>";
+  }
+}
+
+function mostrarConteudoEspelho(componente, btnClicado) {
+  // Muda a cor dos botões (Abas)
+  document.querySelectorAll('.btn-espelho-aba').forEach(b => {
+    b.style.background = 'white'; b.style.color = '#475569';
+  });
+  if(btnClicado) {
+    btnClicado.style.background = '#1e3a8a'; btnClicado.style.color = 'white';
+  }
+
+  // Renderiza os blocos (Anos e Trimestres)
+  const divConteudo = document.getElementById('conteudoPlanilhaVirtual');
+  const dadosAno = dadosEspelhoGlobal[componente];
+  
+  if(!dadosAno) {
+    divConteudo.innerHTML = "<span style='color:#94a3b8;'>Nenhum dado registrado para esta disciplina.</span>";
+    return;
+  }
+
+  let html = "";
+  const anosOrdenados = Object.keys(dadosAno).sort();
+  
+  anosOrdenados.forEach(ano => {
+    let trimestresHtml = "";
+    dadosAno[ano].sort().forEach(trim => {
+      trimestresHtml += `<span style="background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; border: 1px solid #a7f3d0;">✅ ${trim}</span> `;
+    });
+    
+    html += `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; width: 100%; max-width: 300px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+               <h5 style="margin: 0 0 10px 0; color: #1e3a8a; font-size: 1.05rem;">🎓 ${ano}</h5>
+               <div style="display: flex; gap: 6px; flex-wrap: wrap;">${trimestresHtml}</div>
+             </div>`;
+  });
+
+  divConteudo.innerHTML = html;
+}
+
+async function enviarLoteMatriz() {
+  const btn = document.querySelector('button[onclick="enviarLoteMatriz()"]');
+  const jsonText = document.getElementById('jsonExtracao').value.trim();
+  
+  if(!jsonText) { alert("⚠️ Cole o conteúdo extraído no campo antes de enviar."); return; }
+  
+  try {
+    const itens = JSON.parse(jsonText);
+    btn.innerText = "⏳ Salvando no Banco de Dados...";
+    btn.disabled = true;
+    
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: itens }) });
+    const r = await res.json();
+    
+    alert("✅ " + r.mensagem);
+    document.getElementById('jsonExtracao').value = ""; // Limpa a caixa
+    
+    // Atualiza o espelho visual imediatamente!
+    carregarMatrizesSalvas(); 
+    
+  } catch(e) {
+    alert("⚠️ Formato inválido. Certifique-se de que colou o JSON completo.");
+  } finally {
+    btn.innerText = "🚀 Salvar Nova Matriz no Banco";
+    btn.disabled = false;
+  }
 }
