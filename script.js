@@ -333,7 +333,7 @@ function mostrarConteudoEspelho(componente, btnClicado) {
 }
 
 // ==========================================
-// EXTRATOR LÓGICO DE MATRIZ E AS 11 COLUNAS
+// EXTRATOR LÓGICO DE MATRIZ E AS 11 COLUNAS (ALTA PRECISÃO E LIMPEZA)
 // ==========================================
 function atualizarLote(index, campo, valorHtml) {
   if (loteMatrizPronto[index]) {
@@ -353,11 +353,22 @@ function gerarPreviaMatriz() {
 
   if (!texto.trim()) { alert("⚠️ Por favor, cole o texto do PDF na caixa antes de continuar."); return; }
 
-  msg.innerText = "⚡ A fatiar e processar variações curriculares...";
+  msg.innerText = "⚡ A fatiar e limpar cabeçalhos/rodapés com alta precisão...";
   loteMatrizPronto = [];
   containerPrevia.style.display = "none";
 
-  // O SEU CÓDIGO ORIGINAL ANTI-LIXO E REGEX (Intacto)
+  // 1. LIMPEZA INICIAL DO TEXTO
+  texto = texto.replace(/\r?\n|\r/g, " "); // Tudo numa linha
+  
+  // Recria quebras de linha antes dos marcadores
+  texto = texto.replace(/(UNIDADES?\s+TEMÁTICAS?|PRÁTICAS?\s+DE\s+LINGUAGEM)/gi, "\n$1");
+  texto = texto.replace(/(HABILIDADES?\s+DO\s+CRMG|HABILIDADES?\s+PRIORIZADAS?(?:\s+DO\s+ANO\s+ESCOLAR)?)/gi, "\n$1");
+  texto = texto.replace(/(OBJETOS?\s+DO\s+CONHECIMENTO(?:\s+DA\s+HABILIDADE\s+PRIORIZADA)?)/gi, "\n$1");
+  texto = texto.replace(/(CONTEÚDOS?\s+RELACIONADOS?)/gi, "\n$1");
+  texto = texto.replace(/(EXEMPLOS?\s+DE\s+PRÁTICAS?\s*PEDAGÓGICAS?|PRÁTICAS?\s*PEDAGÓGICAS?)/gi, "\n$1");
+  texto = texto.replace(/(EVIDÊNCIAS?\s+DE\s+CONSOLIDAÇÃO(?:\s*(?:DA|DE)\s*APRENDIZAGEM)?)/gi, "\n$1");
+
+  // 2. MARCADORES DEFINITIVOS
   texto = texto.replace(/(?:UNIDADES?\s+TEMÁTICAS?|PRÁTICAS?\s+DE\s+LINGUAGEM)/gi, "___UNIDADE___");
   texto = texto.replace(/(?:GÊNEROS?\s+TEXTUAIS?|GÊNERO\s+TEXTUAL)/gi, "___GENERO___");
   texto = texto.replace(/(?:HABILIDADES?\s+DO\s+CRMG|HABILIDADES?\s+PRIORIZADAS?(?:\s+DO\s+ANO\s+ESCOLAR)?)/gi, "___HAB_PRIORIZADAS___");
@@ -368,52 +379,90 @@ function gerarPreviaMatriz() {
   texto = texto.replace(/(?:EXEMPLOS?\s+DE\s+PRÁTICAS?\s*PEDAGÓGICAS?|PRÁTICAS?\s*PEDAGÓGICAS?)/gi, "___PRATICAS___");
   texto = texto.replace(/(?:EVIDÊNCIAS?\s+DE\s+CONSOLIDAÇÃO(?:\s*(?:DA|DE)\s*APRENDIZAGEM)?)/gi, "___EVIDENCIAS___");
 
-  const blocos = texto.split("___UNIDADE___");
-  
-  for (let i = 1; i < blocos.length; i++) {
-    let bloco = "___UNIDADE___" + blocos[i];
+  // O NOVO FILTRO ANTI-LIXO EXTREMO (A Tesoura Afiada)
+  const limparLixoDoPDF = (txt) => {
+    if (!txt || txt === "-") return "-";
     
-    const capturar = (marcador) => {
-      const regex = new RegExp(marcador + "([\\s\\S]*?)(?=___|$)", "i");
-      const match = bloco.match(regex);
-      if (!match) return "-";
-      
-      let extraido = match[1].trim().replace(/\n/g, " ");
+    let limpo = txt;
 
-      extraido = extraido.replace(/\d*\.?\s*PLANOS?\s+DE\s+CURSO\s+202[0-9][\s\S]*?(?:Etapa\s+de\s+Ensino:\s*Ensino\s+Fundamental|Ensino\s+Fundamental|Ensino\s+Médio)/gi, "");
-      extraido = extraido.replace(/Área\s+de\s+Conhecimento:[\s\S]*?Componente\s+Curricular:[\s\S]*?(?:Ano\s+de\s+Escolaridade:|Etapa\s+de\s+Ensino:)/gi, "");
-      extraido = extraido.replace(new RegExp(disciplina + "\\s*-\\s*\\dº\\s*Trimestre", "gi"), "");
-      extraido = extraido.replace(/\s+\d+\s*$/, ""); 
+    // A. DESTRÓI RODAPÉS COMPLETOS (Apanha desde números de página, "ANOS FINAIS", até "Trimestre")
+    limpo = limpo.replace(/-\s*ANOS\s+FINAIS[\s\S]*?\dº\s*Trimestre/gi, "");
+    limpo = limpo.replace(/\d*\s*PLANO\s+DE\s+CURSO[\s\S]*?(?:Ensino\s+Fundamental|Ensino\s+Médio)/gi, "");
+    limpo = limpo.replace(/Etapa\s+de\s+Ensino:\s*Ensino\s+Fundamental/gi, "");
+    limpo = limpo.replace(/Área\s+de\s+Conhecimento:[\s\S]*?Ano\s+de\s+Escolaridade:/gi, "");
+    
+    // B. DESTRÓI CABEÇALHOS PERDIDOS
+    const regexCabeçalho = new RegExp("\\d*\\s*" + disciplina + "\\s*-\\s*\\dº\\s*Trimestre", "gi");
+    limpo = limpo.replace(regexCabeçalho, "");
 
-      return extraido.trim() || "-";
+    // C. LIMPEZA DE PONTAS
+    limpo = limpo.replace(/^[:\-\•\◦]\s*/, ""); 
+    limpo = limpo.replace(/\s+\d+\s*$/, ""); 
+
+    return limpo.trim() || "-";
+  };
+
+  const blocosUnidade = texto.split("___UNIDADE___").filter(b => b.trim() !== "");
+
+  for (let i = 0; i < blocosUnidade.length; i++) {
+    let blocoStr = "___UNIDADE___" + blocosUnidade[i]; 
+
+    const extrairComum = (marcador, blocoTexto) => {
+        const regex = new RegExp(marcador + "([\\s\\S]*?)(?=___|$)", "i");
+        const match = blocoTexto.match(regex);
+        return match ? limparLixoDoPDF(match[1]) : "-";
     };
 
-    const unidade = capturar("___UNIDADE___");
-    const genero = capturar("___GENERO___");
-    const habPri = capturar("___HAB_PRIORIZADAS___");
-    const habRec = capturar("___HAB_RECOMPOSICAO___");
-    const habSup = capturar("___HAB_SUPORTE___");
-    const objetos = capturar("___OBJETOS___");
-    const conteudos = capturar("___CONTEUDOS___");
-    const praticas = capturar("___PRATICAS___");
-    const evidencias = capturar("___EVIDENCIAS___");
+    const unidade = extrairComum("___UNIDADE___", blocoStr);
+    const genero = extrairComum("___GENERO___", blocoStr);
+    const habRec = extrairComum("___HAB_RECOMPOSICAO___", blocoStr);
+    const habSup = extrairComum("___HAB_SUPORTE___", blocoStr);
+    const objetos = extrairComum("___OBJETOS___", blocoStr);
+    const conteudos = extrairComum("___CONTEUDOS___", blocoStr);
+    const praticas = extrairComum("___PRATICAS___", blocoStr);
+    const evidencias = extrairComum("___EVIDENCIAS___", blocoStr);
 
-    if (unidade !== "-" || habPri !== "-") {
-      loteMatrizPronto.push({
-        disciplina: disciplina, 
-        ano: ano, 
-        trimestre: trimestre,
-        unidade: unidade, 
-        genero: genero, 
-        habPriorizada: habPri,
-        habRecomposicao: habRec, 
-        habSuporte: habSup,
-        objetoConhecimento: objetos, 
-        conteudosRelacionados: conteudos,
-        praticas: praticas, 
-        evidencias: evidencias
-      });
+    const regexBlocoHabs = /___HAB_PRIORIZADAS___([\s\S]*?)(?=___|$)/i;
+    const matchBlocoHabs = blocoStr.match(regexBlocoHabs);
+    
+    let habilidadesLista = [];
+    if (matchBlocoHabs && matchBlocoHabs[1].trim() !== "") {
+        let textoHabs = limparLixoDoPDF(matchBlocoHabs[1]);
+        const regexSeparador = /(?=\([A-Z0-9]+\))/gi; 
+        
+        let habsIndividuais = textoHabs.split(regexSeparador);
+        
+        if (habsIndividuais.length <= 1) {
+             habsIndividuais = textoHabs.split(/(?=\([A-Z]{2}[0-9]{2}[A-Z]{2}[0-9]{2,}\))/i);
+             if (habsIndividuais.length <= 1) habsIndividuais = [textoHabs]; 
+        }
+
+        habsIndividuais.forEach(hab => {
+            let habLimpa = limparLixoDoPDF(hab);
+            if (habLimpa !== "-" && habLimpa.length > 5) habilidadesLista.push(habLimpa);
+        });
+    } else {
+        habilidadesLista.push("-");
     }
+
+    habilidadesLista.forEach(habPrioritada => {
+        if (unidade !== "-" || habPrioritada !== "-") {
+            loteMatrizPronto.push({
+                disciplina: disciplina, 
+                ano: ano, 
+                trimestre: trimestre,
+                unidade: unidade, 
+                genero: genero, 
+                habPriorizada: habPrioritada,
+                habRecomposicao: habRec, 
+                habSuporte: habSup,
+                objetoConhecimento: objetos, 
+                conteudosRelacionados: conteudos,
+                praticas: praticas, 
+                evidencias: evidencias
+            });
+        }
+    });
   }
 
   if (loteMatrizPronto.length === 0) {
@@ -421,7 +470,7 @@ function gerarPreviaMatriz() {
     return;
   }
 
-  // A TABELA EXATA COM AS 11 COLUNAS (LARGURA AMPLA PARA NÃO AMASSAR O TEXTO)
+  // TABELA DE PRÉVIA
   let htmlTabela = `
     <style>
       .cel-edit { border: 1px dashed transparent; padding: 4px; border-radius: 4px; cursor: text; transition: 0.2s; min-height: 20px; font-size:0.8rem; }
@@ -431,7 +480,7 @@ function gerarPreviaMatriz() {
       .col-header { padding:8px; text-align:left; font-size:0.8rem; border-right: 1px solid rgba(255,255,255,0.2); }
     </style>
     
-    <div class="instrucao-edit">💡 Verifique as 11 colunas abaixo. Se algo passou, clique no texto e corrija antes de enviar!</div>
+    <div class="instrucao-edit">💡 Verifique as 11 colunas abaixo. Cada habilidade foi separada numa linha e o "lixo" do PDF foi cortado!</div>
     
     <div style="overflow-x: auto; padding-bottom: 10px; max-height: 500px;">
     <table style="width:100%; min-width:2400px; border-collapse: collapse; border: 1px solid #cbd5e1;">
@@ -441,11 +490,11 @@ function gerarPreviaMatriz() {
         <th class="col-header" style="width:6%;">2. Trimestre</th>
         <th class="col-header" style="width:10%;">3. Unidade Temática</th>
         <th class="col-header" style="width:8%;">4. Gênero Textual</th>
-        <th class="col-header" style="width:13%;">5. Habilidade Priorizada</th>
+        <th class="col-header" style="width:15%;">5. Habilidade Priorizada</th>
         <th class="col-header" style="width:10%;">6. Hab. Recomposição</th>
         <th class="col-header" style="width:10%;">7. Hab. Suporte</th>
-        <th class="col-header" style="width:10%;">8. Objetos do Conhec.</th>
-        <th class="col-header" style="width:10%;">9. Conteúdos Relacionados</th>
+        <th class="col-header" style="width:12%;">8. Objetos do Conhec.</th>
+        <th class="col-header" style="width:12%;">9. Conteúdos Relacionados</th>
         <th class="col-header" style="width:8%;">10. Práticas Pedag.</th>
         <th class="col-header" style="width:8%;">11. Evidências</th>
       </tr>`;
@@ -504,7 +553,7 @@ function gerarPreviaMatriz() {
 
   conteudoPrevia.innerHTML = htmlTabela;
   containerPrevia.style.display = "block";
-  msg.innerText = `✅ Extração Refinada: ${loteMatrizPronto.length} blocos processados com 11 colunas!`;
+  msg.innerText = `✅ Extração Refinada: ${loteMatrizPronto.length} habilidades processadas!`;
 }
 
 async function enviarLoteConfirmado() {
