@@ -13,14 +13,13 @@
     .logo-escola { max-width: 90%; height: auto; max-height: 90px; object-fit: contain; border-radius: 12px; background: white; padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .btn-sair { position: absolute; top: 20px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
     .btn-sair:hover { background: #c0392b; }
-    .container { max-width: 1000px; margin: 30px auto; background: white; padding: 35px; border-radius: 18px; box-shadow: var(--sombra-suave); border: 1px solid #e2e8f0; }
+    .container { max-width: 1050px; margin: 30px auto; background: white; padding: 35px; border-radius: 18px; box-shadow: var(--sombra-suave); border: 1px solid #e2e8f0; }
     
     .tabs { display: flex; gap: 12px; margin-bottom: 25px; background: #f1f5f9; padding: 6px; border-radius: 14px; overflow-x: auto; }
     .tab-btn { flex: 1; padding: 14px; min-width: 150px; border: none; background: transparent; font-weight: 600; font-size: 0.95rem; color: #475569; cursor: pointer; transition: all 0.3s ease; border-radius: 10px; text-align: center; white-space: nowrap; }
     .tab-btn.active { background: white; color: var(--cor-principal); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
     .tab-content { display: none; }
     .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     
     h3 { font-size: 1.3rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--cor-principal); margin-top: 20px; display: flex; align-items: center; gap: 8px; }
     
@@ -34,9 +33,13 @@
     .btn-secundario { background: #e2e8f0; color: #475569; padding: 12px 24px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
     .btn-secundario:hover { background: #cbd5e1; }
     
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; }
+    /* Estilos Tabela de Prévia Editável */
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
     th { background: var(--cor-principal); color: white; padding: 12px; text-align: left; }
-    td { padding: 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+    td { padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    td[contenteditable="true"] { background: #f8fafc; border: 1px dashed #cbd5e1; cursor: text; transition: 0.2s; border-radius: 4px; outline: none; }
+    td[contenteditable="true"]:focus { background: #ffffff; border-color: var(--cor-secundaria); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    td[contenteditable="true"]:hover { background: #f1f5f9; }
     tr:hover { background: #f8fafc; }
   </style>
 </head>
@@ -70,10 +73,11 @@
       <button class="tab-btn" onclick="mudarAba('abaExtracao', this)">📥 Matriz Curricular</button>
     </div>
 
+    <!-- ABAS 1, 2 e 3 (Supervisão, Usuários, Relatórios) -->
     <div id="abaSupervisao" class="tab-content active">
       <h3>📋 Controle de Planos de Aula (Recebidos)</h3>
       <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 0.95rem; color: #1e3a8a;">
-        Aqui você visualiza todos os planos enviados pelos professores, pode acessar os documentos no Drive e aprovar ou devolver para ajuste.
+        Visualize todos os planos enviados pelos professores, acesse os documentos e aprove ou devolva para ajuste.
       </div>
       <button class="btn-primario" onclick="carregarPlanosSupervisao()" style="margin-bottom: 15px;">🔄 Atualizar Lista de Planos</button>
       <div id="tabelaPlanosContainer" style="overflow-x: auto;">
@@ -122,12 +126,12 @@
       </div>
     </div>
 
-    <!-- ABA 4: EXTRAÇÃO CURRICULAR (COM ESPELHO VISUAL DA PLANILHA) -->
+    <!-- ABA 4: EXTRAÇÃO CURRICULAR (ESPELHO + PRÉVIA EDITÁVEL) -->
     <div id="abaExtracao" class="tab-content">
-      <h3>📥 Extração Curricular Instantânea</h3>
-      <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px;">Cole o resultado da IA e verifique em tempo real o que já está salvo no banco de dados da escola.</p>
+      <h3>📥 Extração Curricular (Lógica Padrões CRMG)</h3>
+      <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px;">Cole o texto do PDF. O sistema usa palavras-chave (singular/plural) para organizar, cria uma tabela para você olhar e ajustar, e salva no banco!</p>
       
-      <!-- ESPELHO VISUAL DAS ABAS DA PLANILHA -->
+      <!-- 1. ESPELHO VISUAL DA PLANILHA -->
       <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 25px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
           <h4 style="margin:0; color:#0f172a; display:flex; align-items:center; gap:8px;">📊 Espelho da Planilha (O que já temos?)</h4>
@@ -136,23 +140,56 @@
         
         <p style="font-size:0.85rem; color:#64748b; margin-top:0;">Selecione a disciplina abaixo para ver quais turmas e trimestres já foram extraídos e guardados:</p>
         
-        <!-- Os botões das "Abas da Planilha" vão aparecer aqui -->
         <div id="abasPlanilhaVirtual" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0;">
           <span style="color:#94a3b8; font-size:0.9rem;">Carregando abas...</span>
         </div>
 
-        <!-- Os blocos verdes mostrando o que já tem vão aparecer aqui -->
         <div id="conteudoPlanilhaVirtual" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; min-height: 80px; display: flex; flex-wrap: wrap; gap: 10px;">
            <span style="color:#94a3b8; font-size:0.9rem;">Nenhuma disciplina selecionada.</span>
         </div>
       </div>
 
-      <!-- ÁREA DE COLAR A EXTRAÇÃO -->
+      <!-- 2. FORMULÁRIO DE EXTRAÇÃO & EDIÇÃO -->
       <div style="background: #ffffff; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <h4 style="margin-top:0; color:#334155;">➕ Inserir Nova Matriz</h4>
-        <p style="font-size:0.85rem; color:#64748b; margin-bottom: 15px;">Verificou acima que falta algo? Cole abaixo o JSON para salvar.</p>
-        <textarea id="jsonExtracao" placeholder="Cole aqui o resultado da Extração Curricular (formato JSON)..." style="width:100%; height:200px; border-radius:8px; border:1px solid #cbd5e1; padding:15px; font-family:monospace; font-size:0.9rem; resize:vertical; box-sizing: border-box; background: #fdfdfd;"></textarea>
-        <button onclick="enviarLoteMatriz()" class="btn-primario" style="width:100%; margin-top:15px; background:#10b981; font-size: 1.1rem; padding: 16px;">🚀 Salvar Nova Matriz no Banco</button>
+        <h4 style="margin-top:0; color:#334155;">➕ Inserir Nova Matriz a partir do PDF</h4>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+          <div><label style="font-weight:bold; font-size:0.85rem;">Disciplina</label>
+            <select id="impDisciplina">
+              <option value="Arte">Arte</option>
+              <option value="Ciências">Ciências</option>
+              <option value="Educação Física">Educação Física</option>
+              <option value="Ensino Religioso">Ensino Religioso</option>
+              <option value="Geografia">Geografia</option>
+              <option value="História">História</option>
+              <option value="Língua Inglesa">Língua Inglesa</option>
+              <option value="Língua Portuguesa">Língua Portuguesa</option>
+              <option value="Matemática">Matemática</option>
+            </select>
+          </div>
+          <div><label style="font-weight:bold; font-size:0.85rem;">Ano de Escolaridade</label>
+            <select id="impAno"><option value="6º Ano">6º Ano</option><option value="7º Ano">7º Ano</option><option value="8º Ano">8º Ano</option><option value="9º Ano">9º Ano</option></select>
+          </div>
+          <div><label style="font-weight:bold; font-size:0.85rem;">Trimestre</label>
+            <select id="impTrimestre"><option value="1º Trimestre">1º Trimestre</option><option value="2º Trimestre">2º Trimestre</option><option value="3º Trimestre">3º Trimestre</option></select>
+          </div>
+        </div>
+
+        <textarea id="textoMatrizBruto" placeholder="Cole aqui o texto copiado do PDF do currículo..." style="width:100%; height:200px; border-radius:8px; border:1px solid #cbd5e1; padding:15px; font-family:monospace; font-size:0.9rem; resize:vertical; box-sizing: border-box; background: #fdfdfd; margin-bottom:15px;"></textarea>
+        
+        <button onclick="gerarPreviaMatrizRegex()" class="btn-primario" style="background:#2563eb; width:100%;">⚙️ Fatiar Texto e Gerar Tabela para Conferência</button>
+        
+        <!-- TABELA DE PRÉVIA EDITÁVEL -->
+        <div id="containerPrevia" style="margin-top: 25px; display: none; padding-top: 20px; border-top: 2px dashed #cbd5e1;">
+          <h4 style="color: #1e3a8a; display:flex; justify-content:space-between; align-items:center;">
+            <span>📋 Olhar e Ajustar (Prévia)</span>
+            <span style="font-size:0.8rem; background:#fef08a; color:#854d0e; padding:4px 10px; border-radius:12px;">Dica: Clique nas células abaixo para editar os textos antes de enviar!</span>
+          </h4>
+          
+          <div id="tabelaPreviaConteudo" style="max-height: 450px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px;"></div>
+          
+          <button onclick="enviarLoteConfirmado()" id="btnEnviarOficial" class="btn-primario" style="background:#10b981; font-size: 1.1rem; padding: 16px; width: 100%;">🚀 Tudo certo! Salvar Matriz no Banco</button>
+        </div>
       </div>
     </div>
 
