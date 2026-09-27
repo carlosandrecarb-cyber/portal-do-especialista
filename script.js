@@ -19,16 +19,16 @@ async function fazerLogin() {
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
 
-  if (!usuario || !senha) { msg.innerText = "Preencha usuário e senha."; return; }
+  if (!usuario || !senha) { msg.innerText = "Preencha utilizador e senha."; return; }
 
-  msg.innerText = "⏳ Autenticando Especialista...";
+  msg.innerText = "⏳ A Autenticar Especialista...";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "login", usuario, senha }) });
     const r = await res.json();
 
     if (r.status === "sucesso") {
       if (r.perfil !== "Especialista") {
-        msg.innerText = "Acesso Negado: Área restrita à equipe de Gestão.";
+        msg.innerText = "Acesso Negado: Área restrita à equipa de Gestão.";
         return;
       }
       document.getElementById('telaLogin').style.display = 'none';
@@ -39,10 +39,10 @@ async function fazerLogin() {
 
       carregarPlanosSupervisao();
     } else {
-      msg.innerText = r.mensagem || "Usuário ou senha incorretos.";
+      msg.innerText = r.mensagem || "Utilizador ou senha incorretos.";
     }
   } catch (e) {
-    msg.innerText = "⚠️ Erro de conexão com o servidor.";
+    msg.innerText = "⚠️ Erro de ligação com o servidor.";
   }
 }
 
@@ -54,16 +54,16 @@ function sairDoSistema() {
 }
 
 // ==========================================
-// ABA 1: SUPERVISÃO E ABA 2: USUÁRIOS E ABA 3: RELATÓRIOS (Mantidas Idênticas)
+// ABA 1: SUPERVISÃO, ABA 2: UTILIZADORES E ABA 3: RELATÓRIOS
 // ==========================================
 async function carregarPlanosSupervisao() {
   const container = document.getElementById('tabelaPlanosContainer');
-  container.innerHTML = "<p>⏳ Buscando planos de aula recentes...</p>";
+  container.innerHTML = "<p>⏳ A procurar planos de aula recentes...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
     const r = await res.json();
     if (r.status === "sucesso" && r.registros && r.registros.length > 0) {
-      let html = `<table><tr><th>Data / Professor</th><th>Turma & Componente</th><th>Links (Acesso Restrito)</th><th>Status Pedagógico</th></tr>`;
+      let html = `<table><tr><th>Data / Professor</th><th>Turma & Componente</th><th>Links (Acesso Restrito)</th><th>Estado Pedagógico</th></tr>`;
       r.registros.reverse().forEach(p => {
         let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
         html += `<tr>
@@ -84,13 +84,13 @@ async function carregarPlanosSupervisao() {
 
 async function alterarStatusPlano(linha, novoStatus) {
   try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus }) });
-  const r = await res.json(); if(r.status !== "sucesso") alert("Erro ao atualizar o status.");
-  } catch(e) { alert("Falha na conexão ao atualizar status."); }
+  const r = await res.json(); if(r.status !== "sucesso") alert("Erro ao atualizar o estado.");
+  } catch(e) { alert("Falha na ligação ao atualizar estado."); }
 }
 
 async function carregarListaUsuarios() {
   const container = document.getElementById('tabelaUsuariosContainer');
-  container.innerHTML = "<p>⏳ Carregando banco de usuários...</p>";
+  container.innerHTML = "<p>⏳ A carregar base de utilizadores...</p>";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
     const r = await res.json();
@@ -102,14 +102,14 @@ async function carregarListaUsuarios() {
       });
       html += `</table>`; container.innerHTML = html;
     }
-  } catch(e) { container.innerHTML = "<p>Erro ao carregar lista de usuários.</p>"; }
+  } catch(e) { container.innerHTML = "<p>Erro ao carregar lista de utilizadores.</p>"; }
 }
 
 async function salvarUsuario() {
   const dados = { linha: document.getElementById('usuarioLinha').value, nome: document.getElementById('cadNome').value, email: document.getElementById('cadEmail').value, senha: document.getElementById('cadSenha').value, perfil: document.getElementById('cadPerfil').value, componentes: document.getElementById('cadComponentes').value, turmas: document.getElementById('cadTurmas').value };
   if(!dados.nome || !dados.senha) { alert("⚠️ Nome e Senha são obrigatórios."); return; }
-  const btn = document.querySelector('button[onclick="salvarUsuario()"]'); btn.innerText = "⏳ Salvando..."; btn.disabled = true;
-  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) }); const r = await res.json(); alert("✅ " + r.mensagem); limparFormUsuario(); carregarListaUsuarios(); } catch(e) { alert("⚠️ Erro ao salvar usuário."); } finally { btn.innerText = "💾 Salvar / Atualizar Usuário"; btn.disabled = false; }
+  const btn = document.querySelector('button[onclick="salvarUsuario()"]'); btn.innerText = "⏳ A Guardar..."; btn.disabled = true;
+  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) }); const r = await res.json(); alert("✅ " + r.mensagem); limparFormUsuario(); carregarListaUsuarios(); } catch(e) { alert("⚠️ Erro ao guardar utilizador."); } finally { btn.innerText = "💾 Salvar / Atualizar Usuário"; btn.disabled = false; }
 }
 
 function editarUsuario(linha, nome, email, senha, perfil, componentes, turmas) {
@@ -118,13 +118,13 @@ function editarUsuario(linha, nome, email, senha, perfil, componentes, turmas) {
 function limparFormUsuario() { document.getElementById('usuarioLinha').value = ""; document.getElementById('cadNome').value = ""; document.getElementById('cadEmail').value = ""; document.getElementById('cadSenha').value = ""; document.getElementById('cadPerfil').value = "Professor"; document.getElementById('cadComponentes').value = ""; document.getElementById('cadTurmas').value = ""; }
 
 async function gerarRelatorio() {
-  const btn = document.getElementById('btnGerarRelatorio'); const periodo = document.getElementById('tipoRelatorio').value; btn.innerText = "⏳ Auditando e Gerando Relatório..."; btn.disabled = true;
+  const btn = document.getElementById('btnGerarRelatorio'); const periodo = document.getElementById('tipoRelatorio').value; btn.innerText = "⏳ A Auditar e Gerar Relatório..."; btn.disabled = true;
   try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo }) }); const r = await res.json(); if(r.status === "sucesso") { alert("✅ Relatório gerado!"); window.open(r.url, '_blank'); } else { alert("⚠️ Erro: " + r.mensagem); } } catch(e) { alert("Erro de comunicação ao gerar relatório."); } finally { btn.innerText = "📑 Gerar Documento PDF/Word"; btn.disabled = false; }
 }
 
 async function forcarBackup() {
-  const btn = document.getElementById('btnBackup'); btn.innerText = "⏳ Extraindo dados (Aguarde)..."; btn.disabled = true;
-  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) }); const r = await res.json(); alert("✅ " + r.mensagem); } catch(e) { alert("Erro ao solicitar o backup."); } finally { btn.innerText = "📦 Enviar Backup para meu E-mail"; btn.disabled = false; }
+  const btn = document.getElementById('btnBackup'); btn.innerText = "⏳ A Extrair dados (Aguarde)..."; btn.disabled = true;
+  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) }); const r = await res.json(); alert("✅ " + r.mensagem); } catch(e) { alert("Erro ao solicitar o backup."); } finally { btn.innerText = "📦 Enviar Backup para o meu E-mail"; btn.disabled = false; }
 }
 
 
@@ -137,7 +137,7 @@ async function carregarMatrizesSalvas() {
   const divAbas = document.getElementById('abasPlanilhaVirtual');
   const divConteudo = document.getElementById('conteudoPlanilhaVirtual');
   
-  divAbas.innerHTML = "<span style='color:#64748b; font-size:0.9rem;'>⏳ Lendo banco de dados...</span>";
+  divAbas.innerHTML = "<span style='color:#64748b; font-size:0.9rem;'>⏳ A ler a base de dados...</span>";
   divConteudo.innerHTML = "";
   
   try {
@@ -157,7 +157,7 @@ async function carregarMatrizesSalvas() {
 
       const componentes = Object.keys(dadosEspelhoGlobal).sort();
       if(componentes.length === 0) {
-        divAbas.innerHTML = "<span style='color:#ef4444; font-size:0.9rem;'>O banco de dados está vazio. Nenhuma matriz encontrada.</span>";
+        divAbas.innerHTML = "<span style='color:#ef4444; font-size:0.9rem;'>A base de dados está limpa. Nenhuma matriz encontrada.</span>";
         return;
       }
 
@@ -169,10 +169,10 @@ async function carregarMatrizesSalvas() {
 
       mostrarConteudoEspelho(componentes[0], divAbas.firstChild);
     } else {
-      divAbas.innerHTML = "<span style='color:#ef4444;'>Erro ao ler a planilha.</span>";
+      divAbas.innerHTML = "<span style='color:#ef4444;'>Erro ao ler a grelha.</span>";
     }
   } catch(e) {
-    divAbas.innerHTML = "<span style='color:#ef4444;'>Falha de conexão com o servidor.</span>";
+    divAbas.innerHTML = "<span style='color:#ef4444;'>Falha de ligação com o servidor.</span>";
   }
 }
 
@@ -186,7 +186,7 @@ function mostrarConteudoEspelho(componente, btnClicado) {
   const dadosAno = dadosEspelhoGlobal[componente];
   
   if(!dadosAno) {
-    divConteudo.innerHTML = "<span style='color:#94a3b8;'>Nenhum dado registrado para esta disciplina.</span>";
+    divConteudo.innerHTML = "<span style='color:#94a3b8;'>Nenhum registo efetuado para esta disciplina.</span>";
     return;
   }
 
@@ -208,14 +208,13 @@ function mostrarConteudoEspelho(componente, btnClicado) {
 }
 
 // ==========================================
-// ABA 4: EXTRAÇÃO CURRICULAR (MÁQUINA DE REGRA E PRÉVIA EDITÁVEL)
+// ABA 4: FATIADOR DINÂMICO E PRÉVIA EDITÁVEL
 // ==========================================
 
-function extrairPadroesCRMG(textoBruto) {
+function extrairPadroesCRMG(textoBruto, disciplina) {
     const linhas = textoBruto.split('\n').map(l => l.trim()).filter(l => l);
     let resultados = [];
-    
-    // Função auxiliar para zerar o item
+
     const criarItemVazio = () => ({
         unidade: "-", genero: "-", habPriorizada: "-", habRecomposicao: "-", habSuporte: "-",
         objetoConhecimento: "-", conteudosRelacionados: "-", praticas: "-", evidencias: "-"
@@ -224,50 +223,91 @@ function extrairPadroesCRMG(textoBruto) {
     let itemAtual = criarItemVazio();
     let campoAtual = "";
 
-    // MÁQUINA DE REGEX: Procura singular ou plural com tolerância a acentos
-    const regexUnidade = /^(UNIDADES? TEM[AÁ]TICAS?|PR[AÁ]TICAS? DE LINGUAGEM)/i;
-    const regexObjeto = /^(OBJETOS? D[EO] CONHECIMENTO)/i;
-    const regexHabPriorizada = /^(HABILIDADES? PRIORIZADAS?|HABILIDADES? DO CRMG|HABILIDADES?)/i;
-    const regexRecomposicao = /^(HABILIDADES? DE RECOMPOSIÇÃO|RECOMPOSIÇÃO)/i;
-    const regexSuporte = /^(HABILIDADES? DE SUPORTE|SUPORTE)/i;
-    const regexConteudo = /^(CONTE[UÚ]DOS? RELACIONADOS?|CONTE[UÚ]DOS?)/i;
+    // Expressões regulares dinâmicas para abranger as diferentes disciplinas (Plural e Singular)
+    let regexUnidade = /^(UNIDADES? TEM[AÁ]TICAS?|EIXOS? TEM[AÁ]TICOS?)/i;
+    let regexObjeto = /^(OBJETOS? D[EO] CONHECIMENTO)/i;
+    let regexHab = /^(HABILIDADES? PRIORIZADAS?|HABILIDADES? DO CRMG|HABILIDADES?)/i;
+    let regexRecomposicao = /^(HABILIDADES? DE RECOMPOSIÇÃO|RECOMPOSIÇÃO)/i;
+    let regexSuporte = /^(HABILIDADES? DE SUPORTE|SUPORTE)/i;
+    let regexConteudo = /^(CONTE[UÚ]DOS? RELACIONADOS?|CONTE[UÚ]DOS?)/i;
+
+    // Ajuste fino consoante o componente selecionado
+    if (disciplina === "Língua Portuguesa" || disciplina === "Língua Inglesa") {
+        regexUnidade = /^(PR[AÁ]TICAS? DE LINGUAGEM|EIXOS?)/i;
+    } else if (disciplina === "Ensino Religioso") {
+        regexRecomposicao = /^(COMPETÊNCIAS? SOCIOEMOCIONAIS|SOCIOEMOCIONAIS)/i;
+    }
 
     for (let i = 0; i < linhas.length; i++) {
         let linha = linhas[i];
-        let detectado = false;
+        let processoFeito = false;
 
-        if (regexUnidade.test(linha)) { campoAtual = "unidade"; detectado = true; }
-        else if (regexObjeto.test(linha)) { campoAtual = "objetoConhecimento"; detectado = true; }
-        else if (regexRecomposicao.test(linha)) { campoAtual = "habRecomposicao"; detectado = true; }
-        else if (regexSuporte.test(linha)) { campoAtual = "habSuporte"; detectado = true; }
-        else if (regexConteudo.test(linha)) { campoAtual = "conteudosRelacionados"; detectado = true; }
-        else if (regexHabPriorizada.test(linha)) {
-            // Se já gravou uma habilidade e encontrou outra "Habilidade", fecha a linha atual e desce
+        // Função que retira a palavra-chave e captura o texto que ficou na mesma linha
+        const extrairTextoNaMesmaLinha = (regex) => linha.replace(regex, "").replace(/^[:\-]\s*/, "").trim();
+
+        if (regexUnidade.test(linha)) {
+            if (itemAtual.habPriorizada !== "-" || (itemAtual.unidade !== "-" && itemAtual.unidade !== extrairTextoNaMesmaLinha(regexUnidade))) {
+                resultados.push({...itemAtual});
+                itemAtual = criarItemVazio();
+            }
+            campoAtual = "unidade";
+            let restoLinha = extrairTextoNaMesmaLinha(regexUnidade);
+            if (restoLinha) itemAtual.unidade = restoLinha;
+            processoFeito = true;
+        }
+        else if (regexRecomposicao.test(linha)) {
+            campoAtual = "habRecomposicao";
+            let restoLinha = extrairTextoNaMesmaLinha(regexRecomposicao);
+            if (restoLinha) itemAtual.habRecomposicao = restoLinha;
+            processoFeito = true;
+        }
+        else if (regexSuporte.test(linha)) {
+            campoAtual = "habSuporte";
+            let restoLinha = extrairTextoNaMesmaLinha(regexSuporte);
+            if (restoLinha) itemAtual.habSuporte = restoLinha;
+            processoFeito = true;
+        }
+        else if (regexConteudo.test(linha)) {
+            campoAtual = "conteudosRelacionados";
+            let restoLinha = extrairTextoNaMesmaLinha(regexConteudo);
+            if (restoLinha) itemAtual.conteudosRelacionados = restoLinha;
+            processoFeito = true;
+        }
+        else if (regexObjeto.test(linha)) {
+            campoAtual = "objetoConhecimento";
+            let restoLinha = extrairTextoNaMesmaLinha(regexObjeto);
+            if (restoLinha) itemAtual.objetoConhecimento = restoLinha;
+            processoFeito = true;
+        }
+        else if (regexHab.test(linha)) {
+            // Se já temos uma habilidade preenchida neste bloco, empurra para a lista, 
+            // mas HERDA a unidade temática e o objeto de conhecimento (muito comum ter várias habilidades por unidade)
             if (itemAtual.habPriorizada !== "-") {
                 resultados.push({...itemAtual});
-                let unTemp = itemAtual.unidade; // Guarda a unidade para herdar (pois costuma repetir no PDF)
+                let unidadeHerdada = itemAtual.unidade;
+                let objetoHerdado = itemAtual.objetoConhecimento;
                 itemAtual = criarItemVazio();
-                itemAtual.unidade = unTemp; 
+                itemAtual.unidade = unidadeHerdada;
+                itemAtual.objetoConhecimento = objetoHerdado;
             }
-            campoAtual = "habPriorizada"; 
-            detectado = true;
+            campoAtual = "habPriorizada";
+            let restoLinha = extrairTextoNaMesmaLinha(regexHab);
+            if (restoLinha) itemAtual.habPriorizada = restoLinha;
+            processoFeito = true;
         }
 
-        // Se a linha não é um título, grava no bloco atual
-        if (!detectado && campoAtual) {
-            // Tira os marcadores de lista do pdf (pontos, traços iniciais) se houver
-            let txtL = linha.replace(/^[\-\•\◦]\s*/, ""); 
-            
+        // Se a linha não tem nenhuma palavra-chave no início, é a continuação do texto anterior
+        if (!processoFeito && campoAtual !== "") {
+            let textoLimpo = linha.replace(/^[\-\•\◦]\s*/, "");
             if (itemAtual[campoAtual] === "-") {
-                itemAtual[campoAtual] = txtL;
+                itemAtual[campoAtual] = textoLimpo;
             } else {
-                itemAtual[campoAtual] += " " + txtL;
+                itemAtual[campoAtual] += " " + textoLimpo;
             }
         }
     }
-    
-    // Empurra a última habilidade processada
-    if (itemAtual.habPriorizada !== "-") {
+
+    if (itemAtual.unidade !== "-" || itemAtual.habPriorizada !== "-") {
         resultados.push(itemAtual);
     }
     return resultados;
@@ -279,20 +319,19 @@ function gerarPreviaMatrizRegex() {
   
   if (!textoBruto.trim()) { alert("⚠️ Cole o texto copiado do PDF na caixa antes de continuar."); return; }
 
-  // Roda a extração local instantânea
-  const lotes = extrairPadroesCRMG(textoBruto);
+  // Envia a disciplina para o fatiador saber que palavras-chave procurar
+  const lotes = extrairPadroesCRMG(textoBruto, disciplina);
 
   if (lotes.length === 0) {
-      alert("⚠️ O sistema não encontrou a palavra 'HABILIDADES' no texto. Verifique se copiou a tabela corretamente.");
+      alert("⚠️ O sistema não encontrou a palavra 'HABILIDADES' no texto. Verifique se copiou a grelha corretamente.");
       return;
   }
 
-  // Monta a Tabela HTML Editável
   let htmlTabela = `<div style="overflow-x: auto; padding-bottom: 10px;">
     <table style="font-size:0.85rem; width:100%; min-width:1300px; border-collapse: collapse; border: 1px solid #cbd5e1;">
       <tr style="background-color:#1e3a8a; color:white;">
         <th style="padding:10px; width:3%;">#</th>
-        <th style="padding:10px; width:15%;">Unidade Temática (Click p/ editar)</th>
+        <th style="padding:10px; width:15%;">Unidade Temática (Clicar p/ editar)</th>
         <th style="padding:10px; width:20%;">Habilidade Priorizada</th>
         <th style="padding:10px; width:20%;">Objeto do Conhecimento</th>
         <th style="padding:10px; width:17%;">Recomposição/Conteúdos</th>
@@ -301,9 +340,7 @@ function gerarPreviaMatrizRegex() {
   
   lotes.forEach((item, index) => {
     let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
-    
-    // Se for Mat/Port tem Recomposição, senão usa Conteúdos
-    let campoMisto = (disciplina === "Matemática" || disciplina === "Língua Portuguesa") 
+    let campoMisto = (disciplina === "Matemática" || disciplina === "Língua Portuguesa" || disciplina === "Ensino Religioso") 
                      ? item.habRecomposicao 
                      : item.conteudosRelacionados;
 
@@ -331,13 +368,12 @@ async function enviarLoteConfirmado() {
   if (linhas.length === 0) { alert("Nenhuma linha para enviar."); return; }
   
   const btn = document.getElementById('btnEnviarOficial');
-  btn.innerText = "⏳ Empacotando edições e Salvando no Banco de Dados...";
+  btn.innerText = "⏳ A empacotar edições e guardar na Base de Dados...";
   btn.disabled = true;
 
-  // LÊ AS CÉLULAS EDITÁVEIS DA TELA E MONTA O JSON FINAL!
   let itensProntos = [];
   linhas.forEach(tr => {
-      let isMatPort = (disciplina === "Matemática" || disciplina === "Língua Portuguesa");
+      let isMatPortRel = (disciplina === "Matemática" || disciplina === "Língua Portuguesa" || disciplina === "Ensino Religioso");
       let valMisto = tr.querySelector('.edit-misto').innerText.trim() || "-";
       
       let itemFinal = {
@@ -348,9 +384,9 @@ async function enviarLoteConfirmado() {
           genero: "-",
           habPriorizada: tr.querySelector('.edit-hab').innerText.trim() || "-",
           objetoConhecimento: tr.querySelector('.edit-obj').innerText.trim() || "-",
-          habRecomposicao: isMatPort ? valMisto : "-",
+          habRecomposicao: isMatPortRel ? valMisto : "-",
           habSuporte: "-",
-          conteudosRelacionados: isMatPort ? "-" : valMisto,
+          conteudosRelacionados: isMatPortRel ? "-" : valMisto,
           praticas: tr.querySelector('.edit-praticas').innerText.trim() || "-",
           evidencias: "-"
       };
@@ -363,7 +399,7 @@ async function enviarLoteConfirmado() {
     
     alert("✅ " + r.mensagem);
     
-    // Limpa a tela
+    // Limpa o ecrã
     document.getElementById('textoMatrizBruto').value = "";
     document.getElementById('containerPrevia').style.display = "none";
     
@@ -371,7 +407,7 @@ async function enviarLoteConfirmado() {
     carregarMatrizesSalvas(); 
     
   } catch(e) {
-    alert("⚠️ Falha de conexão ao enviar para o banco de dados.");
+    alert("⚠️ Falha de ligação ao enviar para a base de dados.");
   } finally {
     btn.innerText = "🚀 Tudo certo! Salvar Matriz no Banco";
     btn.disabled = false;
