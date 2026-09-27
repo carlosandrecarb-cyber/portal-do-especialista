@@ -13,13 +13,14 @@
     .logo-escola { max-width: 90%; height: auto; max-height: 90px; object-fit: contain; border-radius: 12px; background: white; padding: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .btn-sair { position: absolute; top: 20px; right: 20px; background: #e74c3c; color: white; border: none; padding: 10px 15px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
     .btn-sair:hover { background: #c0392b; }
-    .container { max-width: 1050px; margin: 30px auto; background: white; padding: 35px; border-radius: 18px; box-shadow: var(--sombra-suave); border: 1px solid #e2e8f0; }
+    .container { max-width: 1100px; margin: 30px auto; background: white; padding: 35px; border-radius: 18px; box-shadow: var(--sombra-suave); border: 1px solid #e2e8f0; }
     
     .tabs { display: flex; gap: 12px; margin-bottom: 25px; background: #f1f5f9; padding: 6px; border-radius: 14px; overflow-x: auto; }
     .tab-btn { flex: 1; padding: 14px; min-width: 150px; border: none; background: transparent; font-weight: 600; font-size: 0.95rem; color: #475569; cursor: pointer; transition: all 0.3s ease; border-radius: 10px; text-align: center; white-space: nowrap; }
     .tab-btn.active { background: white; color: var(--cor-principal); box-shadow: 0 4px 12px rgba(0,0,0,0.08); transform: translateY(-1px); }
     .tab-content { display: none; }
     .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     
     h3 { font-size: 1.3rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 8px; color: var(--cor-principal); margin-top: 20px; display: flex; align-items: center; gap: 8px; }
     
@@ -33,14 +34,12 @@
     .btn-secundario { background: #e2e8f0; color: #475569; padding: 12px 24px; border: none; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.2s; }
     .btn-secundario:hover { background: #cbd5e1; }
     
-    /* Estilos Tabela de Prévia Editável */
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.9rem; }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 0.95rem; }
     th { background: var(--cor-principal); color: white; padding: 12px; text-align: left; }
-    td { padding: 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
-    td[contenteditable="true"] { background: #f8fafc; border: 1px dashed #cbd5e1; cursor: text; transition: 0.2s; border-radius: 4px; outline: none; }
-    td[contenteditable="true"]:focus { background: #ffffff; border-color: var(--cor-secundaria); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
-    td[contenteditable="true"]:hover { background: #f1f5f9; }
+    td { padding: 12px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
     tr:hover { background: #f8fafc; }
+
+    .barra-filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; background: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
   </style>
 </head>
 <body>
@@ -68,27 +67,52 @@
   <div class="container">
     <div class="tabs">
       <button class="tab-btn active" onclick="mudarAba('abaSupervisao', this)">📋 Planos Recebidos</button>
+      <button class="tab-btn" onclick="mudarAba('abaRaioX', this)">📈 Raio-X Curricular</button>
       <button class="tab-btn" onclick="mudarAba('abaUsuarios', this)">👥 Gestão de Usuários</button>
-      <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatórios & Backup</button>
-      <button class="tab-btn" onclick="mudarAba('abaExtracao', this)">📥 Matriz Curricular</button>
+      <button class="tab-btn" onclick="mudarAba('abaRelatorios', this)">📊 Relatórios</button>
+      <button class="tab-btn" onclick="mudarAba('abaExtracao', this)">📥 Extração (Matriz)</button>
     </div>
 
-    <!-- ABAS 1, 2 e 3 (Supervisão, Usuários, Relatórios) -->
+    <!-- ABA 1: SUPERVISÃO COM FILTROS -->
     <div id="abaSupervisao" class="tab-content active">
       <h3>📋 Controle de Planos de Aula (Recebidos)</h3>
-      <div style="background: #eff6ff; border: 1px solid #bfdbfe; padding: 15px; border-radius: 12px; margin-bottom: 20px; font-size: 0.95rem; color: #1e3a8a;">
-        Visualize todos os planos enviados pelos professores, acesse os documentos e aprove ou devolva para ajuste.
+      
+      <div class="barra-filtros">
+        <select id="filtroProf" onchange="filtrarPlanos()"><option value="">👩‍🏫 Todos os Professores</option></select>
+        <select id="filtroComp" onchange="filtrarPlanos()"><option value="">📚 Todas as Disciplinas</option></select>
+        <select id="filtroTurma" onchange="filtrarPlanos()"><option value="">🏷️ Todas as Turmas</option></select>
+        <select id="filtroTrimestre" onchange="filtrarPlanos()"><option value="">⏳ Todos os Trimestres</option></select>
+        <select id="filtroStatus" onchange="filtrarPlanos()">
+          <option value="">Todos os Status</option>
+          <option value="Pendente">🟡 Pendente</option>
+          <option value="Aprovado">✅ Aprovado</option>
+          <option value="Devolvido">🔴 Devolvido</option>
+        </select>
       </div>
-      <button class="btn-primario" onclick="carregarPlanosSupervisao()" style="margin-bottom: 15px;">🔄 Atualizar Lista de Planos</button>
+
+      <button class="btn-primario" onclick="carregarPlanosSupervisao()" style="margin-bottom: 15px;">🔄 Atualizar Base de Dados</button>
       <div id="tabelaPlanosContainer" style="overflow-x: auto;">
-        <p style="color:#64748b;">Clique em "Atualizar Lista" para carregar.</p>
+        <p style="color:#64748b;">Carregando...</p>
       </div>
     </div>
 
+    <!-- ABA 2: RAIO-X CURRICULAR -->
+    <div id="abaRaioX" class="tab-content">
+      <h3>📈 Raio-X de Cobertura Curricular (Ao Vivo)</h3>
+      <div class="barra-filtros">
+        <select id="rxFiltroProf"><option value="">👩‍🏫 Todos os Professores</option></select>
+        <select id="rxFiltroComp"><option value="">📚 Todas as Disciplinas</option></select>
+        <select id="rxFiltroTurma"><option value="">🏷️ Todas as Turmas</option></select>
+        <select id="rxFiltroTrimestre"><option value="">⏳ Todos os Trimestres</option></select>
+        <button onclick="gerarRaioX()" class="btn-primario">🔍 Analisar Matriz</button>
+      </div>
+      <div id="painelRaioX"></div>
+    </div>
+
+    <!-- ABA 3: USUÁRIOS -->
     <div id="abaUsuarios" class="tab-content">
       <h3>👥 Gestão de Professores e Acessos</h3>
       <div style="background: #f8fafc; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
-        <h4 style="margin-top:0; color:#334155; margin-bottom:15px;">Cadastrar ou Editar Usuário</h4>
         <input type="hidden" id="usuarioLinha">
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div><label>Nome Completo</label><input type="text" id="cadNome"></div>
@@ -106,52 +130,48 @@
       <div id="tabelaUsuariosContainer" style="overflow-x: auto;"><p style="color:#64748b;">Carregando usuários do sistema...</p></div>
     </div>
 
+    <!-- ABA 4: RELATÓRIOS -->
     <div id="abaRelatorios" class="tab-content">
-      <h3>📊 Relatórios Executivos & Segurança</h3>
+      <h3>📊 Documento Oficial Executivo & Backup</h3>
       <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
         <div style="background: #fdfdfd; padding: 20px; border-radius: 14px; border: 1px solid #e2e8f0; text-align:center;">
-          <h4 style="margin-top:0; color:#1e3a8a;">Gerar Relatório de Cobertura</h4>
+          <h4 style="margin-top:0; color:#1e3a8a;">Gerar Relatório Analítico</h4>
           <select id="tipoRelatorio" style="margin-bottom:15px;">
             <option value="diario">Diário (Últimas 24h)</option>
             <option value="semanal">Semanal (Últimos 7 dias)</option>
             <option value="quinzenal">Quinzenal (Últimos 15 dias)</option>
             <option value="mensal" selected>Mensal (Últimos 30 dias)</option>
           </select>
-          <button onclick="gerarRelatorio()" class="btn-primario" style="width:100%;" id="btnGerarRelatorio">📑 Gerar Documento PDF/Word</button>
+          <button onclick="gerarRelatorio()" class="btn-primario" style="width:100%;" id="btnGerarRelatorio">📑 Gerar Documento Oficial</button>
+          <div id="areaLinkRelatorio" style="margin-top:15px; display:none;"></div>
         </div>
         <div style="background: #fffbeb; padding: 20px; border-radius: 14px; border: 1px solid #fde68a; text-align:center;">
-          <h4 style="margin-top:0; color:#d97706;">Cópia de Segurança (Backup)</h4>
-          <button onclick="forcarBackup()" class="btn-primario" style="background:#d97706; width:100%; margin-top: 40px;" id="btnBackup">📦 Enviar Backup para meu E-mail</button>
+          <h4 style="margin-top:0; color:#d97706;">Cópia de Segurança</h4>
+          <button onclick="forcarBackup()" class="btn-primario" style="background:#d97706; width:100%; margin-top: 45px;" id="btnBackup">📦 Enviar Backup para meu E-mail</button>
         </div>
       </div>
     </div>
 
-    <!-- ABA 4: EXTRAÇÃO CURRICULAR (ESPELHO + PRÉVIA EDITÁVEL) -->
+    <!-- ABA 5: EXTRAÇÃO CURRICULAR (ESPELHO + AS 11 COLUNAS) -->
     <div id="abaExtracao" class="tab-content">
-      <h3>📥 Extração Curricular (Lógica Padrões CRMG)</h3>
-      <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px;">Cole o texto do PDF. O sistema usa palavras-chave (singular/plural) para organizar, cria uma tabela para você olhar e ajustar, e salva no banco!</p>
+      <h3>📥 Extração Curricular Instantânea</h3>
+      <p style="color: #64748b; font-size: 0.95rem; margin-bottom: 25px;">Cole o texto do PDF da matriz. O sistema fatiador organiza tudo em 11 colunas exatas para você conferir antes de guardar.</p>
       
-      <!-- 1. ESPELHO VISUAL DA PLANILHA -->
+      <!-- ESPELHO VISUAL -->
       <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 14px; padding: 20px; margin-bottom: 25px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
           <h4 style="margin:0; color:#0f172a; display:flex; align-items:center; gap:8px;">📊 Espelho da Planilha (O que já temos?)</h4>
           <button onclick="carregarMatrizesSalvas()" style="background:#e2e8f0; color:#475569; border:none; padding:8px 15px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; transition:0.2s;">🔄 Atualizar Espelho</button>
         </div>
+        <p style="font-size:0.85rem; color:#64748b; margin-top:0;">Selecione a disciplina abaixo para ver os anos e trimestres já inseridos:</p>
         
-        <p style="font-size:0.85rem; color:#64748b; margin-top:0;">Selecione a disciplina abaixo para ver quais turmas e trimestres já foram extraídos e guardados:</p>
-        
-        <div id="abasPlanilhaVirtual" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0;">
-          <span style="color:#94a3b8; font-size:0.9rem;">Carregando abas...</span>
-        </div>
-
-        <div id="conteudoPlanilhaVirtual" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; min-height: 80px; display: flex; flex-wrap: wrap; gap: 10px;">
-           <span style="color:#94a3b8; font-size:0.9rem;">Nenhuma disciplina selecionada.</span>
-        </div>
+        <div id="abasPlanilhaVirtual" style="display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; border-bottom: 2px solid #e2e8f0;"></div>
+        <div id="conteudoPlanilhaVirtual" style="background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; min-height: 80px; display: flex; flex-wrap: wrap; gap: 10px;"></div>
       </div>
 
-      <!-- 2. FORMULÁRIO DE EXTRAÇÃO & EDIÇÃO -->
+      <!-- ÁREA DE EXTRAÇÃO -->
       <div style="background: #ffffff; padding: 25px; border-radius: 14px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.02);">
-        <h4 style="margin-top:0; color:#334155;">➕ Inserir Nova Matriz a partir do PDF</h4>
+        <h4 style="margin-top:0; color:#334155;">➕ Inserir Nova Matriz do PDF</h4>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
           <div><label style="font-weight:bold; font-size:0.85rem;">Disciplina</label>
@@ -175,20 +195,15 @@
           </div>
         </div>
 
-        <textarea id="textoMatrizBruto" placeholder="Cole aqui o texto copiado do PDF do currículo..." style="width:100%; height:200px; border-radius:8px; border:1px solid #cbd5e1; padding:15px; font-family:monospace; font-size:0.9rem; resize:vertical; box-sizing: border-box; background: #fdfdfd; margin-bottom:15px;"></textarea>
+        <textarea id="textoMatrizBruto" placeholder="Cole aqui o texto copiado do PDF do currículo..." style="width:100%; height:150px; border-radius:8px; border:1px solid #cbd5e1; padding:15px; font-family:monospace; font-size:0.9rem; resize:vertical; box-sizing: border-box; background: #fdfdfd; margin-bottom:15px;"></textarea>
         
-        <button onclick="gerarPreviaMatrizRegex()" class="btn-primario" style="background:#2563eb; width:100%;">⚙️ Fatiar Texto e Gerar Tabela para Conferência</button>
+        <button onclick="gerarPreviaMatriz()" class="btn-primario" style="background:#2563eb; width:100%;">⚙️ Fatiar Texto e Gerar Tabela (11 Colunas)</button>
+        <p id="msgImportacao" style="text-align:center; margin-top:10px; font-weight:bold; color:#2563eb;"></p>
         
-        <!-- TABELA DE PRÉVIA EDITÁVEL -->
+        <!-- A TABELA COM AS 11 COLUNAS APARECERÁ AQUI -->
         <div id="containerPrevia" style="margin-top: 25px; display: none; padding-top: 20px; border-top: 2px dashed #cbd5e1;">
-          <h4 style="color: #1e3a8a; display:flex; justify-content:space-between; align-items:center;">
-            <span>📋 Olhar e Ajustar (Prévia)</span>
-            <span style="font-size:0.8rem; background:#fef08a; color:#854d0e; padding:4px 10px; border-radius:12px;">Dica: Clique nas células abaixo para editar os textos antes de enviar!</span>
-          </h4>
-          
-          <div id="tabelaPreviaConteudo" style="max-height: 450px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #e2e8f0; border-radius: 8px;"></div>
-          
-          <button onclick="enviarLoteConfirmado()" id="btnEnviarOficial" class="btn-primario" style="background:#10b981; font-size: 1.1rem; padding: 16px; width: 100%;">🚀 Tudo certo! Salvar Matriz no Banco</button>
+          <div id="tabelaPreviaConteudo" style="margin-bottom: 20px;"></div>
+          <button onclick="enviarLoteConfirmado()" id="btnEnviarOficial" class="btn-primario" style="background:#10b981; font-size: 1.1rem; padding: 16px; width: 100%;">🚀 Tudo certo! Enviar para a Planilha Oficial</button>
         </div>
       </div>
     </div>
