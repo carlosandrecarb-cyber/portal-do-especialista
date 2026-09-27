@@ -54,59 +54,40 @@ function sairDoSistema() {
 }
 
 // ==========================================
-// ABA 1: SUPERVISÃO DE PLANOS
+// ABA 1: SUPERVISÃO E ABA 2: USUÁRIOS E ABA 3: RELATÓRIOS (Mantidas Idênticas)
 // ==========================================
 async function carregarPlanosSupervisao() {
   const container = document.getElementById('tabelaPlanosContainer');
   container.innerHTML = "<p>⏳ Buscando planos de aula recentes...</p>";
-  
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
     const r = await res.json();
-    
     if (r.status === "sucesso" && r.registros && r.registros.length > 0) {
       let html = `<table><tr><th>Data / Professor</th><th>Turma & Componente</th><th>Links (Acesso Restrito)</th><th>Status Pedagógico</th></tr>`;
-      
       r.registros.reverse().forEach(p => {
         let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
-        
         html += `<tr>
                   <td><strong>${p.data}</strong><br><span style="color:#475569; font-size:0.9rem;">${p.professor}</span></td>
                   <td><strong>${p.componente}</strong><br><span style="color:#64748b; font-size:0.85rem;">${p.turma} (${p.trimestre || '-'})</span></td>
-                  <td>
-                    <a href="${p.docUrl}" target="_blank" style="text-decoration:none; color:#2563eb; font-weight:bold; display:block; margin-bottom:5px;">📄 Abrir Plano (Doc)</a>
-                    <a href="${p.pastaUrl}" target="_blank" style="text-decoration:none; color:#d97706; font-weight:bold; font-size:0.85rem;">📁 Pasta Evidências</a>
-                  </td>
-                  <td>
-                    <select onchange="alterarStatusPlano(${p.linha}, this.value)" style="padding:6px; font-weight:bold; border:2px solid ${corStatus}; color:${corStatus}; border-radius:8px; width:100%;">
+                  <td><a href="${p.docUrl}" target="_blank" style="text-decoration:none; color:#2563eb; font-weight:bold; display:block; margin-bottom:5px;">📄 Abrir Plano (Doc)</a><a href="${p.pastaUrl}" target="_blank" style="text-decoration:none; color:#d97706; font-weight:bold; font-size:0.85rem;">📁 Pasta Evidências</a></td>
+                  <td><select onchange="alterarStatusPlano(${p.linha}, this.value)" style="padding:6px; font-weight:bold; border:2px solid ${corStatus}; color:${corStatus}; border-radius:8px; width:100%;">
                       <option value="🟡 Pendente" ${p.status.includes('Pendente') ? 'selected' : ''}>🟡 Pendente</option>
                       <option value="✅ Aprovado" ${p.status.includes('Aprovado') ? 'selected' : ''}>✅ Aprovado</option>
                       <option value="🔴 Devolvido p/ Ajuste" ${p.status.includes('Devolvido') ? 'selected' : ''}>🔴 Devolvido p/ Ajuste</option>
-                    </select>
-                  </td>
+                    </select></td>
                  </tr>`;
       });
-      html += `</table>`;
-      container.innerHTML = html;
-    } else {
-      container.innerHTML = "<p>Nenhum plano foi enviado para a supervisão ainda.</p>";
-    }
-  } catch (e) {
-    container.innerHTML = "<p>Erro ao conectar com a base de dados.</p>";
-  }
+      html += `</table>`; container.innerHTML = html;
+    } else { container.innerHTML = "<p>Nenhum plano foi enviado para a supervisão ainda.</p>"; }
+  } catch (e) { container.innerHTML = "<p>Erro ao conectar com a base de dados.</p>"; }
 }
 
 async function alterarStatusPlano(linha, novoStatus) {
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus }) });
-    const r = await res.json();
-    if(r.status !== "sucesso") alert("Erro ao atualizar o status.");
+  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus }) });
+  const r = await res.json(); if(r.status !== "sucesso") alert("Erro ao atualizar o status.");
   } catch(e) { alert("Falha na conexão ao atualizar status."); }
 }
 
-// ==========================================
-// ABA 2: GESTÃO DE USUÁRIOS
-// ==========================================
 async function carregarListaUsuarios() {
   const container = document.getElementById('tabelaUsuariosContainer');
   container.innerHTML = "<p>⏳ Carregando banco de usuários...</p>";
@@ -117,86 +98,38 @@ async function carregarListaUsuarios() {
       let html = `<table><tr><th>Nome / E-mail</th><th>Perfil</th><th>Acesso (Senha)</th><th>Ação</th></tr>`;
       r.usuarios.forEach(u => {
         let emailDisplay = (u.email && u.email !== "undefined") ? u.email : "Sem e-mail (Link Público)";
-        html += `<tr>
-                  <td><strong>${u.nome}</strong><br><span style="font-size:0.8rem; color:#64748b;">${emailDisplay}</span></td>
-                  <td>${u.perfil}</td>
-                  <td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-family:monospace;">${u.senha}</span></td>
-                  <td><button onclick="editarUsuario(${u.linha}, '${u.nome}', '${u.email}', '${u.senha}', '${u.perfil}', '${u.componentes}', '${u.turmas}')" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">Editar</button></td>
-                 </tr>`;
+        html += `<tr><td><strong>${u.nome}</strong><br><span style="font-size:0.8rem; color:#64748b;">${emailDisplay}</span></td><td>${u.perfil}</td><td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-family:monospace;">${u.senha}</span></td><td><button onclick="editarUsuario(${u.linha}, '${u.nome}', '${u.email}', '${u.senha}', '${u.perfil}', '${u.componentes}', '${u.turmas}')" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:bold;">Editar</button></td></tr>`;
       });
-      html += `</table>`;
-      container.innerHTML = html;
+      html += `</table>`; container.innerHTML = html;
     }
   } catch(e) { container.innerHTML = "<p>Erro ao carregar lista de usuários.</p>"; }
 }
 
 async function salvarUsuario() {
-  const dados = {
-    linha: document.getElementById('usuarioLinha').value,
-    nome: document.getElementById('cadNome').value,
-    email: document.getElementById('cadEmail').value,
-    senha: document.getElementById('cadSenha').value,
-    perfil: document.getElementById('cadPerfil').value,
-    componentes: document.getElementById('cadComponentes').value,
-    turmas: document.getElementById('cadTurmas').value
-  };
-
+  const dados = { linha: document.getElementById('usuarioLinha').value, nome: document.getElementById('cadNome').value, email: document.getElementById('cadEmail').value, senha: document.getElementById('cadSenha').value, perfil: document.getElementById('cadPerfil').value, componentes: document.getElementById('cadComponentes').value, turmas: document.getElementById('cadTurmas').value };
   if(!dados.nome || !dados.senha) { alert("⚠️ Nome e Senha são obrigatórios."); return; }
-
-  const btn = document.querySelector('button[onclick="salvarUsuario()"]');
-  btn.innerText = "⏳ Salvando..."; btn.disabled = true;
-
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) });
-    const r = await res.json();
-    alert("✅ " + r.mensagem);
-    limparFormUsuario();
-    carregarListaUsuarios();
-  } catch(e) { alert("⚠️ Erro ao salvar usuário."); } finally {
-    btn.innerText = "💾 Salvar / Atualizar Usuário"; btn.disabled = false;
-  }
+  const btn = document.querySelector('button[onclick="salvarUsuario()"]'); btn.innerText = "⏳ Salvando..."; btn.disabled = true;
+  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) }); const r = await res.json(); alert("✅ " + r.mensagem); limparFormUsuario(); carregarListaUsuarios(); } catch(e) { alert("⚠️ Erro ao salvar usuário."); } finally { btn.innerText = "💾 Salvar / Atualizar Usuário"; btn.disabled = false; }
 }
 
 function editarUsuario(linha, nome, email, senha, perfil, componentes, turmas) {
-  document.getElementById('usuarioLinha').value = linha;
-  document.getElementById('cadNome').value = nome;
-  document.getElementById('cadEmail').value = (email !== "undefined" && email !== "null") ? email : "";
-  document.getElementById('cadSenha').value = senha;
-  document.getElementById('cadPerfil').value = perfil;
-  document.getElementById('cadComponentes').value = (componentes !== "undefined" && componentes !== "null") ? componentes : "";
-  document.getElementById('cadTurmas').value = (turmas !== "undefined" && turmas !== "null") ? turmas : "";
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  document.getElementById('usuarioLinha').value = linha; document.getElementById('cadNome').value = nome; document.getElementById('cadEmail').value = (email !== "undefined" && email !== "null") ? email : ""; document.getElementById('cadSenha').value = senha; document.getElementById('cadPerfil').value = perfil; document.getElementById('cadComponentes').value = (componentes !== "undefined" && componentes !== "null") ? componentes : ""; document.getElementById('cadTurmas').value = (turmas !== "undefined" && turmas !== "null") ? turmas : ""; window.scrollTo({ top: 0, behavior: 'smooth' });
 }
+function limparFormUsuario() { document.getElementById('usuarioLinha').value = ""; document.getElementById('cadNome').value = ""; document.getElementById('cadEmail').value = ""; document.getElementById('cadSenha').value = ""; document.getElementById('cadPerfil').value = "Professor"; document.getElementById('cadComponentes').value = ""; document.getElementById('cadTurmas').value = ""; }
 
-function limparFormUsuario() {
-  document.getElementById('usuarioLinha').value = ""; document.getElementById('cadNome').value = ""; document.getElementById('cadEmail').value = ""; document.getElementById('cadSenha').value = ""; document.getElementById('cadPerfil').value = "Professor"; document.getElementById('cadComponentes').value = ""; document.getElementById('cadTurmas').value = "";
-}
-
-// ==========================================
-// ABA 3: RELATÓRIOS E BACKUP
-// ==========================================
 async function gerarRelatorio() {
-  const btn = document.getElementById('btnGerarRelatorio');
-  const periodo = document.getElementById('tipoRelatorio').value;
-  btn.innerText = "⏳ Auditando e Gerando Relatório..."; btn.disabled = true;
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo }) });
-    const r = await res.json();
-    if(r.status === "sucesso") { alert("✅ Relatório gerado!"); window.open(r.url, '_blank'); } else { alert("⚠️ Erro: " + r.mensagem); }
-  } catch(e) { alert("Erro de comunicação ao gerar relatório."); } finally { btn.innerText = "📑 Gerar Documento PDF/Word"; btn.disabled = false; }
+  const btn = document.getElementById('btnGerarRelatorio'); const periodo = document.getElementById('tipoRelatorio').value; btn.innerText = "⏳ Auditando e Gerando Relatório..."; btn.disabled = true;
+  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo }) }); const r = await res.json(); if(r.status === "sucesso") { alert("✅ Relatório gerado!"); window.open(r.url, '_blank'); } else { alert("⚠️ Erro: " + r.mensagem); } } catch(e) { alert("Erro de comunicação ao gerar relatório."); } finally { btn.innerText = "📑 Gerar Documento PDF/Word"; btn.disabled = false; }
 }
 
 async function forcarBackup() {
-  const btn = document.getElementById('btnBackup');
-  btn.innerText = "⏳ Extraindo dados (Aguarde)..."; btn.disabled = true;
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) });
-    const r = await res.json(); alert("✅ " + r.mensagem);
-  } catch(e) { alert("Erro ao solicitar o backup."); } finally { btn.innerText = "📦 Enviar Backup para meu E-mail"; btn.disabled = false; }
+  const btn = document.getElementById('btnBackup'); btn.innerText = "⏳ Extraindo dados (Aguarde)..."; btn.disabled = true;
+  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) }); const r = await res.json(); alert("✅ " + r.mensagem); } catch(e) { alert("Erro ao solicitar o backup."); } finally { btn.innerText = "📦 Enviar Backup para meu E-mail"; btn.disabled = false; }
 }
 
+
 // ==========================================
-// ABA 4: EXTRAÇÃO CURRICULAR (ESPELHO VISUAL DA PLANILHA)
+// ABA 4: EXTRAÇÃO CURRICULAR (ESPELHO VISUAL)
 // ==========================================
 let dadosEspelhoGlobal = {};
 
@@ -214,7 +147,6 @@ async function carregarMatrizesSalvas() {
     if (r.status === "sucesso") {
       dadosEspelhoGlobal = {};
       
-      // Agrupa os dados
       r.registros.forEach(item => {
         if(!dadosEspelhoGlobal[item.componente]) dadosEspelhoGlobal[item.componente] = {};
         if(!dadosEspelhoGlobal[item.componente][item.ano]) dadosEspelhoGlobal[item.componente][item.ano] = [];
@@ -223,7 +155,6 @@ async function carregarMatrizesSalvas() {
         }
       });
 
-      // Cria os botões (Abas)
       const componentes = Object.keys(dadosEspelhoGlobal).sort();
       if(componentes.length === 0) {
         divAbas.innerHTML = "<span style='color:#ef4444; font-size:0.9rem;'>O banco de dados está vazio. Nenhuma matriz encontrada.</span>";
@@ -236,9 +167,7 @@ async function carregarMatrizesSalvas() {
       });
       divAbas.innerHTML = htmlAbas;
 
-      // Mostra o conteúdo da primeira aba por padrão
       mostrarConteudoEspelho(componentes[0], divAbas.firstChild);
-      
     } else {
       divAbas.innerHTML = "<span style='color:#ef4444;'>Erro ao ler a planilha.</span>";
     }
@@ -248,15 +177,11 @@ async function carregarMatrizesSalvas() {
 }
 
 function mostrarConteudoEspelho(componente, btnClicado) {
-  // Muda a cor dos botões (Abas)
   document.querySelectorAll('.btn-espelho-aba').forEach(b => {
     b.style.background = 'white'; b.style.color = '#475569';
   });
-  if(btnClicado) {
-    btnClicado.style.background = '#1e3a8a'; btnClicado.style.color = 'white';
-  }
+  if(btnClicado) { btnClicado.style.background = '#1e3a8a'; btnClicado.style.color = 'white'; }
 
-  // Renderiza os blocos (Anos e Trimestres)
   const divConteudo = document.getElementById('conteudoPlanilhaVirtual');
   const dadosAno = dadosEspelhoGlobal[componente];
   
@@ -279,34 +204,176 @@ function mostrarConteudoEspelho(componente, btnClicado) {
                <div style="display: flex; gap: 6px; flex-wrap: wrap;">${trimestresHtml}</div>
              </div>`;
   });
-
   divConteudo.innerHTML = html;
 }
 
-async function enviarLoteMatriz() {
-  const btn = document.querySelector('button[onclick="enviarLoteMatriz()"]');
-  const jsonText = document.getElementById('jsonExtracao').value.trim();
-  
-  if(!jsonText) { alert("⚠️ Cole o conteúdo extraído no campo antes de enviar."); return; }
-  
-  try {
-    const itens = JSON.parse(jsonText);
-    btn.innerText = "⏳ Salvando no Banco de Dados...";
-    btn.disabled = true;
+// ==========================================
+// ABA 4: EXTRAÇÃO CURRICULAR (MÁQUINA DE REGRA E PRÉVIA EDITÁVEL)
+// ==========================================
+
+function extrairPadroesCRMG(textoBruto) {
+    const linhas = textoBruto.split('\n').map(l => l.trim()).filter(l => l);
+    let resultados = [];
     
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: itens }) });
+    // Função auxiliar para zerar o item
+    const criarItemVazio = () => ({
+        unidade: "-", genero: "-", habPriorizada: "-", habRecomposicao: "-", habSuporte: "-",
+        objetoConhecimento: "-", conteudosRelacionados: "-", praticas: "-", evidencias: "-"
+    });
+
+    let itemAtual = criarItemVazio();
+    let campoAtual = "";
+
+    // MÁQUINA DE REGEX: Procura singular ou plural com tolerância a acentos
+    const regexUnidade = /^(UNIDADES? TEM[AÁ]TICAS?|PR[AÁ]TICAS? DE LINGUAGEM)/i;
+    const regexObjeto = /^(OBJETOS? D[EO] CONHECIMENTO)/i;
+    const regexHabPriorizada = /^(HABILIDADES? PRIORIZADAS?|HABILIDADES? DO CRMG|HABILIDADES?)/i;
+    const regexRecomposicao = /^(HABILIDADES? DE RECOMPOSIÇÃO|RECOMPOSIÇÃO)/i;
+    const regexSuporte = /^(HABILIDADES? DE SUPORTE|SUPORTE)/i;
+    const regexConteudo = /^(CONTE[UÚ]DOS? RELACIONADOS?|CONTE[UÚ]DOS?)/i;
+
+    for (let i = 0; i < linhas.length; i++) {
+        let linha = linhas[i];
+        let detectado = false;
+
+        if (regexUnidade.test(linha)) { campoAtual = "unidade"; detectado = true; }
+        else if (regexObjeto.test(linha)) { campoAtual = "objetoConhecimento"; detectado = true; }
+        else if (regexRecomposicao.test(linha)) { campoAtual = "habRecomposicao"; detectado = true; }
+        else if (regexSuporte.test(linha)) { campoAtual = "habSuporte"; detectado = true; }
+        else if (regexConteudo.test(linha)) { campoAtual = "conteudosRelacionados"; detectado = true; }
+        else if (regexHabPriorizada.test(linha)) {
+            // Se já gravou uma habilidade e encontrou outra "Habilidade", fecha a linha atual e desce
+            if (itemAtual.habPriorizada !== "-") {
+                resultados.push({...itemAtual});
+                let unTemp = itemAtual.unidade; // Guarda a unidade para herdar (pois costuma repetir no PDF)
+                itemAtual = criarItemVazio();
+                itemAtual.unidade = unTemp; 
+            }
+            campoAtual = "habPriorizada"; 
+            detectado = true;
+        }
+
+        // Se a linha não é um título, grava no bloco atual
+        if (!detectado && campoAtual) {
+            // Tira os marcadores de lista do pdf (pontos, traços iniciais) se houver
+            let txtL = linha.replace(/^[\-\•\◦]\s*/, ""); 
+            
+            if (itemAtual[campoAtual] === "-") {
+                itemAtual[campoAtual] = txtL;
+            } else {
+                itemAtual[campoAtual] += " " + txtL;
+            }
+        }
+    }
+    
+    // Empurra a última habilidade processada
+    if (itemAtual.habPriorizada !== "-") {
+        resultados.push(itemAtual);
+    }
+    return resultados;
+}
+
+function gerarPreviaMatrizRegex() {
+  const textoBruto = document.getElementById('textoMatrizBruto').value;
+  const disciplina = document.getElementById('impDisciplina').value;
+  
+  if (!textoBruto.trim()) { alert("⚠️ Cole o texto copiado do PDF na caixa antes de continuar."); return; }
+
+  // Roda a extração local instantânea
+  const lotes = extrairPadroesCRMG(textoBruto);
+
+  if (lotes.length === 0) {
+      alert("⚠️ O sistema não encontrou a palavra 'HABILIDADES' no texto. Verifique se copiou a tabela corretamente.");
+      return;
+  }
+
+  // Monta a Tabela HTML Editável
+  let htmlTabela = `<div style="overflow-x: auto; padding-bottom: 10px;">
+    <table style="font-size:0.85rem; width:100%; min-width:1300px; border-collapse: collapse; border: 1px solid #cbd5e1;">
+      <tr style="background-color:#1e3a8a; color:white;">
+        <th style="padding:10px; width:3%;">#</th>
+        <th style="padding:10px; width:15%;">Unidade Temática (Click p/ editar)</th>
+        <th style="padding:10px; width:20%;">Habilidade Priorizada</th>
+        <th style="padding:10px; width:20%;">Objeto do Conhecimento</th>
+        <th style="padding:10px; width:17%;">Recomposição/Conteúdos</th>
+        <th style="padding:10px; width:25%;">Práticas & Evidências</th>
+      </tr>`;
+  
+  lotes.forEach((item, index) => {
+    let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+    
+    // Se for Mat/Port tem Recomposição, senão usa Conteúdos
+    let campoMisto = (disciplina === "Matemática" || disciplina === "Língua Portuguesa") 
+                     ? item.habRecomposicao 
+                     : item.conteudosRelacionados;
+
+    htmlTabela += `<tr class="linha-previa" style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
+                    <td style="padding:10px; font-weight:bold; color:#64748b;">${index + 1}</td>
+                    <td contenteditable="true" class="edit-unidade" style="padding:10px; font-weight:bold; color:#0f172a;">${item.unidade}</td>
+                    <td contenteditable="true" class="edit-hab" style="padding:10px; font-weight:bold; color:#1d4ed8;">${item.habPriorizada}</td>
+                    <td contenteditable="true" class="edit-obj" style="padding:10px;">${item.objetoConhecimento}</td>
+                    <td contenteditable="true" class="edit-misto" style="padding:10px; color:#b45309;">${campoMisto}</td>
+                    <td contenteditable="true" class="edit-praticas" style="padding:10px; color:#15803d; font-style:italic;">-</td>
+                   </tr>`;
+  });
+  htmlTabela += `</table></div>`;
+
+  document.getElementById('tabelaPreviaConteudo').innerHTML = htmlTabela;
+  document.getElementById('containerPrevia').style.display = "block";
+}
+
+async function enviarLoteConfirmado() {
+  const disciplina = document.getElementById('impDisciplina').value;
+  const ano = document.getElementById('impAno').value;
+  const trimestre = document.getElementById('impTrimestre').value;
+  
+  const linhas = document.querySelectorAll('.linha-previa');
+  if (linhas.length === 0) { alert("Nenhuma linha para enviar."); return; }
+  
+  const btn = document.getElementById('btnEnviarOficial');
+  btn.innerText = "⏳ Empacotando edições e Salvando no Banco de Dados...";
+  btn.disabled = true;
+
+  // LÊ AS CÉLULAS EDITÁVEIS DA TELA E MONTA O JSON FINAL!
+  let itensProntos = [];
+  linhas.forEach(tr => {
+      let isMatPort = (disciplina === "Matemática" || disciplina === "Língua Portuguesa");
+      let valMisto = tr.querySelector('.edit-misto').innerText.trim() || "-";
+      
+      let itemFinal = {
+          disciplina: disciplina,
+          ano: ano,
+          trimestre: trimestre,
+          unidade: tr.querySelector('.edit-unidade').innerText.trim() || "-",
+          genero: "-",
+          habPriorizada: tr.querySelector('.edit-hab').innerText.trim() || "-",
+          objetoConhecimento: tr.querySelector('.edit-obj').innerText.trim() || "-",
+          habRecomposicao: isMatPort ? valMisto : "-",
+          habSuporte: "-",
+          conteudosRelacionados: isMatPort ? "-" : valMisto,
+          praticas: tr.querySelector('.edit-praticas').innerText.trim() || "-",
+          evidencias: "-"
+      };
+      itensProntos.push(itemFinal);
+  });
+
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: itensProntos }) });
     const r = await res.json();
     
     alert("✅ " + r.mensagem);
-    document.getElementById('jsonExtracao').value = ""; // Limpa a caixa
+    
+    // Limpa a tela
+    document.getElementById('textoMatrizBruto').value = "";
+    document.getElementById('containerPrevia').style.display = "none";
     
     // Atualiza o espelho visual imediatamente!
     carregarMatrizesSalvas(); 
     
   } catch(e) {
-    alert("⚠️ Formato inválido. Certifique-se de que colou o JSON completo.");
+    alert("⚠️ Falha de conexão ao enviar para o banco de dados.");
   } finally {
-    btn.innerText = "🚀 Salvar Nova Matriz no Banco";
+    btn.innerText = "🚀 Tudo certo! Salvar Matriz no Banco";
     btn.disabled = false;
   }
 }
