@@ -266,7 +266,7 @@ function mostrarConteudoEspelho(componente, btnClicado) {
 }
 
 // ==========================================
-// ABA 5: O EXTRATOR LÓGICO COM A "TESOURA INTELIGENTE"
+// ABA 5: O EXTRATOR LÓGICO COM A "TESOURA INTELIGENTE" CORRIGIDA
 // ==========================================
 function atualizarLote(index, campo, valorHtml) {
   if (loteMatrizPronto[index]) {
@@ -291,10 +291,7 @@ function gerarPreviaMatrizRegex() {
   loteMatrizPronto = [];
   containerPrevia.style.display = "none";
 
-  // 1. CORREÇÃO DE QUEBRAS DE LINHA FALSAS DO PDF
-  texto = texto.replace(/\n(?!\s*(\(|EF|Unidade|Práticas|Habilidade|Objetos|Conteúdos|Evidências))/gi, " ");
-
-  // 2. NORMALIZAÇÃO DOS MARCADORES
+  // 1. NORMALIZAÇÃO DOS MARCADORES DE SEÇÃO
   texto = texto.replace(/(?:UNIDADES?\s+TEMÁTICAS?|PRÁTICAS?\s+DE\s+LINGUAGEM)/gi, "___UNIDADE___");
   texto = texto.replace(/(?:GÊNEROS?\s+TEXTUAIS?|GÊNERO\s+TEXTUAL)/gi, "___GENERO___");
   texto = texto.replace(/(?:HABILIDADES?\s+DO\s+CRMG|HABILIDADES?\s+PRIORIZADAS?(?:\s+DO\s+ANO\s+ESCOLAR)?)/gi, "___HAB_PRIORIZADAS___");
@@ -308,7 +305,8 @@ function gerarPreviaMatrizRegex() {
   // A TESOURA INTELIGENTE (Separa múltiplas habilidades encavaladas)
   const separarHabilidades = (textoBruto) => {
     if (!textoBruto || textoBruto === "-") return "-";
-    let textoFormatado = textoBruto.replace(/([^\n])\s*(\(?EF\d{1,2}[A-Z]{2})/gi, "$1\n$2");
+    // Empurra a habilidade para a linha de baixo para criar o bloco isolado
+    let textoFormatado = textoBruto.replace(/(.)\s*(\(?EF\d{1,2}[A-Z]{2})/gi, "$1\n\n$2");
     return textoFormatado.trim();
   };
 
@@ -323,6 +321,12 @@ function gerarPreviaMatrizRegex() {
       if (!match) return "-";
       
       let extraido = match[1].trim();
+
+      // MATA TODAS AS QUEBRAS DE LINHA FALSAS DO PDF E ESPAÇOS DUPLOS
+      extraido = extraido.replace(/\n/g, " ").replace(/\s{2,}/g, " ");
+      
+      // Junta o parêntese ao EF caso o PDF tenha separado com espaço ou quebra de linha maluca: "( EF" -> "(EF"
+      extraido = extraido.replace(/\(\s*EF/gi, "(EF");
 
       // FILTRO ANTI-LIXO 
       extraido = extraido.replace(/\d*\.?\s*PLANOS?\s+DE\s+CURSO\s+202[0-9][\s\S]*?(?:Etapa\s+de\s+Ensino:\s*Ensino\s+Fundamental|Ensino\s+Fundamental|Ensino\s+Médio)/gi, "");
@@ -343,7 +347,7 @@ function gerarPreviaMatrizRegex() {
     const praticas = capturar("___PRATICAS___");
     const evidencias = capturar("___EVIDENCIAS___");
 
-    // Aplica a "Tesoura" nas Habilidades de Português e Matemática
+    // Aplica a "Tesoura" nas Habilidades de Português e Matemática (Garante que caixas separadas são criadas)
     if (disciplina === "Matemática" || disciplina === "Língua Portuguesa") {
       habRec = separarHabilidades(habRec);
       habSup = separarHabilidades(habSup);
@@ -443,7 +447,7 @@ function gerarPreviaMatrizRegex() {
 
   conteudoPrevia.innerHTML = htmlTabela;
   containerPrevia.style.display = "block";
-  if(msg) msg.innerText = `✅ Extração Refinada: ${loteMatrizPronto.length} blocos organizados! As habilidades conjuntas foram separadas.`;
+  if(msg) msg.innerText = `✅ Extração Refinada: ${loteMatrizPronto.length} blocos organizados! O texto foi limpo e as habilidades separadas.`;
 }
 
 async function enviarLoteConfirmado() {
