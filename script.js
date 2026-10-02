@@ -1,341 +1,533 @@
+// [ 🔴 ATENÇÃO: COLOQUE AQUI O SEU LINK DO APPS SCRIPT GERADO NO PASSO 1 ]
 const URL_API = "https://script.google.com/macros/s/AKfycbzrbfJgz-TSiyWftvEDXH4ZsxZBAYamozeYho2f4KH1T7ZnjBWdwVobHqirP0bDnGMj/exec"; 
 
-var professorLogado = "";
-var dadosMatrizGlobal = [];
+var dadosPlanosGlobais = [];
+var loteMatrizPronto = [];
+let dadosEspelhoGlobal = {};
 
+// ==========================================
+// NAVEGAÇÃO E AUTENTICAÇÃO
+// ==========================================
 function mudarAba(abaId, btn) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tabs button').forEach(el => el.classList.remove('active'));
   document.getElementById(abaId).classList.add('active');
-  if (btn) btn.classList.add('active');
-  else document.querySelectorAll('.tabs button').forEach(b => { if (b.innerText.includes(abaId === 'gerarPlano' ? 'Gerar' : 'Meus')) b.classList.add('active'); });
-  if (abaId === 'meusPlanos') carregarMeusPlanos();
-}
+  btn.classList.add('active');
 
-function verificarEscolaManual() {
-  const codigo = document.getElementById('inputCodigoEscola').value.trim().toLowerCase();
-  if (codigo.length > 1) {
-    document.getElementById('telaWorkspace').style.display = 'none';
-    document.getElementById('telaLogin').style.display = 'flex';
-    document.getElementById('tituloNomeEscola').innerText = "Acesso Autorizado";
-  } else { document.getElementById('msgWorkspace').innerText = "Código não reconhecido."; }
+  if (abaId === 'abaUsuarios') carregarListaUsuarios();
+  if (abaId === 'abaSupervisao') carregarPlanosSupervisao();
+  if (abaId === 'abaExtracao') carregarMatrizesSalvas(); 
 }
 
 async function fazerLogin() {
   const usuario = document.getElementById('loginUsuario').value.trim();
   const senha = document.getElementById('loginSenha').value.trim();
   const msg = document.getElementById('msgLogin');
-  msg.innerText = "⏳ A Autenticar...";
+  
+  if (!usuario || !senha) { msg.innerText = "⚠️ Preencha o utilizador e a senha."; return; }
+
+  msg.innerText = "⏳ A Autenticar Especialista... (Aguarde)";
+  
   try {
-    const res = await fetch(URL_API, { method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ acao: "login", usuario, senha }) });
+    const res = await fetch(URL_API, { 
+      method: 'POST', redirect: 'follow', headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ acao: "login", usuario, senha }) 
+    });
+    
+    if (!res.ok) throw new Error(`Erro do Servidor: ${res.status}`);
     const r = await res.json();
+    
     if (r.status === "sucesso") {
-      professorLogado = r.nome;
-      document.getElementById('telaLogin').style.display = 'none';
-      document.getElementById('nomeProfessor').value = r.nome;
-      document.getElementById('infoUsuarioBoasVindas').style.display = 'inline-block';
-      document.getElementById('infoUsuarioBoasVindas').innerText = `👋 Docente: ${r.nome}`;
-      document.getElementById('btnSairSistema').style.display = 'block';
-      carregarComponentesProfessor(r.componentes, r.turmas);
-    } else { msg.innerText = r.mensagem || "Erro de login."; }
-  } catch (e) { msg.innerText = "⚠️ Erro de conexão com o servidor."; }
+      if (r.perfil && r.perfil.toLowerCase() === "especialista") {
+        document.getElementById('telaLogin').style.display = 'none';
+        
+        const headerBoasVindas = document.getElementById('infoUsuarioBoasVindas');
+        headerBoasVindas.style.display = 'inline-block';
+        headerBoasVindas.innerText = `👋 Gestor Logado: ${r.nome}`;
+        
+        carregarPlanosSupervisao();
+      } else {
+        msg.innerText = "⛔ Acesso Negado: A sua conta não tem perfil de Especialista.";
+      }
+    } else {
+      msg.innerText = `⚠️ ${r.mensagem || "Utilizador ou senha incorretos."}`;
+    }
+  } catch (e) { msg.innerText = `❌ Falha de comunicação: ${e.message}`; }
 }
 
 function sairDoSistema() {
-  professorLogado = "";
   document.getElementById('loginSenha').value = ""; 
   document.getElementById('telaLogin').style.display = 'flex';
   document.getElementById('infoUsuarioBoasVindas').style.display = 'none';
-  document.getElementById('btnSairSistema').style.display = 'none';
-  document.getElementById('nomeProfessor').value = "";
-  mudarAba('gerarPlano', document.querySelector('.tabs button')); 
+  mudarAba('abaSupervisao', document.querySelector('.tabs button')); 
 }
 
-function carregarComponentesProfessor(componentesLista, turmasLista) {
-  const selComp = document.getElementById('componente');
-  const areaTurmas = document.getElementById('areaTurmas');
-
-  let htmlComp = '<option value="">Selecione a disciplina...</option>';
-  const compArray = (componentesLista?.length && componentesLista[0] !== "") ? componentesLista : ["Matemática", "Língua Portuguesa", "Geografia", "História", "Ciências", "Arte", "Educação Física", "Ensino Religioso", "Língua Inglesa"];
-  compArray.forEach(c => htmlComp += `<option value="${c}">${c}</option>`);
-  selComp.innerHTML = htmlComp;
-
-  let htmlTurma = '';
-  const turmasArray = (turmasLista?.length && turmasLista[0] !== "") ? turmasLista : ["6º Ano", "7º Ano", "8º Ano", "9º Ano"];
-  turmasArray.forEach(t => {
-    htmlTurma += `<label style="display:flex; align-items:center; cursor:pointer; padding:6px 10px; background:#f8fafc; border:1px solid #edf2f7; border-radius:8px; margin:0;">
-                    <input type="checkbox" name="chkTurmaProf" value="${t}" onchange="buscarMatriz()" style="transform:scale(1.2); margin-right:10px; accent-color:var(--cor-secundaria);">
-                    ${t}
-                  </label>`;
-  });
-  areaTurmas.innerHTML = htmlTurma;
-}
-
-async function buscarMatriz() {
-  const componente = document.getElementById('componente').value;
-  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
-  const trimestre = document.getElementById('selTrimestre') ? document.getElementById('selTrimestre').value : "3º Trimestre";
+// ==========================================
+// ABA 1: SUPERVISÃO DE PLANOS RECEBIDOS
+// ==========================================
+async function carregarPlanosSupervisao() {
+  const container = document.getElementById('tabelaPlanosContainer');
+  container.innerHTML = "⏳ Atualizando base de dados...";
   
-  if (!componente || turmasMarcadas.length === 0 || !trimestre) {
-    document.getElementById('blocoCurriculo').style.display = 'none';
-    return;
-  }
-  
-  const anoBaseParaBusca = turmasMarcadas[0]; 
-  document.getElementById('unidade').innerHTML = '<option value="">⏳ Buscando matriz...</option>';
-  document.getElementById('blocoCurriculo').style.display = 'block';
-
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "buscarMatrizTrimestre", componente: componente, trimestre: trimestre, ano: anoBaseParaBusca }) });
-    const r = await res.json();
-    dadosMatrizGlobal = r.itens || [];
-    let htmlUnidades = '<option value="">Selecione a Unidade Temática...</option>';
-    [...new Set(dadosMatrizGlobal.map(i => i.unidade))].forEach(u => htmlUnidades += `<option value="${u}">${u}</option>`);
-    
-    if(dadosMatrizGlobal.length === 0) { htmlUnidades = '<option value="">⚠️ Nenhuma matriz encontrada.</option>'; }
-    document.getElementById('unidade').innerHTML = htmlUnidades;
-  } catch(e) { document.getElementById('unidade').innerHTML = '<option value="">Erro na busca.</option>'; }
-}
-
-function montarCheckboxes() {
-  const unidadeSelecionada = document.getElementById('unidade').value;
-  const componente = document.getElementById('componente').value;
-  if (!unidadeSelecionada) return;
-  document.getElementById('painelOpcoes').style.display = 'block';
-
-  const itens = dadosMatrizGlobal.filter(i => i.unidade === unidadeSelecionada);
-  
-  let tituloHabPrincipal = "Habilidade do CRMG:";
-  let tituloConteudo = "Conteúdos Relacionados:";
-  let mostrarRecSup = false;
-  let mostrarSocioemocional = false;
-
-  const extrairItensMultiplos = (textoBruto) => {
-    if (!textoBruto || textoBruto === "-") return [];
-    let partes = textoBruto.split(/\n|\s+\|\s+|(?:,(?![^\(]*\)))/);
-    return partes.map(p => p.replace(/^[\-\•\◦]\s*/, "").trim()).filter(p => p.length > 2);
-  };
-
-  // ✅ NOVO: A Tesoura Inteligente de Habilidades
-  const separarHabilidades = (textoBruto) => {
-    if (!textoBruto || textoBruto === "-") return [];
-    // Encontra a transição entre texto e um novo código (ex: " EF15..." ou " (EF15...")
-    // e injeta uma quebra de linha real (\n) para forçar a separação na array.
-    let formatado = textoBruto.replace(/\s(\(?EF\d{1,2}[A-Z]{2})/gi, "\n$1");
-    return formatado.split("\n").map(t => t.trim()).filter(t => t.length > 5);
-  };
-
-  if (componente === "Língua Portuguesa" || componente === "Matemática") {
-    tituloHabPrincipal = "Habilidade Priorizada do ano escolar:";
-    tituloConteudo = "Objeto do conhecimento da habilidade priorizada:";
-    mostrarRecSup = true;
-  } else if (componente === "Ensino Religioso") {
-    mostrarSocioemocional = true;
-  }
-
-  let htmlPri = "", htmlRec = "", htmlSup = "";
-  let conteudoSet = new Set();
-
-  itens.forEach(item => {
-    // Habilidade Priorizada (Mantemos Inteira)
-    if (item.habPriorizada && item.habPriorizada !== "-") {
-      htmlPri += `<div class="checkbox-item"><input type="radio" name="radioHabPriorizada" value="${item.habPriorizada}"><label>${item.habPriorizada}</label></div>`;
-    }
-    
-    // Habilidades de Recomposição e Suporte (Passam pela Tesoura)
-    if (mostrarRecSup) {
-      if (item.habRecomposicao && item.habRecomposicao !== "-") {
-        separarHabilidades(item.habRecomposicao).forEach(h => {
-          htmlRec += `<div class="checkbox-item"><input type="checkbox" name="chkHabRecomposicao" value="${h}"><label>${h}</label></div>`;
-        });
-      }
-      if (item.habSuporte && item.habSuporte !== "-") {
-        separarHabilidades(item.habSuporte).forEach(h => {
-          htmlSup += `<div class="checkbox-item"><input type="checkbox" name="chkHabSuporte" value="${h}"><label>${h}</label></div>`;
-        });
-      }
-    } else if (mostrarSocioemocional) {
-      if (item.habRecomposicao && item.habRecomposicao !== "-") {
-        separarHabilidades(item.habRecomposicao).forEach(h => {
-          htmlRec += `<div class="checkbox-item"><input type="checkbox" name="chkHabRecomposicao" value="${h}"><label>${h}</label></div>`;
-        });
-      }
-    }
-
-    // Objetos e Conteúdos
-    if (componente === "Língua Portuguesa" || componente === "Matemática") {
-      extrairItensMultiplos(item.objetoConhecimento).forEach(obj => conteudoSet.add(obj));
-    } else {
-      extrairItensMultiplos(item.conteudosRelacionados).forEach(cont => conteudoSet.add(cont));
-    }
-  });
-
-  let painelHabilidades = `<label style="font-weight:700; color:#d97706;">${tituloHabPrincipal}</label>${htmlPri || '<p>Nenhuma.</p>'}`;
-  if (mostrarRecSup) {
-    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; color:#d97706; margin-top:10px;">Habilidades de Recomposição:</label>${htmlRec}` : ''}`;
-    painelHabilidades += `${htmlSup ? `<label style="font-weight:700; color:#d97706; margin-top:10px;">Habilidades de Suporte:</label>${htmlSup}` : ''}`;
-  } else if (mostrarSocioemocional) {
-    painelHabilidades += `${htmlRec ? `<label style="font-weight:700; color:#d97706; margin-top:10px;">Habilidades Socioemocionais:</label>${htmlRec}` : ''}`;
-  }
-  document.getElementById('listaHabilidades').innerHTML = painelHabilidades;
-
-  let htmlObj = `<label style="font-weight:700; color:#0284c7; display:block; margin-bottom:8px;">${tituloConteudo}</label>`;
-  conteudoSet.forEach(cont => htmlObj += `<div class="checkbox-item"><input type="checkbox" name="chkObjeto" value="${cont}"><label>${cont}</label></div>`);
-  document.getElementById('listaObjetos').innerHTML = conteudoSet.size > 0 ? htmlObj : '<p>Nenhum conteúdo localizado.</p>';
-}
-
-const formatarData = (dataBase) => {
-  if (!dataBase) return "-";
-  const [ano, mes, dia] = dataBase.split('-');
-  return `${dia}/${mes}/${ano}`;
-};
-
-function abrirIA(tipo) {
-  const componente = document.getElementById('componente').value || "minha disciplina";
-  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
-  const anoEscolaridade = turmasMarcadas.length > 0 ? turmasMarcadas[0].split('º')[0] + "º Ano" : "minha turma";
-  
-  const habRadios = document.querySelector('input[name="radioHabPriorizada"]:checked');
-  const habSelecionada = habRadios ? habRadios.value : "uma habilidade da BNCC/Currículo";
-  
-  const recursosSelecionados = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
-  
-  let promptMestre = `Atue como um professor especialista de ${componente}. Crie o passo a passo (desenvolvimento) de uma aula para alunos do ${anoEscolaridade}. O planejamento deve ser focado na seguinte habilidade: "${habSelecionada}". `;
-  if (recursosSelecionados) { promptMestre += `Para esta aula, planeio utilizar especificamente as seguintes ferramentas e metodologias: ${recursosSelecionados}. Integra estes elementos de forma criativa na aula. `; }
-  promptMestre += `O texto gerado deve ser direto, prático e detalhar o tempo (em minutos) e as ações exatas do professor e dos alunos.`;
-  
-  navigator.clipboard.writeText(promptMestre).then(() => {
-    alert("✅ Comando Inteligente copiado com sucesso!\n\nCole o texto na página da Inteligência Artificial que vai abrir agora.");
-    if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
-    else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
-  }).catch(err => {
-    alert("⚠️ O seu navegador bloqueou a cópia automática. A janela será aberta mesmo assim.");
-    if (tipo === 'gemini') window.open('https://gemini.google.com/app', '_blank');
-    else if (tipo === 'chatgpt') window.open('https://chatgpt.com', '_blank');
-  });
-}
-
-// -------------------------------------------------------------
-// GERAÇÃO DO PLANO DE AULA
-// -------------------------------------------------------------
-async function enviarPlanoAulaAPI() {
-  const turmasMarcadas = Array.from(document.querySelectorAll('input[name="chkTurmaProf"]:checked')).map(cb => cb.value);
-  if(turmasMarcadas.length === 0) { alert("⚠️ Selecione pelo menos uma Turma marcando a caixinha."); return; }
-
-  const btn = document.getElementById('btnGerar');
-  btn.innerText = "⏳ A Gerar Documentos Oficiais...";
-  btn.disabled = true;
-
-  const habPri = document.querySelector('input[name="radioHabPriorizada"]:checked');
-  const habPrioTexto = habPri ? habPri.value : "Não selecionada";
-  
-  const itemMatriz = dadosMatrizGlobal.find(i => i.habPriorizada === habPrioTexto);
-  const evidenciasMatriz = (itemMatriz && itemMatriz.evidencias && itemMatriz.evidencias !== "-") ? itemMatriz.evidencias : "Avaliação formativa e contínua.";
-
-  const rec = Array.from(document.querySelectorAll('input[name="chkHabRecomposicao"]:checked')).map(c => c.value).join("\n");
-  const sup = Array.from(document.querySelectorAll('input[name="chkHabSuporte"]:checked')).map(c => c.value).join("\n");
-  const objs = Array.from(document.querySelectorAll('input[name="chkObjeto"]:checked')).map(c => c.value).join(" | ");
-  const recursos = Array.from(document.querySelectorAll('input[name="chk_recursos"]:checked')).map(c => c.value).join(", ");
-  
-  const gerarAnexos = document.getElementById('chkGerarAnexos') ? document.getElementById('chkGerarAnexos').checked : false;
-
-  const turmaInteira = turmasMarcadas.join(" e ");
-  const anoEscolaridade = turmasMarcadas[0].split('º')[0] + "º Ano"; 
-
-  // CAPTURA O HTML (As quebras de linha)
-  const textoDesenvolvimento = document.getElementById('desenvolvimento').innerHTML;
-
-  const dadosPlano = {
-    professor: document.getElementById('nomeProfessor').value,
-    tipoPlano: document.getElementById('tipoPlano').value,
-    componente: document.getElementById('componente').value,
-    qtdAulas: document.getElementById('qtdAulas').value,
-    dataInicio: formatarData(document.getElementById('dataInicioPer').value),
-    dataFim: formatarData(document.getElementById('dataFimPer').value),
-    turma: turmaInteira,
-    ano: anoEscolaridade,
-    trimestre: document.getElementById('selTrimestre').value,
-    unidade: document.getElementById('unidade').value,
-    habPriorizada: habPrioTexto,
-    habRecomposicao: rec,
-    habSuporte: sup,
-    objetoConhecimento: objs || "-",
-    desenvolvimento: textoDesenvolvimento, 
-    recursos: recursos || "-",
-    evidencias: evidenciasMatriz,
-    gerarAnexos: gerarAnexos
-  };
-
-  try {
-    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarPlano", planoData: dadosPlano }) });
-    const r = await res.json();
-    if (r.status === "sucesso") {
-      alert("✅ Plano Oficial e Anexos gerados com sucesso!");
-      window.open(r.url, '_blank');
-      mudarAba('meusPlanos', null);
-    } else { alert("Erro: " + r.mensagem); }
-  } catch(e) { alert("Erro de conexão com o servidor."); } 
-  finally { btn.innerText = "🚀 Gerar Plano Oficial & Enviar para Supervisão"; btn.disabled = false; }
-}
-
-// -------------------------------------------------------------
-// MEUS PLANOS E EVIDÊNCIAS
-// -------------------------------------------------------------
-async function carregarMeusPlanos() {
-  const container = document.getElementById('listaDePlanos');
-  container.innerHTML = "⏳ A carregar os seus planos recentes...";
   try {
     const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarSupervisao" }) });
     const r = await res.json();
-    if (r.status === "sucesso" && r.registros) {
-      const meus = r.registros.filter(i => i.professor.toLowerCase() === professorLogado.toLowerCase());
-      if (!meus.length) return container.innerHTML = "<p>Ainda não gerou nenhum plano.</p>";
-      let html = "";
-      meus.reverse().forEach(p => {
-        
-        let botoesCaderno = p.cadernoUrl ? `
-          <a href="${p.cadernoUrl}" target="_blank" style="flex:1; text-align:center; background:#f1f5f9; color:#475569; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; border:1px solid #cbd5e1; font-size:0.85rem; min-width:110px;">📑 Abrir Caderno de Anexos</a>
-          <button onclick="abrirModalQR('${p.cadernoUrl}', '📱 QR Code: Caderno de Anexos')" style="flex:1; background:#8b5cf6; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width:110px;">📱 QR Anexos</button>
-        ` : '';
-
-        let feedbackHTML = "";
-        if (p.status.includes('Devolvido') && p.feedback && p.feedback.trim() !== "") {
-           feedbackHTML = `<div style="background:#fee2e2; color:#991b1b; padding:8px; border-radius:6px; font-size:0.85rem; margin-bottom:15px; border-left: 4px solid #ef4444;">💬 <strong>Motivo da Devolução:</strong> ${p.feedback}</div>`;
-        }
-
-        let corStatus = p.status.includes('Aprovado') ? '#10b981' : (p.status.includes('Devolvido') ? '#ef4444' : '#f59e0b');
-
-        html += `<div class="plano-item">
-                  <div style="font-size: 0.9rem; color: #64748b; margin-bottom: 5px;"><strong>📅 ${p.data}</strong> | Estado: <span style="color:${corStatus}; font-weight:bold;">${p.status}</span></div>
-                  <div style="font-size: 1.05rem; color: #0f172a; font-weight: bold; margin-bottom: 5px;">📚 ${p.componente}</div>
-                  <div style="font-size: 0.9rem; color: #334155; margin-bottom: 15px;"><strong>🏷️ Turmas:</strong> ${p.turma}</div>
-                  
-                  ${feedbackHTML}
-
-                  <div style="display: flex; gap: 8px; flex-wrap: wrap; align-items: stretch;">
-                    <a href="${p.docUrl}" target="_blank" style="flex:1; text-align:center; background:#2563eb; color:white; padding:10px 12px; text-decoration:none; border-radius:8px; font-weight:bold; font-size:0.85rem; min-width:110px;">📄 Abrir Plano</a>
-                    <button onclick="abrirModalQR('${p.pastaUrl}', '📷 QR Code: Pasta de Evidências')" style="flex:1; background:#10b981; color:white; border:none; padding:10px 12px; border-radius:8px; font-weight:bold; cursor:pointer; font-size:0.85rem; min-width:110px;">📷 QR Evidências</button>
-                    ${botoesCaderno}
-                  </div>
-                 </div>`;
-      });
-      container.innerHTML = html;
+    if (r.status === "sucesso") {
+      dadosPlanosGlobais = r.registros.reverse(); 
+      preencherDropdownFiltros();
+      desenharTabelaSupervisao(dadosPlanosGlobais);
     }
-  } catch (e) { container.innerHTML = "<p>Erro ao carregar a lista.</p>"; }
+  } catch(e) { container.innerHTML = "Erro de conexão ao carregar planos."; }
 }
 
-function abrirModalQR(url, tituloModal) { 
-  let modal = document.getElementById('modalQR');
-  let tituloExistente = document.getElementById('textoModalQR');
-  if(!tituloExistente) {
-    let txt = document.createElement('h3'); txt.id = 'textoModalQR'; txt.style.color = '#f8fafc'; txt.style.marginBottom = '20px'; txt.style.textAlign = 'center'; txt.style.padding = '0 20px';
-    document.getElementById('imgQRCode').before(txt);
+function preencherDropdownFiltros() {
+  const profs = new Set(), comps = new Set(), turmas = new Set(), trims = new Set();
+  dadosPlanosGlobais.forEach(p => {
+    profs.add(p.professor); comps.add(p.componente); turmas.add(p.turma); trims.add(p.trimestre);
+  });
+  
+  const pop = (id, label, set) => {
+    let el = document.getElementById(id);
+    el.innerHTML = `<option value="">${label}</option>`;
+    [...set].sort().forEach(i => el.innerHTML += `<option value="${i}">${i}</option>`);
+  };
+  
+  pop('filtroProf', '👩‍🏫 Todos os Professores', profs);
+  pop('filtroComp', '📚 Todas as Disciplinas', comps);
+  pop('filtroTurma', '🏷️ Todas as Turmas', turmas);
+  pop('filtroTrimestre', '⏳ Todos os Trimestres', trims);
+  
+  pop('rxFiltroProf', '👩‍🏫 Todos os Professores', profs);
+  pop('rxFiltroComp', '📚 Todas as Disciplinas', comps);
+  pop('rxFiltroTurma', '🏷️ Todas as Turmas', turmas);
+  pop('rxFiltroTrimestre', '⏳ Todos os Trimestres', trims);
+}
+
+function filtrarPlanos() {
+  const fProf = document.getElementById('filtroProf').value;
+  const fComp = document.getElementById('filtroComp').value;
+  const fTurma = document.getElementById('filtroTurma').value;
+  const fTrim = document.getElementById('filtroTrimestre').value;
+  const fStat = document.getElementById('filtroStatus').value;
+
+  const filtrados = dadosPlanosGlobais.filter(p => {
+    return (!fProf || p.professor === fProf) &&
+           (!fComp || p.componente === fComp) &&
+           (!fTurma || p.turma === fTurma) &&
+           (!fTrim || p.trimestre === fTrim) &&
+           (!fStat || p.status.includes(fStat));
+  });
+  desenharTabelaSupervisao(filtrados);
+}
+
+function desenharTabelaSupervisao(lista) {
+  const container = document.getElementById('tabelaPlanosContainer');
+  if (lista.length === 0) { container.innerHTML = "<p>Nenhum plano corresponde aos filtros.</p>"; return; }
+  
+  let html = `<table><tr><th>Data</th><th>Professor</th><th>Componente/Turma</th><th>Ações & Documentos</th><th>Avaliação</th></tr>`;
+  
+  lista.forEach(p => {
+    const selPen = p.status.includes('Pendente') ? 'selected' : '';
+    const selApr = p.status.includes('Aprovado') ? 'selected' : '';
+    const selDev = p.status.includes('Devolvido') ? 'selected' : '';
+    
+    html += `<tr>
+              <td><span style="font-size:0.8rem; color:#64748b;">${p.data}</span></td>
+              <td><strong>${p.professor}</strong></td>
+              <td>${p.componente}<br><span style="font-size:0.85rem; color:#64748b;">${p.turma}</span></td>
+              <td>
+                <a href="${p.docUrl}" target="_blank" style="display:inline-block; background:#2563eb; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; font-size:0.85rem; margin-bottom:5px;">📄 Abrir Plano</a>
+                <br><a href="${p.pastaUrl}" target="_blank" style="display:inline-block; background:#10b981; color:white; padding:6px 12px; border-radius:6px; text-decoration:none; font-size:0.85rem;">📂 Pasta (Evidências)</a>
+              </td>
+              <td style="min-width: 250px;">
+                <select id="status_${p.linha}" onchange="atualizarStatusBanco(${p.linha})" style="padding:6px; margin-bottom:5px; font-weight:bold;">
+                  <option value="🟡 Pendente" ${selPen}>🟡 Pendente</option>
+                  <option value="✅ Aprovado" ${selApr}>✅ Aprovado</option>
+                  <option value="🔴 Devolvido p/ Ajuste" ${selDev}>🔴 Devolvido</option>
+                </select>
+                <br>
+                <div style="display:flex; gap:5px;">
+                  <input type="text" id="feed_${p.linha}" value="${p.feedback}" placeholder="Comentário..." style="padding:6px; font-size:0.85rem;">
+                  <button onclick="atualizarStatusBanco(${p.linha})" style="background:#475569; color:white; border:none; border-radius:6px; cursor:pointer;">OK</button>
+                </div>
+              </td>
+             </tr>`;
+  });
+  container.innerHTML = html + "</table>";
+}
+
+async function atualizarStatusBanco(linha) {
+  const novoStatus = document.getElementById(`status_${linha}`).value;
+  const feedback = document.getElementById(`feed_${linha}`).value;
+  try {
+    await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "atualizarStatus", linha: linha, novoStatus: novoStatus, feedback: feedback }) });
+    const pIndex = dadosPlanosGlobais.findIndex(p => p.linha === linha);
+    if(pIndex !== -1) { dadosPlanosGlobais[pIndex].status = novoStatus; dadosPlanosGlobais[pIndex].feedback = feedback; }
+  } catch(e) { alert("Erro ao guardar o status."); }
+}
+
+// ==========================================
+// ABA 2: RAIO-X CURRICULAR
+// ==========================================
+async function gerarRaioX() {
+  const fProf = document.getElementById('rxFiltroProf').value;
+  const fComp = document.getElementById('rxFiltroComp').value;
+  const fTurma = document.getElementById('rxFiltroTurma').value;
+  const fTrim = document.getElementById('rxFiltroTrimestre').value;
+  const painel = document.getElementById('painelRaioX');
+
+  painel.innerHTML = "⏳ A cruzar dados da Matriz Oficial com os Planos executados...";
+
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "cruzarHabilidades", componente: fComp, turma: fTurma, professor: fProf, trimestre: fTrim }) });
+    const r = await res.json();
+    
+    if (r.status === "sucesso") {
+      let html = `<div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:20px;">
+                    <div style="background:#f0fdf4; border:1px solid #bbf7d0; padding:15px; border-radius:10px;">
+                      <h4 style="color:#166534; margin-top:0;">✅ Consolidado (${r.trabalhadas.length})</h4>
+                      <ul style="font-size:0.9rem; padding-left:20px;">`;
+      r.trabalhadas.forEach(h => html += `<li>${h.habilidade} <br><span style="color:#64748b; font-size:0.8rem;">Por: ${h.professor}</span></li>`);
+      html += `</ul></div>
+               <div style="background:#fffbeb; border:1px solid #fde68a; padding:15px; border-radius:10px;">
+                 <h4 style="color:#b45309; margin-top:0;">⚠️ Faltam (${r.pendentes.length})</h4>
+                 <ul style="font-size:0.9rem; padding-left:20px;">`;
+      r.pendentes.forEach(h => html += `<li>${h.habilidade}</li>`);
+      html += `</ul></div></div>`;
+      painel.innerHTML = html;
+    }
+  } catch(e) { painel.innerHTML = "Erro ao cruzar os dados."; }
+}
+
+// ==========================================
+// ABA 5: O ESPELHO DA PLANILHA (RASTREIO DE MATRIZ)
+// ==========================================
+async function carregarMatrizesSalvas() {
+  const divAbas = document.getElementById('abasPlanilhaVirtual');
+  const divConteudo = document.getElementById('conteudoPlanilhaVirtual');
+  
+  if (!divAbas || !divConteudo) return; 
+
+  divAbas.innerHTML = "<span style='color:#64748b; font-size:0.9rem;'>⏳ A ler a base de dados...</span>";
+  divConteudo.innerHTML = "";
+  
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarMatrizesExtraidas" }) });
+    const r = await res.json();
+    
+    if (r.status === "sucesso") {
+      dadosEspelhoGlobal = {};
+      r.registros.forEach(item => {
+        if(!dadosEspelhoGlobal[item.componente]) dadosEspelhoGlobal[item.componente] = {};
+        if(!dadosEspelhoGlobal[item.componente][item.ano]) dadosEspelhoGlobal[item.componente][item.ano] = [];
+        if(!dadosEspelhoGlobal[item.componente][item.ano].includes(item.trimestre)) { dadosEspelhoGlobal[item.componente][item.ano].push(item.trimestre); }
+      });
+
+      const componentes = Object.keys(dadosEspelhoGlobal).sort();
+      if(componentes.length === 0) {
+        divAbas.innerHTML = "<span style='color:#ef4444; font-size:0.9rem;'>A base de dados está limpa. Nenhuma matriz encontrada.</span>";
+        return;
+      }
+
+      let htmlAbas = "";
+      componentes.forEach((comp, index) => {
+        htmlAbas += `<button onclick="mostrarConteudoEspelho('${comp}', this)" class="btn-espelho-aba" style="padding: 10px 20px; border: 1px solid #cbd5e1; background: ${index === 0 ? '#1e3a8a' : 'white'}; color: ${index === 0 ? 'white' : '#475569'}; border-radius: 8px; font-weight: bold; cursor: pointer; white-space: nowrap; transition: 0.2s;">${comp}</button>`;
+      });
+      divAbas.innerHTML = htmlAbas;
+
+      mostrarConteudoEspelho(componentes[0], divAbas.firstChild);
+    } else {
+      divAbas.innerHTML = "<span style='color:#ef4444;'>Erro ao ler a grelha.</span>";
+    }
+  } catch(e) { divAbas.innerHTML = "<span style='color:#ef4444;'>Falha de ligação com o servidor.</span>"; }
+}
+
+function mostrarConteudoEspelho(componente, btnClicado) {
+  document.querySelectorAll('.btn-espelho-aba').forEach(b => { b.style.background = 'white'; b.style.color = '#475569'; });
+  if(btnClicado) { btnClicado.style.background = '#1e3a8a'; btnClicado.style.color = 'white'; }
+
+  const divConteudo = document.getElementById('conteudoPlanilhaVirtual');
+  const dadosAno = dadosEspelhoGlobal[componente];
+  
+  if(!dadosAno) { divConteudo.innerHTML = "<span style='color:#94a3b8;'>Nenhum registo efetuado para esta disciplina.</span>"; return; }
+
+  let html = "";
+  const anosOrdenados = Object.keys(dadosAno).sort();
+  
+  anosOrdenados.forEach(ano => {
+    let trimestresHtml = "";
+    dadosAno[ano].sort().forEach(trim => { trimestresHtml += `<span style="background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; border: 1px solid #a7f3d0;">✅ ${trim}</span> `; });
+    html += `<div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 15px; width: 100%; max-width: 300px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+               <h5 style="margin: 0 0 10px 0; color: #1e3a8a; font-size: 1.05rem;">🎓 ${ano}</h5>
+               <div style="display: flex; gap: 6px; flex-wrap: wrap;">${trimestresHtml}</div>
+             </div>`;
+  });
+  divConteudo.innerHTML = html;
+}
+
+// ==========================================
+// ABA 5: O EXTRATOR LÓGICO COM A "TESOURA INTELIGENTE"
+// ==========================================
+function atualizarLote(index, campo, valorHtml) {
+  if (loteMatrizPronto[index]) {
+    let textoComBr = valorHtml.replace(/<br\s*[\/]?>/gi, "\n").replace(/<\/p>|<\/div>/gi, "\n");
+    let textoLimpo = textoComBr.replace(/<[^>]*>?/gm, '').trim();
+    loteMatrizPronto[index][campo] = textoLimpo || "-";
   }
-  document.getElementById('textoModalQR').innerText = tituloModal || "Aponte a câmera do celular";
-  document.getElementById('imgQRCode').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(url)}`; 
-  modal.style.display = 'flex'; 
 }
 
-function fecharModalQR() { document.getElementById('modalQR').style.display = 'none'; }
+function gerarPreviaMatrizRegex() {
+  let texto = document.getElementById('textoMatrizBruto').value;
+  const disciplina = document.getElementById('impDisciplina').value.trim();
+  const ano = document.getElementById('impAno').value.trim();
+  const trimestre = document.getElementById('impTrimestre').value.trim();
+  const msg = document.getElementById('msgImportacao') || document.createElement('div'); 
+  const containerPrevia = document.getElementById('containerPrevia');
+  const conteudoPrevia = document.getElementById('tabelaPreviaConteudo');
 
-document.addEventListener("DOMContentLoaded", () => { const btn = document.getElementById('btnGerar'); if(btn) btn.onclick = enviarPlanoAulaAPI; });
+  if (!texto.trim()) { alert("⚠️ Por favor, cole o texto do PDF na caixa antes de continuar."); return; }
+
+  msg.innerText = "⚡ A fatiar e processar variações curriculares...";
+  loteMatrizPronto = [];
+  containerPrevia.style.display = "none";
+
+  // 1. CORREÇÃO DE QUEBRAS DE LINHA FALSAS DO PDF
+  texto = texto.replace(/\n(?!\s*(\(|EF|Unidade|Práticas|Habilidade|Objetos|Conteúdos|Evidências))/gi, " ");
+
+  // 2. NORMALIZAÇÃO DOS MARCADORES
+  texto = texto.replace(/(?:UNIDADES?\s+TEMÁTICAS?|PRÁTICAS?\s+DE\s+LINGUAGEM)/gi, "___UNIDADE___");
+  texto = texto.replace(/(?:GÊNEROS?\s+TEXTUAIS?|GÊNERO\s+TEXTUAL)/gi, "___GENERO___");
+  texto = texto.replace(/(?:HABILIDADES?\s+DO\s+CRMG|HABILIDADES?\s+PRIORIZADAS?(?:\s+DO\s+ANO\s+ESCOLAR)?)/gi, "___HAB_PRIORIZADAS___");
+  texto = texto.replace(/(?:HABILIDADES?\s+DE\s+RECOMPOSIÇÃO(?:\s+DAS\s+APRENDIZAGENS)?|HABILIDADE\s+SOCIOEMOCIONAL\s*:\s*PROJETO\s+DE\s+VIDA|HABILIDADES?\s+SOCIOEMOCIONA(?:IS|L))/gi, "___HAB_RECOMPOSICAO___");
+  texto = texto.replace(/(?:HABILIDADES?\s+DE\s+SUPORTE)/gi, "___HAB_SUPORTE___");
+  texto = texto.replace(/(?:OBJETOS?\s+DO\s+CONHECIMENTO(?:\s+DA\s+HABILIDADE\s+PRIORIZADA)?)/gi, "___OBJETOS___");
+  texto = texto.replace(/(?:CONTEÚDOS?\s+RELACIONADOS?)/gi, "___CONTEUDOS___");
+  texto = texto.replace(/(?:EXEMPLOS?\s+DE\s+PRÁTICAS?\s*PEDAGÓGICAS?|PRÁTICAS?\s*PEDAGÓGICAS?)/gi, "___PRATICAS___");
+  texto = texto.replace(/(?:EVIDÊNCIAS?\s+DE\s+CONSOLIDAÇÃO(?:\s*(?:DA|DE)\s*APRENDIZAGEM)?)/gi, "___EVIDENCIAS___");
+
+  // A TESOURA INTELIGENTE (Separa múltiplas habilidades encavaladas)
+  const separarHabilidades = (textoBruto) => {
+    if (!textoBruto || textoBruto === "-") return "-";
+    let textoFormatado = textoBruto.replace(/([^\n])\s*(\(?EF\d{1,2}[A-Z]{2})/gi, "$1\n$2");
+    return textoFormatado.trim();
+  };
+
+  const blocos = texto.split("___UNIDADE___");
+  
+  for (let i = 1; i < blocos.length; i++) {
+    let bloco = "___UNIDADE___" + blocos[i];
+    
+    const capturar = (marcador) => {
+      const regex = new RegExp(marcador + "([\\s\\S]*?)(?=___|$)", "i");
+      const match = bloco.match(regex);
+      if (!match) return "-";
+      
+      let extraido = match[1].trim();
+
+      // FILTRO ANTI-LIXO 
+      extraido = extraido.replace(/\d*\.?\s*PLANOS?\s+DE\s+CURSO\s+202[0-9][\s\S]*?(?:Etapa\s+de\s+Ensino:\s*Ensino\s+Fundamental|Ensino\s+Fundamental|Ensino\s+Médio)/gi, "");
+      extraido = extraido.replace(/Área\s+de\s+Conhecimento:[\s\S]*?Componente\s+Curricular:[\s\S]*?(?:Ano\s+de\s+Escolaridade:|Etapa\s+de\s+Ensino:)/gi, "");
+      extraido = extraido.replace(new RegExp(disciplina + "\\s*-\\s*\\dº\\s*Trimestre", "gi"), "");
+      extraido = extraido.replace(/\s+\d+\s*$/, ""); 
+
+      return extraido.trim() || "-";
+    };
+
+    const unidade = capturar("___UNIDADE___");
+    const genero = capturar("___GENERO___");
+    let habPri = capturar("___HAB_PRIORIZADAS___");
+    let habRec = capturar("___HAB_RECOMPOSICAO___");
+    let habSup = capturar("___HAB_SUPORTE___");
+    const objetos = capturar("___OBJETOS___");
+    const conteudos = capturar("___CONTEUDOS___");
+    const praticas = capturar("___PRATICAS___");
+    const evidencias = capturar("___EVIDENCIAS___");
+
+    // Aplica a "Tesoura" nas Habilidades de Português e Matemática
+    if (disciplina === "Matemática" || disciplina === "Língua Portuguesa") {
+      habRec = separarHabilidades(habRec);
+      habSup = separarHabilidades(habSup);
+      habPri = separarHabilidades(habPri); 
+    }
+
+    if (unidade !== "-" || habPri !== "-") {
+      loteMatrizPronto.push({
+        disciplina: disciplina, 
+        ano: ano, 
+        trimestre: trimestre,
+        unidade: unidade, 
+        genero: genero, 
+        habPriorizada: habPri,
+        habRecomposicao: habRec, 
+        habSuporte: habSup,
+        objetoConhecimento: objetos, 
+        conteudosRelacionados: conteudos,
+        praticas: praticas, 
+        evidencias: evidencias
+      });
+    }
+  }
+
+  if (loteMatrizPronto.length === 0) {
+    alert("⚠️ O sistema não reconheceu os títulos. Confirme se colou o texto corretamente.");
+    return;
+  }
+
+  // 4. TABELA DE PRÉVIA COMPLETA
+  let htmlTabela = `
+    <style>
+      .cel-edit { border: 1px dashed transparent; padding: 4px; border-radius: 4px; cursor: text; transition: 0.2s; min-height: 20px; font-size:0.8rem; white-space: pre-wrap; }
+      .cel-edit:hover { border-color: #94a3b8; background-color: #f8fafc; }
+      .cel-edit:focus { border-color: #3b82f6; background-color: #eff6ff; outline: none; }
+      .col-header { padding:8px; text-align:left; font-size:0.8rem; }
+    </style>
+    
+    <div style="overflow-x: auto; padding-bottom: 10px; max-height: 500px;">
+    <table style="width:100%; min-width:2000px; border-collapse: collapse; border: 1px solid #cbd5e1;">
+      <tr style="background-color:#1e3a8a; color:white; position: sticky; top: 0;">
+        <th class="col-header" style="width:2%;">#</th>
+        <th class="col-header" style="width:6%;">Ano/Trim.</th>
+        <th class="col-header" style="width:10%;">Unidade Temática</th>
+        <th class="col-header" style="width:15%;">Habilidade Priorizada</th>
+        <th class="col-header" style="width:10%;">Hab. Recomposição</th>
+        <th class="col-header" style="width:10%;">Hab. Suporte</th>
+        <th class="col-header" style="width:12%;">Objetos do Conhec.</th>
+        <th class="col-header" style="width:12%;">Conteúdos Relacionados</th>
+        <th class="col-header" style="width:12%;">Práticas Pedagógicas</th>
+        <th class="col-header" style="width:11%;">Evidências</th>
+      </tr>`;
+  
+  loteMatrizPronto.forEach((item, index) => {
+    let bgLine = index % 2 === 0 ? '#ffffff' : '#f8fafc';
+    htmlTabela += `<tr style="border-bottom: 1px solid #e2e8f0; background: ${bgLine};">
+                    <td style="vertical-align:top; padding:8px; font-size:0.8rem;">${index + 1}</td>
+                    
+                    <td style="vertical-align:top; padding:8px; font-size:0.8rem; color:#475569;">
+                      <strong>${item.ano}</strong><br>${item.trimestre}
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'unidade', this.innerHTML)" class="cel-edit" style="font-weight:bold; color:#1e293b;">${item.unidade}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habPriorizada', this.innerHTML)" class="cel-edit" style="color:#2563eb; font-weight:bold;">${item.habPriorizada}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habRecomposicao', this.innerHTML)" class="cel-edit">${item.habRecomposicao}</div>
+                    </td>
+
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'habSuporte', this.innerHTML)" class="cel-edit">${item.habSuporte}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'objetoConhecimento', this.innerHTML)" class="cel-edit" style="color:#0f766e;">${item.objetoConhecimento}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'conteudosRelacionados', this.innerHTML)" class="cel-edit" style="color:#0369a1;">${item.conteudosRelacionados}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'praticas', this.innerHTML)" class="cel-edit" style="color:#15803d;">${item.praticas}</div>
+                    </td>
+                    
+                    <td style="vertical-align:top; padding:8px;">
+                      <div contenteditable="true" onblur="atualizarLote(${index}, 'evidencias', this.innerHTML)" class="cel-edit" style="color:#b45309; font-style:italic;">${item.evidencias}</div>
+                    </td>
+                   </tr>`;
+  });
+  htmlTabela += `</table></div>`;
+
+  conteudoPrevia.innerHTML = htmlTabela;
+  containerPrevia.style.display = "block";
+  if(msg) msg.innerText = `✅ Extração Refinada: ${loteMatrizPronto.length} blocos organizados! As habilidades conjuntas foram separadas.`;
+}
+
+async function enviarLoteConfirmado() {
+  if (loteMatrizPronto.length === 0) { alert("⚠️ Nenhuma habilidade na prévia para enviar."); return; }
+  
+  const btnEnvio = document.getElementById('btnEnviarOficial');
+  btnEnvio.innerText = "⏳ A gravar nas 11 colunas da Planilha Oficial...";
+  btnEnvio.disabled = true;
+
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarLoteMatriz", itens: loteMatrizPronto }) });
+    const r = await res.json();
+    if (r.status === "sucesso") {
+      alert("✅ " + r.mensagem);
+      document.getElementById('textoMatrizBruto').value = "";
+      document.getElementById('containerPrevia').style.display = "none";
+      loteMatrizPronto = [];
+
+      carregarMatrizesSalvas(); 
+
+    } else { alert("⚠️ Erro ao guardar: " + r.mensagem); }
+  } catch (e) { alert("⚠ Erro de comunicação com o servidor Google Apps Script."); } 
+  finally { btnEnvio.innerText = "🚀 Tudo certo! Enviar para a Planilha Oficial"; btnEnvio.disabled = false; }
+}
+
+// ==========================================
+// ABA 3: USUÁRIOS
+// ==========================================
+async function carregarListaUsuarios() {
+  const container = document.getElementById('tabelaUsuariosContainer');
+  container.innerHTML = "<p style='text-align:center;'>⏳ A carregar utilizadores...</p>";
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "listarUsuarios" }) });
+    const r = await res.json();
+    if (r.status === "sucesso") {
+      let html = `<table><tr><th>Nome / E-mail</th><th>Perfil</th><th>Senha</th><th>Ação</th></tr>`;
+      r.usuarios.forEach(u => {
+        let emailD = (u.email && u.email !== "undefined") ? u.email : "Sem e-mail";
+        html += `<tr><td><strong>${u.nome}</strong><br><span style="font-size:0.8rem; color:#64748b;">${emailD}</span></td><td>${u.perfil}</td><td><span style="background:#e2e8f0; padding:4px 8px; border-radius:6px; font-family:monospace;">${u.senha}</span></td><td><button onclick="editarUsuario(${u.linha}, '${u.nome}', '${u.email}', '${u.senha}', '${u.perfil}', '${u.componentes}', '${u.turmas}')" style="background:#3498db; color:white; border:none; padding:8px 12px; border-radius:8px; cursor:pointer;">Editar</button></td></tr>`;
+      });
+      container.innerHTML = html + `</table>`;
+    }
+  } catch(e) { container.innerHTML = "<p>Erro ao listar utilizadores.</p>"; }
+}
+
+async function salvarUsuario() {
+  const dados = { linha: document.getElementById('usuarioLinha').value, nome: document.getElementById('cadNome').value.trim(), email: document.getElementById('cadEmail').value.trim(), senha: document.getElementById('cadSenha').value.trim(), perfil: document.getElementById('cadPerfil').value, componentes: document.getElementById('cadComponentes').value.trim(), turmas: document.getElementById('cadTurmas').value.trim() };
+  if(!dados.nome || !dados.senha) { alert("Nome e Senha são obrigatórios."); return; }
+  try {
+    await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "salvarUsuario", usuarioData: dados }) });
+    alert("✅ Utilizador guardado com sucesso!"); limparFormUsuario(); carregarListaUsuarios();
+  } catch(e) { alert("⚠️ Erro ao guardar."); }
+}
+
+function editarUsuario(linha, nome, email, senha, perfil, comp, turma) {
+  document.getElementById('usuarioLinha').value = linha; document.getElementById('cadNome').value = nome;
+  document.getElementById('cadEmail').value = email !== "undefined" ? email : ""; document.getElementById('cadSenha').value = senha;
+  document.getElementById('cadPerfil').value = perfil; document.getElementById('cadComponentes').value = comp !== "undefined" ? comp : "";
+  document.getElementById('cadTurmas').value = turma !== "undefined" ? turma : ""; window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function limparFormUsuario() { document.querySelectorAll('#abaUsuarios input').forEach(i => i.value = ""); }
+
+// ==========================================
+// ABA 4: RELATÓRIOS E BACKUP
+// ==========================================
+async function gerarRelatorio() {
+  const btn = document.getElementById('btnGerarRelatorio');
+  const periodo = document.getElementById('tipoRelatorio').value;
+  btn.innerText = "⏳ A Auditar Matrizes e Gerar Documento...";
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "gerarRelatorioExecutivo", periodo: periodo }) });
+    const r = await res.json();
+    if(r.status === "sucesso") {
+      alert("✅ Relatório Avançado concluído!"); 
+      window.open(r.url, '_blank');
+    } else { alert("⚠️ Erro: " + r.mensagem); }
+  } catch(e) { alert("Erro de comunicação."); } finally { btn.innerText = "📑 Gerar Documento Oficial (Google Docs)"; btn.disabled = false; }
+}
+
+async function forcarBackup() {
+  const btn = document.getElementById('btnBackup'); btn.innerText = "⏳ A extrair dados..."; btn.disabled = true;
+  try { const res = await fetch(URL_API, { method: 'POST', body: JSON.stringify({ acao: "forcarBackup" }) }); const r = await res.json(); alert("✅ " + r.mensagem); } 
+  catch(e) { alert("Erro."); } finally { btn.innerText = "📦 Enviar para E-mail"; btn.disabled = false; }
+}
